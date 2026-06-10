@@ -6,7 +6,8 @@
       "PowerShell(npm install @supabase/supabase-js @supabase/ssr --no-audit --no-fund)",
       "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npm run dev)",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; \"node procs: $\\(\\(Get-Process node -ErrorAction SilentlyContinue | Measure-Object\\).Count\\)\")",
-      "mcp__claude_ai_Supabase__apply_migration"
+      "mcp__claude_ai_Supabase__apply_migration",
+      "PowerShell(cd d:\\\\JHB-website; $env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npm run dev:admin)"
     ]
   }
 }

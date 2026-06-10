@@ -1,0 +1,21 @@
+{
+  "name": "@jhb/shared",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./supabase/client": "./src/supabase/client.ts",
+    "./supabase/server": "./src/supabase/server.ts",
+    "./content": "./src/content.ts",
+    "./content-server": "./src/content.server.ts",
+    "./data": "./src/data.ts",
+    "./services-server": "./src/services.server.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.1"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
