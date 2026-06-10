@@ -1,0 +1,61 @@
+// Client-safe content types + defaults (no server-only imports here).
+// Server fetchers live in content.server.ts.
+
+export type HeroContent = {
+  badge: string;
+  title: string;
+  highlight: string;
+  subtitle: string;
+  ctaPrimaryLabel: string;
+  ctaPrimaryHref: string;
+  ctaSecondaryLabel: string;
+  ctaSecondaryHref: string;
+};
+
+export type StatItem = { value: number; suffix: string; label: string };
+export type StatsContent = { items: StatItem[] };
+
+export type SiteSettings = {
+  companyName: string;
+  tagline: string;
+  phone: string;
+  email: string;
+  address: string;
+  hours: string;
+  instagram: string;
+  facebook: string;
+  linkedin: string;
+};
+
+export const HERO_DEFAULT: HeroContent = {
+  badge: "Next-Gen AI Automation Agency",
+  title: "Grow Your Business Online, Smarter and Faster With",
+  highlight: "Best Digital Marketing Salem",
+  subtitle:
+    "We help businesses of all sizes attract the right customers, build trust, and boost sales. With data-driven strategies, SEO, content, and digital solutions, we deliver the best digital marketing Salem—your growth is our mission every step of the way.",
+  ctaPrimaryLabel: "Contact Us",
+  ctaPrimaryHref: "#contact",
+  ctaSecondaryLabel: "Explore Services",
+  ctaSecondaryHref: "#services",
+};
+
+export const STATS_DEFAULT: StatsContent = {
+  items: [
+    { value: 87, suffix: "%", label: "Client Retention" },
+    { value: 3, suffix: "+", label: "Years of Service" },
+    { value: 15, suffix: "+", label: "Professionals" },
+    { value: 180, suffix: "+", label: "Satisfied Clients" },
+  ],
+};
+
+export const SETTINGS_DEFAULT: SiteSettings = {
+  companyName: "JHB Automations",
+  tagline: "Digitalise your business with AI, web and data-driven marketing.",
+  phone: "+91 97918 22718",
+  email: "jhbautomations@gmail.com",
+  address: "Indira Nagar, Narasothipatti, Salem-4, Tamil Nadu",
+  hours: "Mon-Sat, 9:30 AM - 6:00 PM",
+  instagram: "https://instagram.com/jhb_automations_",
+  facebook: "#",
+  linkedin: "#",
+};
