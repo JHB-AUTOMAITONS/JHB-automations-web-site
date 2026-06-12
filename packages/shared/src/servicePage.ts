@@ -32,6 +32,27 @@ export type CtaSec = {
   buttonText: string;
   buttonLink: string;
 };
+export type ClientsSec = { enabled: boolean; title: string; logos: string[] };
+export type Testimonial = {
+  name: string;
+  company: string;
+  review: string;
+  photo: string | null;
+};
+export type TestimonialsSec = {
+  enabled: boolean;
+  title: string;
+  items: Testimonial[];
+};
+export type OfficeSec = {
+  enabled: boolean;
+  title: string;
+  address: string;
+  phone: string;
+  email: string;
+  mapEmbedUrl: string;
+  image: string | null;
+};
 
 export type ServiceSections = {
   hero: HeroSec;
@@ -39,6 +60,9 @@ export type ServiceSections = {
   benefits: BenefitsSec;
   process: ProcessSec;
   whyUs: WhyUsSec;
+  clients: ClientsSec;
+  testimonials: TestimonialsSec;
+  office: OfficeSec;
   cta: CtaSec;
 };
 
@@ -83,6 +107,17 @@ export function defaultSections(c: ServiceContentInput): ServiceSections {
       description: `We don't just deliver ${c.title.toLowerCase()} — we deliver measurable business growth, with full transparency at every step.`,
       features: c.benefits,
     },
+    clients: { enabled: false, title: "Trusted By", logos: [] },
+    testimonials: { enabled: false, title: "What Our Clients Say", items: [] },
+    office: {
+      enabled: false,
+      title: "Visit Our Office",
+      address: "",
+      phone: "",
+      email: "",
+      mapEmbedUrl: "",
+      image: null,
+    },
     cta: {
       enabled: true,
       heading: `Ready to get started with ${c.title}?`,
@@ -105,6 +140,9 @@ export function mergeSections(
     benefits: { ...d.benefits, ...(o.benefits ?? {}) },
     process: { ...d.process, ...(o.process ?? {}) },
     whyUs: { ...d.whyUs, ...(o.whyUs ?? {}) },
+    clients: { ...d.clients, ...(o.clients ?? {}) },
+    testimonials: { ...d.testimonials, ...(o.testimonials ?? {}) },
+    office: { ...d.office, ...(o.office ?? {}) },
     cta: { ...d.cta, ...(o.cta ?? {}) },
   };
 }

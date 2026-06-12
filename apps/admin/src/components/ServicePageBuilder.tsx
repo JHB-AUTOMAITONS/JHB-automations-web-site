@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ServiceSections } from "@jhb/shared/service-page";
+import type { ServiceSections, Testimonial } from "@jhb/shared/service-page";
 import {
   saveService,
   saveServiceSections,
   publishServiceSections,
+  saveServiceFaqs,
 } from "@/app/actions";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
+
+type Faq = { question: string; answer: string };
 
 type Stat = { value: string; label: string };
 type Toast = { type: "success" | "error"; msg: string } | null;
@@ -27,10 +30,13 @@ export default function ServicePageBuilder(props: {
   initialMetaDescription: string;
   initialMetaKeywords: string;
   initialSections: ServiceSections;
+  initialFaqs: Faq[];
 }) {
   const router = useRouter();
 
   const [s, setS] = useState<ServiceSections>(props.initialSections);
+  const [faqs, setFaqs] = useState<Faq[]>(props.initialFaqs);
+  const [autosave, setAutosave] = useState<"idle" | "saving" | "saved">("idle");
   const [slug, setSlug] = useState(props.initialSlug);
   const [metaTitle, setMetaTitle] = useState(props.initialMetaTitle);
   const [metaDesc, setMetaDesc] = useState(props.initialMetaDescription);
@@ -51,6 +57,31 @@ export default function ServicePageBuilder(props: {
     section: K,
     patch: Partial<ServiceSections[K]>
   ) => setS((p) => ({ ...p, [section]: { ...p[section], ...patch } }));
+
+  // Autosave the section draft 1.5s after the last change
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    setAutosave("saving");
+    const t = setTimeout(async () => {
+      await saveServiceSections(
+        props.serviceKey,
+        s as unknown as Record<string, unknown>
+      );
+      setAutosave("saved");
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s]);
+
+  const saveFaqs = async () => {
+    await saveServiceFaqs(props.serviceKey, faqs);
+    flash({ type: "success", msg: "FAQs saved." });
+    router.refresh();
+  };
 
   const persistDraft = async () => {
     const metaRes = await saveService(props.serviceKey, {
@@ -139,6 +170,13 @@ export default function ServicePageBuilder(props: {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <span className="mr-1 text-xs text-muted">
+            {autosave === "saving"
+              ? "Autosaving…"
+              : autosave === "saved"
+                ? "✓ Draft autosaved"
+                : ""}
+          </span>
           <a
             href={`${WEBSITE_URL}/services/${slug}`}
             target="_blank"
@@ -253,10 +291,34 @@ export default function ServicePageBuilder(props: {
                 </div>
               </SecCard>
 
-              <p className="text-xs text-muted">
-                FAQs for this service are managed under{" "}
-                <a href="/faqs" className="text-primary underline">FAQs</a>.
-              </p>
+              {/* CLIENT SHOWCASE */}
+              <SecCard title="Client Showcase" enabled={s.clients.enabled} onToggle={(v) => set("clients", { enabled: v })}>
+                <Field label="Section title" value={s.clients.title} onChange={(v) => set("clients", { title: v })} />
+                <LogoEditor logos={s.clients.logos} onChange={(logos) => set("clients", { logos })} />
+              </SecCard>
+
+              {/* TESTIMONIALS */}
+              <SecCard title="Testimonials" enabled={s.testimonials.enabled} onToggle={(v) => set("testimonials", { enabled: v })}>
+                <Field label="Section title" value={s.testimonials.title} onChange={(v) => set("testimonials", { title: v })} />
+                <TestimonialEditor items={s.testimonials.items} onChange={(items) => set("testimonials", { items })} />
+              </SecCard>
+
+              {/* FAQ */}
+              <SecCard title="FAQ" enabled hideToggle onToggle={() => {}}>
+                <FaqEditor faqs={faqs} onChange={setFaqs} onSave={saveFaqs} />
+              </SecCard>
+
+              {/* OFFICE */}
+              <SecCard title="Office Location" enabled={s.office.enabled} onToggle={(v) => set("office", { enabled: v })}>
+                <Field label="Title" value={s.office.title} onChange={(v) => set("office", { title: v })} />
+                <Field label="Address" value={s.office.address} onChange={(v) => set("office", { address: v })} textarea />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Phone" value={s.office.phone} onChange={(v) => set("office", { phone: v })} />
+                  <Field label="Email" value={s.office.email} onChange={(v) => set("office", { email: v })} />
+                </div>
+                <Field label="Google Map embed URL" value={s.office.mapEmbedUrl} onChange={(v) => set("office", { mapEmbedUrl: v })} />
+                <ImagePicker label="Office image" value={s.office.image} onChange={(u) => set("office", { image: u })} />
+              </SecCard>
             </>
           ) : (
             /* ---- SEO TAB ---- */
@@ -346,21 +408,139 @@ function SecCard({
   title,
   enabled,
   onToggle,
+  hideToggle,
   children,
 }: {
   title: string;
   enabled: boolean;
   onToggle: (v: boolean) => void;
+  hideToggle?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">{title}</h2>
-        <Toggle checked={enabled} onChange={onToggle} />
+        {!hideToggle && <Toggle checked={enabled} onChange={onToggle} />}
       </div>
       {enabled && <div className="mt-5 space-y-4">{children}</div>}
     </section>
+  );
+}
+
+function LogoEditor({
+  logos,
+  onChange,
+}: {
+  logos: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= logos.length) return;
+    const next = [...logos];
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
+    onChange(next);
+  };
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {logos.map((logo, i) => (
+          <div key={i} className="rounded-xl border border-ink/10 bg-base p-2">
+            <div className="grid h-16 place-items-center overflow-hidden rounded-lg bg-surface">
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt="" className="max-h-12 w-auto object-contain" />
+              ) : (
+                <span className="text-xl text-muted">🖼</span>
+              )}
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-1">
+              <ImagePicker value={logo || null} onChange={(u) => onChange(logos.map((x, idx) => (idx === i ? u || "" : x)))} />
+              <div className="flex flex-col gap-1">
+                <button onClick={() => move(i, i - 1)} disabled={i === 0} className="grid h-6 w-6 place-items-center rounded border border-ink/10 text-[10px] disabled:opacity-30">↑</button>
+                <button onClick={() => move(i, i + 1)} disabled={i === logos.length - 1} className="grid h-6 w-6 place-items-center rounded border border-ink/10 text-[10px] disabled:opacity-30">↓</button>
+              </div>
+              <button onClick={() => onChange(logos.filter((_, idx) => idx !== i))} className="grid h-6 w-6 place-items-center rounded border border-ink/10 text-[10px] hover:border-red-300 hover:text-red-500">✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={() => onChange([...logos, ""])} className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary">
+        + Add logo
+      </button>
+    </div>
+  );
+}
+
+function TestimonialEditor({
+  items,
+  onChange,
+}: {
+  items: Testimonial[];
+  onChange: (v: Testimonial[]) => void;
+}) {
+  const upd = (i: number, patch: Partial<Testimonial>) =>
+    onChange(items.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  return (
+    <div className="space-y-3">
+      {items.map((t, i) => (
+        <div key={i} className="rounded-xl border border-ink/10 bg-base p-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input value={t.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder="Customer name" className="rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary" />
+            <input value={t.company} onChange={(e) => upd(i, { company: e.target.value })} placeholder="Company" className="rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary" />
+          </div>
+          <textarea value={t.review} onChange={(e) => upd(i, { review: e.target.value })} placeholder="Review" rows={2} className="mt-2 w-full resize-none rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary" />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <ImagePicker label="Photo" value={t.photo} onChange={(u) => upd(i, { photo: u })} />
+            <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="rounded-md border border-ink/10 px-3 py-1.5 text-xs text-muted hover:border-red-300 hover:text-red-500">Delete</button>
+          </div>
+        </div>
+      ))}
+      <button onClick={() => onChange([...items, { name: "", company: "", review: "", photo: null }])} className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary">
+        + Add testimonial
+      </button>
+    </div>
+  );
+}
+
+function FaqEditor({
+  faqs,
+  onChange,
+  onSave,
+}: {
+  faqs: Faq[];
+  onChange: (v: Faq[]) => void;
+  onSave: () => void;
+}) {
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= faqs.length) return;
+    const next = [...faqs];
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
+    onChange(next);
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted">
+        FAQs save separately (they publish immediately) and generate FAQ schema on the page.
+      </p>
+      {faqs.map((f, i) => (
+        <div key={i} className="rounded-xl border border-ink/10 bg-base p-3">
+          <div className="flex items-center gap-2">
+            <input value={f.question} onChange={(e) => onChange(faqs.map((x, idx) => (idx === i ? { ...x, question: e.target.value } : x)))} placeholder="Question" className="flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm font-medium outline-none focus:border-primary" />
+            <button onClick={() => move(i, i - 1)} disabled={i === 0} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↑</button>
+            <button onClick={() => move(i, i + 1)} disabled={i === faqs.length - 1} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↓</button>
+            <button onClick={() => onChange(faqs.filter((_, idx) => idx !== i))} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+          </div>
+          <textarea value={f.answer} onChange={(e) => onChange(faqs.map((x, idx) => (idx === i ? { ...x, answer: e.target.value } : x)))} placeholder="Answer" rows={2} className="mt-2 w-full resize-none rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary" />
+        </div>
+      ))}
+      <div className="flex items-center gap-2">
+        <button onClick={() => onChange([...faqs, { question: "", answer: "" }])} className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary">+ Add FAQ</button>
+        <button onClick={onSave} className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">Save FAQs</button>
+      </div>
+    </div>
   );
 }
 
@@ -555,6 +735,37 @@ function Preview({ s }: { s: ServiceSections }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      {s.clients.enabled && s.clients.logos.filter(Boolean).length > 0 && (
+        <div className="border-t border-ink/10 p-5 text-center">
+          <h4 className="font-display text-sm font-bold">{s.clients.title}</h4>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            {s.clients.logos.filter(Boolean).slice(0, 6).map((l, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={l} alt="" className="h-7 w-auto rounded bg-base object-contain p-1" />
+            ))}
+          </div>
+        </div>
+      )}
+      {s.testimonials.enabled && s.testimonials.items.length > 0 && (
+        <div className="border-t border-ink/10 p-5">
+          <h4 className="font-display text-sm font-bold">{s.testimonials.title}</h4>
+          <div className="mt-2 space-y-2">
+            {s.testimonials.items.slice(0, 2).map((t, i) => (
+              <div key={i} className="rounded-lg bg-base p-2">
+                <p className="text-[10px] text-muted line-clamp-2">“{t.review}”</p>
+                <p className="mt-1 text-[11px] font-semibold">{t.name}{t.company ? `, ${t.company}` : ""}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {s.office.enabled && (
+        <div className="border-t border-ink/10 p-5">
+          <h4 className="font-display text-sm font-bold">{s.office.title}</h4>
+          <p className="mt-1 whitespace-pre-line text-[11px] text-muted">{s.office.address}</p>
+          {s.office.mapEmbedUrl && <p className="mt-1 text-[10px] text-primary">🗺 Map embedded</p>}
         </div>
       )}
       {s.cta.enabled && (

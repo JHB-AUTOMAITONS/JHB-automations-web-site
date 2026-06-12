@@ -26,7 +26,8 @@ export default function ServicePageView({
   related?: RelatedLink[];
   faqs?: FaqItem[];
 }) {
-  const { hero, about, benefits, process, whyUs, cta } = sections;
+  const { hero, about, benefits, process, whyUs, clients, testimonials, office, cta } =
+    sections;
 
   return (
     <main className="relative pt-32">
@@ -241,6 +242,77 @@ export default function ServicePageView({
         </section>
       )}
 
+      {/* Client Showcase */}
+      {clients.enabled && clients.logos.length > 0 && (
+        <section className="container-x py-16">
+          <Reveal>
+            <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">
+              {clients.title}
+            </h2>
+          </Reveal>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+            {clients.logos.map((logo, i) => (
+              <div
+                key={i}
+                className="glass flex h-20 w-36 items-center justify-center rounded-2xl p-4"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logo}
+                  alt="Client logo"
+                  loading="lazy"
+                  className="max-h-12 w-auto max-w-full object-contain opacity-80 transition-opacity hover:opacity-100"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Testimonials */}
+      {testimonials.enabled && testimonials.items.length > 0 && (
+        <section className="container-x py-16">
+          <Reveal>
+            <h2 className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl">
+              {testimonials.title}
+            </h2>
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {testimonials.items.map((t, i) => (
+              <Reveal key={i} delay={(i % 3) * 0.06}>
+                <figure className="glass glow-border h-full rounded-2xl p-6">
+                  <div className="mb-3 flex text-accent">★★★★★</div>
+                  <blockquote className="text-sm leading-relaxed text-ink/80">
+                    “{t.review}”
+                  </blockquote>
+                  <figcaption className="mt-5 flex items-center gap-3">
+                    {t.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={t.photo}
+                        alt={t.name}
+                        loading="lazy"
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
+                        {(t.name || "?").slice(0, 1)}
+                      </span>
+                    )}
+                    <div>
+                      <p className="font-display text-sm font-semibold">{t.name}</p>
+                      {t.company && (
+                        <p className="text-xs text-muted">{t.company}</p>
+                      )}
+                    </div>
+                  </figcaption>
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Related */}
       {related.length > 0 && (
         <section className="container-x py-20">
@@ -273,6 +345,70 @@ export default function ServicePageView({
         <div className="pb-12">
           <FaqAccordion items={faqs} />
         </div>
+      )}
+
+      {/* Office Location (per-service override) */}
+      {office.enabled && (
+        <section className="container-x py-16">
+          <div className="glass-strong glow-border overflow-hidden rounded-3xl shadow-soft">
+            <div className="grid lg:grid-cols-2">
+              <div className="p-8 sm:p-10">
+                <span className="eyebrow">Visit Us</span>
+                <h2 className="mt-4 font-display text-2xl font-bold sm:text-3xl">
+                  {office.title}
+                </h2>
+                <ul className="mt-6 space-y-4 text-sm">
+                  {office.address && (
+                    <li className="flex gap-3">
+                      <span>📍</span>
+                      <address className="not-italic leading-relaxed text-muted">
+                        {office.address}
+                      </address>
+                    </li>
+                  )}
+                  {office.phone && (
+                    <li className="flex items-center gap-3">
+                      <span>📞</span>
+                      <a href={`tel:${office.phone.replace(/\s+/g, "")}`} className="font-medium hover:text-primary">
+                        {office.phone}
+                      </a>
+                    </li>
+                  )}
+                  {office.email && (
+                    <li className="flex items-center gap-3">
+                      <span>✉️</span>
+                      <a href={`mailto:${office.email}`} className="font-medium hover:text-primary">
+                        {office.email}
+                      </a>
+                    </li>
+                  )}
+                </ul>
+                {office.image && (
+                  <div className="mt-6 overflow-hidden rounded-2xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={office.image} alt="Office" loading="lazy" className="aspect-video w-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <div className="min-h-[300px] p-6 lg:p-8 lg:pl-0">
+                {office.mapEmbedUrl ? (
+                  <iframe
+                    title="Office location map"
+                    src={office.mapEmbedUrl}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="h-full min-h-[260px] w-full rounded-2xl border-0 shadow-soft"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="grid h-full min-h-[260px] place-items-center rounded-2xl bg-base text-sm text-muted">
+                    Add a Google Map embed URL
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* CTA */}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServices } from "@jhb/shared/services-server";
 import { getServiceSectionsRaw } from "@jhb/shared/service-page-server";
+import { getServiceFaqs } from "@jhb/shared/faqs-server";
 import { defaultSections, mergeSections } from "@jhb/shared/service-page";
 import ServicePageBuilder from "@/components/ServicePageBuilder";
 
@@ -14,7 +15,10 @@ export default async function ServiceBuilderPage({
   const svc = services.find((s) => s.key === key);
   if (!svc) notFound();
 
-  const draftRaw = await getServiceSectionsRaw(key, "draft");
+  const [draftRaw, faqRows] = await Promise.all([
+    getServiceSectionsRaw(key, "draft"),
+    getServiceFaqs(key),
+  ]);
   const sections = mergeSections(
     defaultSections({
       title: svc.title,
@@ -37,6 +41,7 @@ export default async function ServiceBuilderPage({
       initialMetaDescription={svc.metaDescription}
       initialMetaKeywords={svc.metaKeywords}
       initialSections={sections}
+      initialFaqs={faqRows.map((f) => ({ question: f.question, answer: f.answer }))}
     />
   );
 }
