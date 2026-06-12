@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { serviceDetails } from "@jhb/shared/data";
 import { getServiceBySlug, getServices } from "@jhb/shared/services-server";
 import { getServiceFaqs } from "@jhb/shared/faqs-server";
+import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import ServiceDetailView from "@/components/ServiceDetail";
 
 // Pre-render the default slugs; changed slugs render on-demand (dynamicParams).
@@ -47,15 +48,21 @@ export default async function ServicePage({
   const data = await getServiceBySlug(slug);
   if (!data) notFound();
 
-  const [services, faqRows] = await Promise.all([
+  const [services, faqRows, linkRows] = await Promise.all([
     getServices(),
     getServiceFaqs(data.key),
+    getServiceAnchorLinks(data.key),
   ]);
   const related = services
     .filter((s) => s.key !== data.key)
     .slice(0, 4)
     .map((s) => ({ title: s.title, slug: s.slug, icon: s.icon }));
   const faqs = faqRows.map((f) => ({ question: f.question, answer: f.answer }));
+  const links = linkRows.map((l) => ({
+    anchor_text: l.anchor_text,
+    url: l.url,
+    new_tab: l.new_tab,
+  }));
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const serviceSchema = {
@@ -97,7 +104,7 @@ export default async function ServicePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <ServiceDetailView data={data} related={related} faqs={faqs} />
+      <ServiceDetailView data={data} related={related} faqs={faqs} links={links} />
     </>
   );
 }

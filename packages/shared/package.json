@@ -13,6 +13,8 @@
     "./posts-server": "./src/posts.server.ts",
     "./faqs": "./src/faqs.ts",
     "./faqs-server": "./src/faqs.server.ts",
+    "./service-links": "./src/serviceLinks.ts",
+    "./service-links-server": "./src/serviceLinks.server.ts",
     "./data": "./src/data.ts",
     "./services-server": "./src/services.server.ts",
     "./types": "./src/types.ts"

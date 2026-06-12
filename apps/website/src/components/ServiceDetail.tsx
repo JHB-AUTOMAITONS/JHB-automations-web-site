@@ -1,24 +1,68 @@
 "use client";
 
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
 import type { FaqItem } from "@jhb/shared/faqs";
+import type { AnchorLink } from "@jhb/shared/service-links";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
 
 type RelatedLink = { title: string; slug: string; icon: string };
 
+// Auto-link the first occurrence of each anchor phrase within a block of text.
+// `used` is shared across the page so each anchor links at most once.
+function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNode {
+  if (!links.length || !text) return text;
+  let nodes: ReactNode[] = [text];
+  const ordered = [...links].sort(
+    (a, b) => b.anchor_text.length - a.anchor_text.length
+  );
+  for (const link of ordered) {
+    const anchor = link.anchor_text.trim();
+    if (!anchor || used.has(anchor.toLowerCase())) continue;
+    nodes = nodes.flatMap((node) => {
+      if (typeof node !== "string") return [node];
+      const idx = node.toLowerCase().indexOf(anchor.toLowerCase());
+      if (idx === -1) return [node];
+      used.add(anchor.toLowerCase());
+      const before = node.slice(0, idx);
+      const match = node.slice(idx, idx + anchor.length);
+      const after = node.slice(idx + anchor.length);
+      const isExternal = /^https?:\/\//i.test(link.url);
+      return [
+        before,
+        <Link
+          key={`${anchor}-${idx}`}
+          href={link.url}
+          {...(link.new_tab || isExternal
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          className="font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary"
+        >
+          {match}
+        </Link>,
+        after,
+      ];
+    });
+  }
+  return nodes.map((n, i) => <Fragment key={i}>{n}</Fragment>);
+}
+
 export default function ServiceDetail({
   data,
   related = [],
   faqs = [],
+  links = [],
 }: {
   data: ServiceDetailType;
   related?: RelatedLink[];
   faqs?: FaqItem[];
+  links?: AnchorLink[];
 }) {
+  const used = new Set<string>();
   return (
     <main className="relative pt-32">
       {/* ambient glows */}
@@ -64,7 +108,7 @@ export default function ServiceDetail({
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
             >
-              {data.intro}
+              {linkify(data.intro, links, used)}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -140,7 +184,7 @@ export default function ServiceDetail({
                     {f.title}
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                    {f.desc}
+                    {linkify(f.desc, links, used)}
                   </p>
                 </div>
               </div>
@@ -178,7 +222,7 @@ export default function ServiceDetail({
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                     ✓
                   </span>
-                  <span className="text-ink/90">{b}</span>
+                  <span className="text-ink/90">{linkify(b, links, used)}</span>
                 </motion.li>
               ))}
             </ul>

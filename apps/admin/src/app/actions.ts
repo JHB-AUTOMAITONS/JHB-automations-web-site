@@ -204,6 +204,51 @@ export async function saveService(
   return { ok: true, slug };
 }
 
+// ---- Service Links (internal/external link management) ----
+
+export async function saveServiceLinks(
+  key: string,
+  items: { anchor_text: string; url: string; new_tab: boolean }[]
+) {
+  const { supabase } = await getStaff();
+  const clean = items
+    .map((i) => {
+      const url = i.url.trim();
+      const external = /^https?:\/\//i.test(url);
+      return {
+        anchor_text: i.anchor_text.trim(),
+        url,
+        type: external ? "external" : "internal",
+        new_tab: i.new_tab || external,
+      };
+    })
+    .filter((i) => i.anchor_text && i.url);
+
+  const del = await supabase
+    .from("jhb_service_links")
+    .delete()
+    .eq("service_key", key);
+  if (del.error) return { ok: false, error: del.error.message };
+
+  if (clean.length > 0) {
+    const rows = clean.map((i, idx) => ({
+      service_key: key,
+      anchor_text: i.anchor_text,
+      url: i.url,
+      type: i.type,
+      new_tab: i.new_tab,
+      sort_order: idx,
+      updated_at: new Date().toISOString(),
+    }));
+    const ins = await supabase.from("jhb_service_links").insert(rows);
+    if (ins.error) return { ok: false, error: ins.error.message };
+  }
+
+  await log("links.update", `Updated links for service "${key}"`);
+  revalidatePath("/links");
+  return { ok: true };
+}
+
 export async function updateUserRole(id: string, role: string) {
   const { supabase, profile } = await getStaff();
   if (profile?.role !== "admin")
