@@ -49,12 +49,12 @@ export default async function AdminRootLayout({
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans antialiased">
         {!user ? (
-          // Login page renders without the dashboard shell
-          <div className="cursor-auto">{children}</div>
+          // Login page renders without the dashboard shell (own scroll, just in case)
+          <div className="h-[100dvh] cursor-auto overflow-y-auto">{children}</div>
         ) : (
-          <div className="flex min-h-screen cursor-auto bg-base text-ink">
-            {/* Sidebar */}
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-ink/10 bg-surface p-5 lg:flex">
+          <div className="flex h-[100dvh] cursor-auto overflow-hidden bg-base text-ink">
+            {/* Sidebar — fixed full height, scrolls internally only if its own content overflows */}
+            <aside className="hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-ink/10 bg-surface p-5 lg:flex">
               <Link href="/" className="mb-8 flex items-center gap-2">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
                   JH
@@ -82,10 +82,10 @@ export default async function AdminRootLayout({
               </div>
             </aside>
 
-            {/* Main */}
-            <div className="flex min-w-0 flex-1 flex-col">
+            {/* Main column — fills height; header(s) stay fixed, only <main> scrolls */}
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               {/* Mobile top bar */}
-              <header className="flex items-center justify-between border-b border-ink/10 bg-surface px-5 py-3 lg:hidden">
+              <header className="flex shrink-0 items-center justify-between border-b border-ink/10 bg-surface px-5 py-3 lg:hidden">
                 <Link href="/" className="flex items-center gap-2">
                   <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                     JH
@@ -98,13 +98,14 @@ export default async function AdminRootLayout({
                   </button>
                 </form>
               </header>
-              <div className="lg:hidden">
+              <div className="shrink-0 lg:hidden">
                 <div className="border-b border-ink/10 bg-surface px-3 pb-3">
                   <AdminNav horizontal role={role} />
                 </div>
               </div>
 
-              <main className="flex-1 p-6 sm:p-8">{children}</main>
+              {/* The only scrollable region */}
+              <main className="flex-1 overflow-y-auto p-6 sm:p-8">{children}</main>
             </div>
           </div>
         )}

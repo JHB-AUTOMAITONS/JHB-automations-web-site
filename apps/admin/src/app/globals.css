@@ -23,6 +23,8 @@ body {
   background-color: var(--base);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  /* The dashboard manages its own scrolling; the window itself never scrolls. */
+  overflow: hidden;
 }
 
 /* Selection */
