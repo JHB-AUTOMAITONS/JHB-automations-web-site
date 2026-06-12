@@ -7,6 +7,7 @@ import CursorGlow from "./CursorGlow";
 import ScrollProgress from "./ScrollProgress";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import OfficeLocation from "./OfficeLocation";
 import PageViewTracker from "./PageViewTracker";
 import type { SiteSettings } from "@jhb/shared/content";
 import type { ServiceLink } from "@jhb/shared/services-server";
@@ -33,6 +34,7 @@ export default function SiteChrome({
       <ScrollProgress />
       <Navbar serviceLinks={serviceLinks} />
       {children}
+      <OfficeLocation settings={settings} />
       <Footer settings={settings} serviceLinks={serviceLinks} />
     </>
   );
