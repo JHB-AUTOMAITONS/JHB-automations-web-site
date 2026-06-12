@@ -5,6 +5,7 @@ import Services from "@/components/Services";
 import Stats from "@/components/Stats";
 import Testimonials from "@/components/Testimonials";
 import Process from "@/components/Process";
+import Faq from "@/components/Faq";
 import CtaSection from "@/components/CtaSection";
 import Contact from "@/components/Contact";
 import { getStats, getSettings, buildMetadata } from "@jhb/shared/content-server";
@@ -65,6 +66,7 @@ export default async function Home() {
       <Stats items={stats.items} />
       <Testimonials />
       <Process />
+      <Faq />
       <CtaSection cta={home.cta} />
       <Contact settings={settings} />
     </main>
