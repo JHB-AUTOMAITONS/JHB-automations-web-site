@@ -33,16 +33,16 @@ body {
   color: #0e1116;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
+/* Hide scrollbars everywhere — scrolling (wheel, touchpad, keyboard, touch) still works */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge / IE */
 }
-::-webkit-scrollbar-track {
-  background: #eceef6;
-}
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #7c3aed);
-  border-radius: 10px;
+*::-webkit-scrollbar {
+  /* Chrome, Edge, Safari */
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 @layer components {
