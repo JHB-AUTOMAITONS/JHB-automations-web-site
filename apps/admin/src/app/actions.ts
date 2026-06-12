@@ -362,6 +362,56 @@ export async function deletePost(id: string) {
   return { ok: true };
 }
 
+// ---- Service Page sections (draft / publish) ----
+
+export async function saveServiceSections(
+  key: string,
+  data: Record<string, unknown>
+) {
+  const { supabase, user } = await getStaff();
+  const { error } = await supabase.from("jhb_service_pages").upsert(
+    {
+      service_key: key,
+      state: "draft",
+      data,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    },
+    { onConflict: "service_key,state" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("servicepage.draft", `Saved draft for service "${key}"`);
+  revalidatePath("/services");
+  return { ok: true };
+}
+
+export async function publishServiceSections(key: string, slug: string) {
+  const { supabase, user } = await getStaff();
+  const { data: draft } = await supabase
+    .from("jhb_service_pages")
+    .select("data")
+    .eq("service_key", key)
+    .eq("state", "draft")
+    .maybeSingle();
+  if (!draft) return { ok: false, error: "Save a draft before publishing." };
+
+  const { error } = await supabase.from("jhb_service_pages").upsert(
+    {
+      service_key: key,
+      state: "published",
+      data: draft.data,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    },
+    { onConflict: "service_key,state" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("servicepage.publish", `Published service page "${key}"`);
+  revalidatePath("/services");
+  revalidatePath(`/services/${slug}`);
+  return { ok: true };
+}
+
 // ---- Service FAQs ----
 
 export async function saveServiceFaqs(

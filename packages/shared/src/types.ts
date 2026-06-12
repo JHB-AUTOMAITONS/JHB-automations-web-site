@@ -26,3 +26,15 @@ export type {
 } from "./home";
 export type { Post, PostCard, PostStatus } from "./posts";
 export type { ServiceFaq, FaqItem } from "./faqs";
+export type {
+  ServiceSections,
+  HeroSec,
+  AboutSec,
+  BenefitsSec,
+  ProcessSec,
+  WhyUsSec,
+  CtaSec,
+  BenefitItem,
+  ProcessStep,
+  ServiceContentInput,
+} from "./servicePage";
