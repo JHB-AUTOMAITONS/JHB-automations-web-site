@@ -8,6 +8,7 @@ import Process from "@/components/Process";
 import FounderPerspective from "@/components/FounderPerspective";
 import ClientLogos from "@/components/ClientLogos";
 import Faq from "@/components/Faq";
+import BlogPreview from "@/components/BlogPreview";
 import CtaSection from "@/components/CtaSection";
 import Contact from "@/components/Contact";
 import { getStats, getSettings, buildMetadata } from "@jhb/shared/content-server";
@@ -71,6 +72,7 @@ export default async function Home() {
       <FounderPerspective />
       <ClientLogos />
       <Faq />
+      <BlogPreview />
       <CtaSection cta={home.cta} />
       <Contact settings={settings} />
     </main>

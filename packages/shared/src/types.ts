@@ -24,3 +24,4 @@ export type {
   ServiceCardOverride,
   CtaBlock,
 } from "./home";
+export type { Post, PostCard, PostStatus } from "./posts";

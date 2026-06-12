@@ -172,6 +172,26 @@ body {
 .prose-jhb strong {
   font-weight: 600;
 }
+.prose-jhb h2 {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--ink);
+}
+.prose-jhb h3 {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+.prose-jhb li {
+  margin-top: 0.35rem;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * {

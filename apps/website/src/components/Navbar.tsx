@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { navItems, serviceMenu } from "@jhb/shared/data";
 import Icon from "./Icon";
@@ -12,8 +13,12 @@ export default function Navbar({
 }: {
   serviceLinks?: DropItem[];
 }) {
+  const pathname = usePathname();
   const dropdownFor = (label: string, fallback?: DropItem[]) =>
     label === "Services" ? serviceLinks : fallback;
+  // A non-hash route link is active when the current path matches it
+  const isActive = (href: string) =>
+    !href.includes("#") && href !== "/" && pathname.startsWith(href);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobileServices, setMobileServices] = useState(false);
@@ -87,7 +92,9 @@ export default function Navbar({
                 <a
                   key={item.href}
                   href={item.href}
-                  className="nav-underline text-sm font-medium text-muted transition-colors hover:text-ink"
+                  className={`nav-underline text-sm font-medium transition-colors hover:text-ink ${
+                    isActive(item.href) ? "text-primary" : "text-muted"
+                  }`}
                 >
                   {item.label}
                 </a>
@@ -192,7 +199,9 @@ export default function Navbar({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="rounded-xl px-4 py-3 text-base font-medium text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+                    className={`rounded-xl px-4 py-3 text-base font-medium transition-colors hover:bg-ink/[0.04] hover:text-ink ${
+                      isActive(item.href) ? "text-primary" : "text-muted"
+                    }`}
                   >
                     {item.label}
                   </motion.a>

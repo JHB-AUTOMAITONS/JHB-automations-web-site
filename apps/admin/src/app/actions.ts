@@ -264,6 +264,104 @@ export async function publishHome() {
   return { ok: true };
 }
 
+// ---- Blog posts ----
+
+type PostInput = {
+  id?: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content_html: string;
+  cover_image: string | null;
+  category: string;
+  tags: string[];
+  author: string;
+  meta_title: string;
+  meta_description: string;
+  status: "draft" | "published";
+};
+
+function slugify(s: string) {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export async function savePost(input: PostInput) {
+  const { supabase, user } = await getStaff();
+  const slug = slugify(input.slug || input.title);
+  if (!slug) return { ok: false, error: "A title or slug is required." };
+  if (!input.title.trim()) return { ok: false, error: "Title is required." };
+
+  const now = new Date().toISOString();
+  const base = {
+    slug,
+    title: input.title.trim(),
+    excerpt: input.excerpt || null,
+    content_html: input.content_html || null,
+    cover_image: input.cover_image || null,
+    category: input.category || null,
+    tags: input.tags ?? [],
+    author: input.author || "JHB Automations",
+    meta_title: input.meta_title || null,
+    meta_description: input.meta_description || null,
+    status: input.status,
+    updated_at: now,
+    updated_by: user.id,
+  };
+
+  let result;
+  if (input.id) {
+    const { data: existing } = await supabase
+      .from("jhb_posts")
+      .select("published_at")
+      .eq("id", input.id)
+      .maybeSingle();
+    const published_at =
+      existing?.published_at ?? (input.status === "published" ? now : null);
+    result = await supabase
+      .from("jhb_posts")
+      .update({ ...base, published_at })
+      .eq("id", input.id)
+      .select("id")
+      .maybeSingle();
+  } else {
+    const published_at = input.status === "published" ? now : null;
+    result = await supabase
+      .from("jhb_posts")
+      .insert({ ...base, published_at })
+      .select("id")
+      .maybeSingle();
+  }
+
+  if (result.error) {
+    if (result.error.code === "23505")
+      return { ok: false, error: "That slug is already used by another post." };
+    return { ok: false, error: result.error.message };
+  }
+
+  await log(
+    input.id ? "post.update" : "post.create",
+    `${input.status === "published" ? "Published" : "Saved"} post "${input.title}"`
+  );
+  revalidatePath("/posts");
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${slug}`);
+  return { ok: true, id: result.data?.id as string };
+}
+
+export async function deletePost(id: string) {
+  const { supabase } = await getStaff();
+  const { error } = await supabase.from("jhb_posts").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await log("post.delete", `Deleted post ${id}`);
+  revalidatePath("/posts");
+  revalidatePath("/blog");
+  return { ok: true };
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

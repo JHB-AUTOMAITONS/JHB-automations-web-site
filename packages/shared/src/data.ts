@@ -586,6 +586,7 @@ export const navItems: NavItem[] = [
   { label: "Services", href: "/#services", dropdown: serviceMenu },
   { label: "Testimonials", href: "/#testimonials" },
   { label: "Process", href: "/#process" },
+  { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
