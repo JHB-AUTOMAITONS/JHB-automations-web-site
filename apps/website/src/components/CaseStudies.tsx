@@ -9,7 +9,7 @@ export default function CaseStudies() {
     <section id="cases" className="relative py-24 sm:py-32">
       <div className="container-x">
         <SectionHeading
-          eyebrow="Case Studies"
+          eyebrow="Case Studies" 
           title={
             <>
               Real Businesses, <span className="grad-text">Real Results</span>

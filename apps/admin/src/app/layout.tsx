@@ -64,7 +64,7 @@ export default async function AdminRootLayout({
                 </span>
               </Link>
 
-              <AdminNav />
+              <AdminNav role={role} />
 
               <div className="mt-auto rounded-2xl border border-ink/10 bg-base p-4">
                 <p className="truncate text-sm font-semibold">
@@ -100,7 +100,7 @@ export default async function AdminRootLayout({
               </header>
               <div className="lg:hidden">
                 <div className="border-b border-ink/10 bg-surface px-3 pb-3">
-                  <AdminNav horizontal />
+                  <AdminNav horizontal role={role} />
                 </div>
               </div>
 

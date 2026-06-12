@@ -18,6 +18,14 @@ async function getStaff() {
   return { supabase, user, profile };
 }
 
+async function requireAdmin() {
+  const ctx = await getStaff();
+  if (ctx.profile?.role !== "admin") {
+    return { ...ctx, ok: false as const };
+  }
+  return { ...ctx, ok: true as const };
+}
+
 async function log(action: string, detail: string) {
   try {
     const { supabase, user } = await getStaff();
@@ -207,6 +215,52 @@ export async function updateUserRole(id: string, role: string) {
   if (error) return { ok: false, error: error.message };
   await log("user.role", `Set role "${role}" for user ${id}`);
   revalidatePath("/users");
+  return { ok: true };
+}
+
+// ---- Home Page Content Manager (Super Admin only) ----
+
+export async function saveHomeDraft(data: Record<string, unknown>) {
+  const { supabase, user, ok } = await requireAdmin();
+  if (!ok) return { ok: false, error: "Only Super Admin can edit the home page." };
+  const { error } = await supabase
+    .from("jhb_home")
+    .upsert(
+      { key: "draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+      { onConflict: "key" }
+    );
+  if (error) return { ok: false, error: error.message };
+  await log("home.draft", "Saved home page draft");
+  revalidatePath("/home");
+  return { ok: true };
+}
+
+export async function publishHome() {
+  const { supabase, user, ok } = await requireAdmin();
+  if (!ok) return { ok: false, error: "Only Super Admin can publish the home page." };
+
+  // Copy the current draft into the published row
+  const { data: draft } = await supabase
+    .from("jhb_home")
+    .select("data")
+    .eq("key", "draft")
+    .maybeSingle();
+  if (!draft) return { ok: false, error: "No draft to publish." };
+
+  const { error } = await supabase
+    .from("jhb_home")
+    .upsert(
+      {
+        key: "published",
+        data: draft.data,
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      },
+      { onConflict: "key" }
+    );
+  if (error) return { ok: false, error: error.message };
+  await log("home.publish", "Published home page");
+  revalidatePath("/home");
   return { ok: true };
 }
 

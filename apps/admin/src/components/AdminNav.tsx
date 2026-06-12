@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
+type Item = { href: string; label: string; icon: string; adminOnly?: boolean };
+
+const items: Item[] = [
   { href: "/", label: "Dashboard", icon: "▦" },
+  { href: "/home", label: "Home Page", icon: "🏠", adminOnly: true },
   { href: "/content", label: "Content", icon: "✎" },
   { href: "/services", label: "Services", icon: "🧩" },
   { href: "/seo", label: "SEO", icon: "🔍" },
@@ -17,8 +20,15 @@ const items = [
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
 
-export default function AdminNav({ horizontal = false }: { horizontal?: boolean }) {
+export default function AdminNav({
+  horizontal = false,
+  role = "editor",
+}: {
+  horizontal?: boolean;
+  role?: string;
+}) {
   const pathname = usePathname();
+  const visible = items.filter((i) => !i.adminOnly || role === "admin");
 
   return (
     <nav
@@ -28,7 +38,7 @@ export default function AdminNav({ horizontal = false }: { horizontal?: boolean 
           : "flex flex-col gap-1"
       }
     >
-      {items.map((item) => {
+      {visible.map((item) => {
         const active =
           item.href === "/"
             ? pathname === "/"

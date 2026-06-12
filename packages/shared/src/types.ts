@@ -16,3 +16,11 @@ export type {
 } from "./data";
 export type { ResolvedService, ServiceLink } from "./services.server";
 export type { SeoRow } from "./content.server";
+export type {
+  HomeContent,
+  HeroBlock,
+  AboutBlock,
+  ServicesSectionBlock,
+  ServiceCardOverride,
+  CtaBlock,
+} from "./home";

@@ -65,7 +65,7 @@ export default function Navbar({
                   </a>
                   {/* hover bridge + dropdown */}
                   <div className="invisible absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 translate-y-2 pt-4 opacity-0 transition-all duration-300 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                    <div className="glass-strong glow-border grid max-h-[60vh] grid-cols-1 gap-1 overflow-y-auto rounded-2xl p-3 shadow-glow [scrollbar-width:thin]">
+                    <div className="glass-strong grid max-h-[60vh] grid-cols-1 gap-1 overflow-y-auto rounded-2xl p-3 shadow-soft [scrollbar-width:thin]">
                       {(dropdownFor(item.label, item.dropdown) ?? []).map((d) => (
                         <a
                           key={d.label}

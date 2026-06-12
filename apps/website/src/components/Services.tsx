@@ -11,20 +11,20 @@ type ServiceCardData = { title: string; desc: string; icon: string; slug: string
 
 export default function Services({
   items = defaultServices,
+  heading = "Premium AI & Growth Services",
+  subheading = "Everything you need to automate operations, generate leads and scale — engineered under one roof.",
 }: {
   items?: ServiceCardData[];
+  heading?: string;
+  subheading?: string;
 }) {
   return (
     <section id="services" className="relative py-24 sm:py-32">
       <div className="container-x">
         <SectionHeading
           eyebrow="What We Do"
-          title={
-            <>
-              Premium <span className="grad-text">AI &amp; Growth</span> Services
-            </>
-          }
-          desc="Everything you need to automate operations, generate leads and scale — engineered under one roof."
+          title={<span className="grad-text">{heading}</span>}
+          desc={subheading}
         />
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

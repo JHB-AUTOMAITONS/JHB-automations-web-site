@@ -13,7 +13,13 @@ const marquee = [
   "ChatGPT",
 ];
 
-export default function Hero({ content = HERO_DEFAULT }: { content?: HeroContent }) {
+export default function Hero({
+  content = HERO_DEFAULT,
+  heroImage = null,
+}: {
+  content?: HeroContent;
+  heroImage?: string | null;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -136,6 +142,19 @@ export default function Hero({ content = HERO_DEFAULT }: { content?: HeroContent
           transition={{ duration: 0.9, delay: 0.25 }}
           className="relative mx-auto w-full max-w-lg"
         >
+          {heroImage ? (
+            <motion.div
+              style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
+              className="glass-strong glow-border relative overflow-hidden rounded-3xl shadow-glow"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroImage}
+                alt="JHB Automations"
+                className="aspect-[4/3] w-full object-cover"
+              />
+            </motion.div>
+          ) : (
           <motion.div
             style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
             className="glass-strong glow-border relative rounded-3xl p-5 shadow-glow"
@@ -186,6 +205,7 @@ export default function Hero({ content = HERO_DEFAULT }: { content?: HeroContent
               </span>
             </div>
           </motion.div>
+          )}
 
           {/* floating cards */}
           <motion.div

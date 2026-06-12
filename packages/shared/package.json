@@ -7,6 +7,8 @@
     "./supabase/server": "./src/supabase/server.ts",
     "./content": "./src/content.ts",
     "./content-server": "./src/content.server.ts",
+    "./home": "./src/home.ts",
+    "./home-server": "./src/home.server.ts",
     "./data": "./src/data.ts",
     "./services-server": "./src/services.server.ts",
     "./types": "./src/types.ts"
