@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Contact from "@/components/Contact";
 import Reveal from "@/components/Reveal";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Contact Us — JHB Automations",
@@ -24,13 +24,12 @@ export default function ContactPage() {
 
       {/* Hero */}
       <section className="container-x">
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
-          <Link href="/#home" className="transition-colors hover:text-ink">
-            Home
-          </Link>
-          <span>/</span>
-          <span className="text-primary">Contact</span>
-        </nav>
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "Contact", href: "/contact" },
+          ]}
+        />
 
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>

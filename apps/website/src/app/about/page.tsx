@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { processSteps } from "@jhb/shared/data";
 
 export const metadata: Metadata = {
@@ -42,13 +43,12 @@ export default function AboutPage() {
 
       {/* Hero */}
       <section className="container-x">
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
-          <Link href="/#home" className="transition-colors hover:text-ink">
-            Home
-          </Link>
-          <span>/</span>
-          <span className="text-primary">About</span>
-        </nav>
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "About", href: "/about" },
+          ]}
+        />
 
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>

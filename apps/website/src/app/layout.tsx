@@ -34,11 +34,27 @@ export const metadata: Metadata = {
     "SEO",
     "Business Growth",
   ],
+  applicationName: "JHB Automations",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   openGraph: {
+    type: "website",
+    siteName: "JHB Automations",
+    locale: "en_IN",
     title: "JHB Automations — Intelligent AI Automation",
     description:
       "Transform your business with intelligent AI automation, web development and data-driven growth.",
-    type: "website",
+    images: ["/og.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JHB Automations — Intelligent AI Automation",
+    description:
+      "Transform your business with intelligent AI automation, web development and data-driven growth.",
+    images: ["/og.png"],
   },
 };
 
@@ -49,9 +65,50 @@ export default async function RootLayout({
     getSettings(),
     getServiceLinks(),
   ]);
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const sameAs = [settings.instagram, settings.facebook, settings.linkedin].filter(
+    (u) => u && u !== "#"
+  );
+
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: settings.companyName || "JHB Automations",
+    url: site,
+    logo: `${site}/logo.png`,
+    description: settings.tagline,
+    email: settings.email,
+    telephone: settings.phone,
+    sameAs,
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: settings.companyName || "JHB Automations",
+    url: site,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${site}/blog?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
         <SiteChrome settings={settings} serviceLinks={serviceLinks}>
           {children}
         </SiteChrome>

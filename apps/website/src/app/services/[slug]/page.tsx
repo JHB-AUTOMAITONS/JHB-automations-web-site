@@ -29,6 +29,8 @@ export async function generateMetadata({
       .filter(Boolean),
     alternates: { canonical },
     openGraph: {
+      siteName: "JHB Automations",
+      type: "website",
       url: canonical,
       title: data.metaTitle,
       description: data.metaDescription,
@@ -55,5 +57,47 @@ export default async function ServicePage({
     .map((s) => ({ title: s.title, slug: s.slug, icon: s.icon }));
   const faqs = faqRows.map((f) => ({ question: f.question, answer: f.answer }));
 
-  return <ServiceDetailView data={data} related={related} faqs={faqs} />;
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: data.title,
+    serviceType: data.title,
+    description: data.metaDescription || data.intro,
+    url: `${site}/services/${data.slug}`,
+    areaServed: "Salem, Tamil Nadu, India",
+    provider: {
+      "@type": "Organization",
+      name: "JHB Automations",
+      url: site,
+    },
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: site },
+      { "@type": "ListItem", position: 2, name: "Services", item: `${site}/services` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: data.title,
+        item: `${site}/services/${data.slug}`,
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <ServiceDetailView data={data} related={related} faqs={faqs} />
+    </>
+  );
 }

@@ -81,6 +81,8 @@ export async function buildMetadata(
     alternates: { canonical },
     openGraph: {
       ...(fallback.openGraph ?? {}),
+      siteName: "JHB Automations",
+      type: "website",
       url: canonical,
       title: seo.title ?? undefined,
       description: seo.description ?? undefined,

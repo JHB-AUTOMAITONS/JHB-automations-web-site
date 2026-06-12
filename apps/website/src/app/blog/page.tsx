@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import PostCard from "@/components/PostCard";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { getPublishedPosts } from "@jhb/shared/posts-server";
 import { buildMetadata } from "@jhb/shared/content-server";
 
@@ -13,8 +13,22 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function BlogIndex() {
-  const posts = await getPublishedPosts();
+export default async function BlogIndex({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const all = await getPublishedPosts();
+  const query = (q ?? "").trim().toLowerCase();
+  const posts = query
+    ? all.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query) ||
+          (p.excerpt ?? "").toLowerCase().includes(query) ||
+          (p.category ?? "").toLowerCase().includes(query)
+      )
+    : all;
 
   return (
     <main className="relative pt-32">
@@ -22,13 +36,12 @@ export default async function BlogIndex() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
       <section className="container-x pb-28">
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
-          <Link href="/#home" className="transition-colors hover:text-ink">
-            Home
-          </Link>
-          <span>/</span>
-          <span className="text-primary">Blog</span>
-        </nav>
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "Blog", href: "/blog" },
+          ]}
+        />
 
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
@@ -45,11 +58,28 @@ export default async function BlogIndex() {
               growth.
             </p>
           </Reveal>
+
+          {/* Search (powers the WebSite SearchAction) */}
+          <form action="/blog" method="get" className="mx-auto mt-8 flex max-w-md gap-2">
+            <input
+              type="search"
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="Search articles…"
+              aria-label="Search articles"
+              className="w-full rounded-xl border border-ink/10 bg-surface px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <button type="submit" className="btn btn-primary !px-5 !py-3 !text-sm">
+              Search
+            </button>
+          </form>
         </div>
 
         {posts.length === 0 ? (
           <div className="mx-auto mt-14 max-w-md rounded-2xl border border-ink/10 bg-surface p-10 text-center text-muted shadow-soft">
-            No articles published yet. Check back soon!
+            {query
+              ? `No articles match “${q}”.`
+              : "No articles published yet. Check back soon!"}
           </div>
         ) : (
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

@@ -47,6 +47,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
       addressCountry: "IN",
     },
     areaServed: "Salem, Tamil Nadu, India",
+    hasMap: viewHref,
     openingHours: "Mo-Sa 09:30-18:00",
     keywords:
       "Digital Marketing Company in Salem, IT Services in Salem, AI Automation Company in Salem",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { getServices } from "@jhb/shared/services-server";
 import { buildMetadata } from "@jhb/shared/content-server";
 
@@ -21,13 +22,12 @@ export default async function ServicesIndex() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
       <section className="container-x">
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
-          <Link href="/#home" className="transition-colors hover:text-ink">
-            Home
-          </Link>
-          <span>/</span>
-          <span className="text-primary">Services</span>
-        </nav>
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "Services", href: "/services" },
+          ]}
+        />
 
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
