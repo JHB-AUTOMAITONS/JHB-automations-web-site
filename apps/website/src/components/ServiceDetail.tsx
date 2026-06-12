@@ -3,17 +3,21 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
+import type { FaqItem } from "@jhb/shared/faqs";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
+import FaqAccordion from "./FaqAccordion";
 
 type RelatedLink = { title: string; slug: string; icon: string };
 
 export default function ServiceDetail({
   data,
   related = [],
+  faqs = [],
 }: {
   data: ServiceDetailType;
   related?: RelatedLink[];
+  faqs?: FaqItem[];
 }) {
   return (
     <main className="relative pt-32">
@@ -206,6 +210,13 @@ export default function ServiceDetail({
           ))}
         </div>
       </section>
+
+      {/* FAQ — near the bottom, just above the CTA */}
+      {faqs.length > 0 && (
+        <div className="pb-12">
+          <FaqAccordion items={faqs} />
+        </div>
+      )}
 
       {/* CTA */}
       <section className="container-x pb-28">

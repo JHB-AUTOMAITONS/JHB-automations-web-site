@@ -11,6 +11,8 @@
     "./home-server": "./src/home.server.ts",
     "./posts": "./src/posts.ts",
     "./posts-server": "./src/posts.server.ts",
+    "./faqs": "./src/faqs.ts",
+    "./faqs-server": "./src/faqs.server.ts",
     "./data": "./src/data.ts",
     "./services-server": "./src/services.server.ts",
     "./types": "./src/types.ts"

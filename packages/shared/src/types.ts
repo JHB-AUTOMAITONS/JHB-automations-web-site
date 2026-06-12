@@ -25,3 +25,4 @@ export type {
   CtaBlock,
 } from "./home";
 export type { Post, PostCard, PostStatus } from "./posts";
+export type { ServiceFaq, FaqItem } from "./faqs";

@@ -362,6 +362,44 @@ export async function deletePost(id: string) {
   return { ok: true };
 }
 
+// ---- Service FAQs ----
+
+export async function saveServiceFaqs(
+  serviceKey: string,
+  items: { question: string; answer: string }[]
+) {
+  const { supabase, user } = await getStaff();
+
+  const clean = items
+    .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+    .filter((f) => f.question && f.answer);
+
+  // Replace the FAQ set for this service (handles add/edit/delete/reorder)
+  const del = await supabase
+    .from("jhb_service_faqs")
+    .delete()
+    .eq("service_key", serviceKey);
+  if (del.error) return { ok: false, error: del.error.message };
+
+  if (clean.length > 0) {
+    const rows = clean.map((f, i) => ({
+      service_key: serviceKey,
+      question: f.question,
+      answer: f.answer,
+      sort_order: i,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    }));
+    const ins = await supabase.from("jhb_service_faqs").insert(rows);
+    if (ins.error) return { ok: false, error: ins.error.message };
+  }
+
+  await log("faq.update", `Updated FAQs for "${serviceKey}"`);
+  revalidatePath("/faqs");
+  revalidatePath(`/services/${serviceKey}`);
+  return { ok: true };
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

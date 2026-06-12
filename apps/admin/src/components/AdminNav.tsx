@@ -11,6 +11,7 @@ const items: Item[] = [
   { href: "/content", label: "Content", icon: "✎" },
   { href: "/services", label: "Services", icon: "🧩" },
   { href: "/posts", label: "Blog", icon: "📝" },
+  { href: "/faqs", label: "FAQs", icon: "❓" },
   { href: "/seo", label: "SEO", icon: "🔍" },
   { href: "/leads", label: "Leads", icon: "✉" },
   { href: "/analytics", label: "Analytics", icon: "📊" },
