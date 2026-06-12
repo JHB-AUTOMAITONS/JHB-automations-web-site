@@ -5,6 +5,7 @@ import Services from "@/components/Services";
 import Stats from "@/components/Stats";
 import Testimonials from "@/components/Testimonials";
 import Process from "@/components/Process";
+import FounderPerspective from "@/components/FounderPerspective";
 import Faq from "@/components/Faq";
 import CtaSection from "@/components/CtaSection";
 import Contact from "@/components/Contact";
@@ -66,6 +67,7 @@ export default async function Home() {
       <Stats items={stats.items} />
       <Testimonials />
       <Process />
+      <FounderPerspective />
       <Faq />
       <CtaSection cta={home.cta} />
       <Contact settings={settings} />
