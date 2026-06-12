@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "About Us — JHB Automations",
   description:
     "We help businesses automate operations, generate leads and scale faster with intelligent AI systems, web development and data-driven marketing.",
+  alternates: { canonical: "/about" },
 };
 
 const values = [

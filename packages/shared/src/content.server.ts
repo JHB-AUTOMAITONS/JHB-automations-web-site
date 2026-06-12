@@ -68,8 +68,9 @@ export async function buildMetadata(
   path: string,
   fallback: Metadata
 ): Promise<Metadata> {
+  const canonical = path === "/" ? "/" : path;
   const seo = await getSeo(path);
-  if (!seo) return fallback;
+  if (!seo) return { ...fallback, alternates: { canonical } };
   return {
     ...fallback,
     title: seo.title ?? fallback.title,
@@ -77,8 +78,10 @@ export async function buildMetadata(
     keywords: seo.keywords
       ? seo.keywords.split(",").map((k) => k.trim())
       : fallback.keywords,
+    alternates: { canonical },
     openGraph: {
       ...(fallback.openGraph ?? {}),
+      url: canonical,
       title: seo.title ?? undefined,
       description: seo.description ?? undefined,
       images: seo.og_image ? [seo.og_image] : undefined,

@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Contact Us — JHB Automations",
   description:
     "Book a free consultation. Tell us about your goals and we'll map the fastest path to automated, predictable growth.",
+  alternates: { canonical: "/contact" },
 };
 
 const channels = [

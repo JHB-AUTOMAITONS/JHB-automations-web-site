@@ -19,6 +19,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const data = await getServiceBySlug(slug);
   if (!data) return { title: "Service Not Found — JHB Automations" };
+  const canonical = `/services/${data.slug}`;
   return {
     title: data.metaTitle,
     description: data.metaDescription,
@@ -26,7 +27,9 @@ export async function generateMetadata({
       .split(",")
       .map((k) => k.trim())
       .filter(Boolean),
+    alternates: { canonical },
     openGraph: {
+      url: canonical,
       title: data.metaTitle,
       description: data.metaDescription,
     },

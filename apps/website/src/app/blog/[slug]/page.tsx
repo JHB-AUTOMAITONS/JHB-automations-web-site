@@ -29,10 +29,13 @@ export async function generateMetadata({
   if (!post) return { title: "Article Not Found — JHB Automations" };
   const title = post.meta_title || `${post.title} — JHB Automations`;
   const description = post.meta_description || post.excerpt || undefined;
+  const canonical = `/blog/${post.slug}`;
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
+      url: canonical,
       title,
       description,
       type: "article",
