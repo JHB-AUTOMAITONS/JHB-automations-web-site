@@ -65,7 +65,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
 
       <div className="container-x">
         <div className="glass-strong glow-border overflow-hidden rounded-3xl shadow-soft">
-          <div className="grid lg:grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-[55fr_45fr] lg:grid-cols-[3fr_2fr]">
             {/* Left: details */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -136,30 +136,32 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
               </a>
             </motion.div>
 
-            {/* Right: map */}
+            {/* Right: map — contained, reduced size so it doesn't dominate */}
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="relative min-h-[320px] lg:min-h-full"
+              className="flex items-center p-6 pt-0 sm:p-8 lg:pl-0 lg:pt-8"
             >
-              <iframe
-                title={`Map showing ${OFFICE.name}, Salem`}
-                src={embedSrc}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="absolute inset-0 h-full w-full border-0"
-                allowFullScreen
-              />
-              <a
-                href={viewHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute right-3 top-3 rounded-lg bg-base/90 px-3 py-1.5 text-xs font-semibold text-primary shadow-soft backdrop-blur transition-colors hover:text-secondary"
-              >
-                Open in Google Maps ↗
-              </a>
+              <div className="relative h-[300px] w-full overflow-hidden rounded-2xl shadow-soft md:h-[320px] lg:h-[340px]">
+                <iframe
+                  title={`Map showing ${OFFICE.name}, Salem`}
+                  src={embedSrc}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="absolute inset-0 h-full w-full border-0"
+                  allowFullScreen
+                />
+                <a
+                  href={viewHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute right-3 top-3 rounded-lg bg-base/90 px-3 py-1.5 text-xs font-semibold text-primary shadow-soft backdrop-blur transition-colors hover:text-secondary"
+                >
+                  Open in Google Maps ↗
+                </a>
+              </div>
             </motion.div>
           </div>
         </div>
