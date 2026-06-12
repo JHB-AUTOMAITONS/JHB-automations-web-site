@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
 import type { FaqItem } from "@jhb/shared/faqs";
-import type { ServiceContent } from "@jhb/shared/service-content";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
@@ -15,12 +14,10 @@ export default function ServiceDetail({
   data,
   related = [],
   faqs = [],
-  serviceContent = null,
 }: {
   data: ServiceDetailType;
   related?: RelatedLink[];
   faqs?: FaqItem[];
-  serviceContent?: ServiceContent | null;
 }) {
   return (
     <main className="relative pt-32">
@@ -188,27 +185,6 @@ export default function ServiceDetail({
           </div>
         </div>
       </section>
-
-      {/* Service Content (rich text, admin-managed) */}
-      {serviceContent && serviceContent.html && (
-        <section className="container-x pb-24">
-          <div className="mx-auto max-w-3xl">
-            {serviceContent.title && (
-              <Reveal>
-                <h2 className="font-display text-3xl font-bold sm:text-4xl">
-                  {serviceContent.title}
-                </h2>
-              </Reveal>
-            )}
-            <Reveal delay={0.08}>
-              <div
-                className="prose-jhb mt-6 text-lg leading-relaxed text-ink/80"
-                dangerouslySetInnerHTML={{ __html: serviceContent.html }}
-              />
-            </Reveal>
-          </div>
-        </section>
-      )}
 
       {/* Related services */}
       <section className="container-x pb-24">

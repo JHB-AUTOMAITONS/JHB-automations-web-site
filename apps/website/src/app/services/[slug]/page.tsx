@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { serviceDetails } from "@jhb/shared/data";
 import { getServiceBySlug, getServices } from "@jhb/shared/services-server";
 import { getServiceFaqs } from "@jhb/shared/faqs-server";
-import { getPublishedServiceContent } from "@jhb/shared/service-content-server";
 import ServiceDetailView from "@/components/ServiceDetail";
 
 // Pre-render the default slugs; changed slugs render on-demand (dynamicParams).
@@ -48,10 +47,9 @@ export default async function ServicePage({
   const data = await getServiceBySlug(slug);
   if (!data) notFound();
 
-  const [services, faqRows, serviceContent] = await Promise.all([
+  const [services, faqRows] = await Promise.all([
     getServices(),
     getServiceFaqs(data.key),
-    getPublishedServiceContent(data.key),
   ]);
   const related = services
     .filter((s) => s.key !== data.key)
@@ -99,12 +97,7 @@ export default async function ServicePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <ServiceDetailView
-        data={data}
-        related={related}
-        faqs={faqs}
-        serviceContent={serviceContent}
-      />
+      <ServiceDetailView data={data} related={related} faqs={faqs} />
     </>
   );
 }

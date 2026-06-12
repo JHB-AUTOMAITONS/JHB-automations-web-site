@@ -26,4 +26,3 @@ export type {
 } from "./home";
 export type { Post, PostCard, PostStatus } from "./posts";
 export type { ServiceFaq, FaqItem } from "./faqs";
-export type { ServiceContent, ServiceContentVersion } from "./serviceContent";
