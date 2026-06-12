@@ -12,7 +12,8 @@
       "PowerShell(cd d:\\\\JHB-website; npx tsc --noEmit -p apps/admin/tsconfig.json 2>&1 | Out-String; \"EXIT: $LASTEXITCODE\")",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; \"node stopped: $\\(\\(Get-Process node -ErrorAction SilentlyContinue | Measure-Object\\).Count\\)\")",
       "PowerShell(cd d:\\\\JHB-website; $env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npm run dev:website)",
-      "Read(//c/Users/HP/AppData/Local/Temp/claude/d--JHB-website/2128af96-6d3f-48c8-8f83-361a72ab339b/tasks/**)"
+      "Read(//c/Users/HP/AppData/Local/Temp/claude/d--JHB-website/2128af96-6d3f-48c8-8f83-361a72ab339b/tasks/**)",
+      "mcp__claude_ai_Supabase__list_tables"
     ]
   }
 }

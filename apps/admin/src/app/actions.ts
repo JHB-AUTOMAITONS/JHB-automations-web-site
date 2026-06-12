@@ -204,6 +204,71 @@ export async function saveService(
   return { ok: true, slug };
 }
 
+// ---- Service Content (rich text, draft/publish/versions) ----
+
+export async function saveServiceContentDraft(
+  key: string,
+  title: string,
+  html: string
+) {
+  const { supabase, user } = await getStaff();
+  const { error } = await supabase.from("jhb_service_content").upsert(
+    {
+      service_key: key,
+      draft_title: title,
+      draft_html: html,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    },
+    { onConflict: "service_key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function publishServiceContent(
+  key: string,
+  slug: string,
+  title: string,
+  html: string
+) {
+  const { supabase, user } = await getStaff();
+  // Save draft + publish in one upsert
+  const { error } = await supabase.from("jhb_service_content").upsert(
+    {
+      service_key: key,
+      draft_title: title,
+      draft_html: html,
+      pub_title: title,
+      pub_html: html,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    },
+    { onConflict: "service_key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  // Snapshot a version for "restore previous version"
+  await supabase
+    .from("jhb_service_content_versions")
+    .insert({ service_key: key, title, content_html: html });
+  await log("servicecontent.publish", `Published content for "${key}"`);
+  revalidatePath(`/services/${slug}`);
+  revalidatePath("/services");
+  return { ok: true };
+}
+
+export async function unpublishServiceContent(key: string, slug: string) {
+  const { supabase } = await getStaff();
+  const { error } = await supabase
+    .from("jhb_service_content")
+    .update({ pub_title: null, pub_html: null, updated_at: new Date().toISOString() })
+    .eq("service_key", key);
+  if (error) return { ok: false, error: error.message };
+  await log("servicecontent.unpublish", `Unpublished content for "${key}"`);
+  revalidatePath(`/services/${slug}`);
+  return { ok: true };
+}
+
 export async function updateUserRole(id: string, role: string) {
   const { supabase, profile } = await getStaff();
   if (profile?.role !== "admin")
