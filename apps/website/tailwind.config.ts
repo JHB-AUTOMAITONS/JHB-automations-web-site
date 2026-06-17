@@ -8,29 +8,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        base: "#F5F6FB",
-        surface: "#FFFFFF",
-        ink: "#0E1116",
-        dark: "#0E1116",
+        // Semantic tokens are CSS-variable driven so the whole site themes
+        // from globals.css (:root) — dark page, light text, dark-glass surfaces.
+        base: "rgb(var(--base) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        dark: "#050816",
         primary: "#2563EB",
         secondary: "#7C3AED",
         accent: "#FF2E7E",
         sun: "#FF7A1A",
-        muted: "#5B6472",
       },
       fontFamily: {
         display: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 20px 50px -20px rgba(37, 99, 235, 0.45)",
-        "glow-purple": "0 20px 50px -20px rgba(124, 58, 237, 0.45)",
-        soft: "0 10px 40px -12px rgba(14, 17, 22, 0.12)",
-        "soft-lg": "0 24px 60px -20px rgba(14, 17, 22, 0.18)",
+        glow: "0 20px 50px -20px rgba(37, 99, 235, 0.5)",
+        "glow-purple": "0 20px 50px -20px rgba(124, 58, 237, 0.5)",
+        soft: "0 10px 40px -12px rgba(0, 0, 0, 0.5)",
+        "soft-lg": "0 24px 60px -20px rgba(0, 0, 0, 0.6)",
       },
       backgroundImage: {
         "grid-faint":
-          "linear-gradient(to right, rgba(14,17,22,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(14,17,22,0.05) 1px, transparent 1px)",
+          "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
       },
       keyframes: {
         float: {

@@ -62,7 +62,7 @@ export default function Contact({
   };
 
   return (
-    <section id="contact" className="relative py-24 sm:py-32">
+    <section id="contact" className="relative py-16 sm:py-24">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl">
           <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
@@ -73,7 +73,7 @@ export default function Contact({
             <div>
               <span className="eyebrow">Let&apos;s Talk</span>
               <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-                Book Your <span className="grad-text">Free Consultation</span>
+                Get in <span className="grad-text">Touch</span>
               </h2>
               <p className="mt-4 text-muted">
                 Tell us about your goals and we&apos;ll map the fastest path to
@@ -185,7 +185,7 @@ export default function Contact({
 
                 <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                   <button type="submit" className="btn btn-primary flex-1">
-                    Schedule Consultation →
+                    Send Message →
                   </button>
                   <a
                     href={`tel:${settings.phone.replace(/\s+/g, "")}`}

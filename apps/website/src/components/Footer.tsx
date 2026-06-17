@@ -36,9 +36,16 @@ export default function Footer({
           {/* brand */}
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
-                JH
-              </span>
+              {settings.branding?.footerLogo ? (
+                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={settings.branding.footerLogo} alt={`${settings.companyName} logo`} className="max-h-full max-w-full object-contain" />
+                </span>
+              ) : (
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
+                  JH
+                </span>
+              )}
               <span className="font-display text-lg font-bold">
                 JHB <span className="grad-text">Automations</span>
               </span>
@@ -76,7 +83,6 @@ export default function Footer({
               { label: "About", href: "/about" },
               { label: "All Services", href: "/services" },
               { label: "Testimonials", href: "/#testimonials" },
-              { label: "Process", href: "/#process" },
               { label: "Contact", href: "/contact" },
             ]}
           />

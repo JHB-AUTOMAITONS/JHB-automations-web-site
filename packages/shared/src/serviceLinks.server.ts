@@ -1,7 +1,8 @@
 import { createClient } from "./supabase/server";
 import type { ServiceLinkRow } from "./serviceLinks";
 
-const COLS = "id, service_key, anchor_text, url, type, new_tab, sort_order";
+const COLS =
+  "id, service_key, anchor_text, url, type, new_tab, link_type, sponsored, ugc, sort_order";
 
 export async function getServiceAnchorLinks(
   key: string

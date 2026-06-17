@@ -4,6 +4,8 @@ import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import { getSettings } from "@jhb/shared/content-server";
 import { getServiceLinks } from "@jhb/shared/services-server";
+import { getPublishedProducts } from "@jhb/shared/products-server";
+import { productHref } from "@jhb/shared/products";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,7 +19,9 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const favicon = (await getSettings()).branding?.favicon;
+  return {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
   ),
@@ -56,15 +60,23 @@ export const metadata: Metadata = {
       "Transform your business with intelligent AI automation, web development and data-driven growth.",
     images: ["/og.png"],
   },
-};
+  ...(favicon ? { icons: { icon: favicon, shortcut: favicon, apple: favicon } } : {}),
+  };
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, serviceLinks] = await Promise.all([
+  const [settings, serviceLinks, products] = await Promise.all([
     getSettings(),
     getServiceLinks(),
+    getPublishedProducts(),
   ]);
+  const productLinks = products.map((p) => ({
+    label: p.title,
+    href: productHref(p),
+    icon: "spark",
+  }));
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const sameAs = [settings.instagram, settings.facebook, settings.linkedin].filter(
@@ -76,7 +88,7 @@ export default async function RootLayout({
     "@type": "Organization",
     name: settings.companyName || "JHB Automations",
     url: site,
-    logo: `${site}/logo.png`,
+    logo: /^https?:\/\//.test(settings.branding?.headerLogo || "") ? settings.branding.headerLogo : `${site}/logo.png`,
     description: settings.tagline,
     email: settings.email,
     telephone: settings.phone,
@@ -109,7 +121,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
-        <SiteChrome settings={settings} serviceLinks={serviceLinks}>
+        <SiteChrome settings={settings} serviceLinks={serviceLinks} productLinks={productLinks}>
           {children}
         </SiteChrome>
       </body>

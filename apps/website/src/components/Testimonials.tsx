@@ -1,10 +1,15 @@
 "use client";
 
-import { testimonials, type Testimonial } from "@jhb/shared/data";
+import { testimonials } from "@jhb/shared/data";
+import {
+  rowToCard,
+  type TestimonialCard as Card,
+  type TestimonialRow,
+} from "@jhb/shared/testimonials";
 import SectionHeading from "./SectionHeading";
 
 const accents: Record<
-  Testimonial["accent"],
+  Card["accent"],
   { ring: string; glow: string; text: string; grad: string; dot: string }
 > = {
   blue: {
@@ -37,15 +42,31 @@ const accents: Record<
   },
 };
 
-// Split into rows
-const row1 = testimonials.slice(0, 6);
-const row2 = testimonials.slice(6, 12);
+// Hardcoded fallback mapped onto the normalized card shape.
+const fallbackCards: Card[] = testimonials.map((t) => ({
+  name: t.name,
+  role: t.role,
+  company: t.company,
+  rating: t.rating,
+  quote: t.quote,
+  result: t.result,
+  tags: t.tags,
+  accent: t.accent,
+}));
 
-export default function Testimonials() {
+export default function Testimonials({ items }: { items?: TestimonialRow[] }) {
+  // Use DB testimonials when available; otherwise the built-in fallback set.
+  const cards: Card[] =
+    items && items.length > 0 ? items.map((r, i) => rowToCard(r, i)) : fallbackCards;
+
+  const mid = Math.ceil(cards.length / 2);
+  const row1 = cards.slice(0, mid);
+  const row2 = cards.slice(mid);
+
   return (
     <section
       id="testimonials"
-      className="relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-16 sm:py-24"
     >
       {/* glowing background */}
       <div className="pointer-events-none absolute left-1/4 top-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[150px]" />
@@ -96,7 +117,7 @@ export default function Testimonials() {
       {/* Marquee rows */}
       <div className="relative flex flex-col gap-5">
         <MarqueeRow items={row1} duration={55} />
-        <MarqueeRow items={row2} duration={68} reverse />
+        {row2.length > 0 && <MarqueeRow items={row2} duration={68} reverse />}
 
         {/* edge fade */}
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-base to-transparent sm:w-40" />
@@ -104,7 +125,7 @@ export default function Testimonials() {
       </div>
 
       {/* rating summary */}
-      <div className="container-x mt-14">
+      <div className="container-x mt-10">
         <div className="glass glow-border mx-auto flex max-w-md items-center justify-center gap-4 rounded-2xl px-6 py-4">
           <div className="flex text-accent">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -127,7 +148,7 @@ function MarqueeRow({
   duration,
   reverse = false,
 }: {
-  items: Testimonial[];
+  items: Card[];
   duration: number;
   reverse?: boolean;
 }) {
@@ -149,7 +170,7 @@ function MarqueeRow({
   );
 }
 
-function TestimonialCard({ t }: { t: Testimonial }) {
+function TestimonialCard({ t }: { t: Card }) {
   const a = accents[t.accent];
   const initials = t.name
     .split(" ")
@@ -162,17 +183,33 @@ function TestimonialCard({ t }: { t: Testimonial }) {
     >
       {/* header */}
       <div className="flex items-center gap-3">
-        <span
-          className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${a.grad} font-display text-sm font-bold text-white shadow-lg`}
-        >
-          {initials}
-        </span>
+        {/* Fixed-size circular avatar — clips photo or fallback identically,
+            so every card header has the same height and the image stays put. */}
+        <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full shadow-lg ring-1 ring-ink/10">
+          {t.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={t.photo}
+              alt={t.name}
+              loading="lazy"
+              className="h-full w-full object-cover object-center"
+            />
+          ) : (
+            <span
+              className={`grid h-full w-full place-items-center bg-gradient-to-br ${a.grad} font-display text-sm font-bold text-white`}
+            >
+              {initials}
+            </span>
+          )}
+        </div>
         <div className="min-w-0">
           <p className="truncate font-display text-sm font-semibold text-ink">
             {t.name}
           </p>
           <p className="truncate text-xs text-muted">
-            {t.role} · <span className={a.text}>{t.company}</span>
+            {t.role}
+            {t.role && t.company ? " · " : ""}
+            <span className={a.text}>{t.company}</span>
           </p>
         </div>
       </div>
@@ -190,26 +227,30 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       </p>
 
       {/* result */}
-      <div className="mt-4 flex items-center gap-2">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full bg-ink/[0.04] px-3 py-1.5 text-xs font-semibold ${a.text} ring-1 ring-ink/10`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
-          {t.result}
-        </span>
-      </div>
+      {t.result && (
+        <div className="mt-4 flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full bg-ink/[0.04] px-3 py-1.5 text-xs font-semibold ${a.text} ring-1 ring-ink/10`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
+            {t.result}
+          </span>
+        </div>
+      )}
 
       {/* tags */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {t.tags.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-md bg-ink/[0.04] px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted ring-1 ring-ink/10"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {t.tags && t.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {t.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-md bg-ink/[0.04] px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted ring-1 ring-ink/10"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </article>
   );
 }

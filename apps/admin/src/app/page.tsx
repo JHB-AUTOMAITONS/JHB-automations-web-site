@@ -21,9 +21,9 @@ export default async function AdminDashboard() {
   ]);
 
   const cards = [
-    { label: "Leads", value: leadCount ?? 0, href: "/admin/leads", icon: "✉" },
-    { label: "Page Views", value: viewCount ?? 0, href: "/admin/analytics", icon: "📊" },
-    { label: "Media Files", value: mediaCount ?? 0, href: "/admin/media", icon: "🖼" },
+    { label: "Leads", value: leadCount ?? 0, href: "/leads", icon: "✉" },
+    { label: "Page Views", value: viewCount ?? 0, href: "/analytics", icon: "📊" },
+    { label: "Media Files", value: mediaCount ?? 0, href: "/media", icon: "🖼" },
   ];
 
   return (
@@ -58,20 +58,25 @@ export default async function AdminDashboard() {
         <div className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
           <h2 className="font-display text-lg font-semibold">Quick Actions</h2>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/admin/content" className="btn btn-primary !px-5 !py-2.5 !text-sm">
-              Edit Content
+            <Link href="/home" className="btn btn-primary !px-5 !py-2.5 !text-sm">
+              Edit Home Page
             </Link>
-            <Link href="/admin/settings" className="btn btn-ghost !px-5 !py-2.5 !text-sm">
+            <Link href="/settings" className="btn btn-ghost !px-5 !py-2.5 !text-sm">
               Edit Settings
             </Link>
-            <Link href="/admin/media" className="btn btn-ghost !px-5 !py-2.5 !text-sm">
+            <Link href="/media" className="btn btn-ghost !px-5 !py-2.5 !text-sm">
               Upload Media
             </Link>
           </div>
         </div>
 
         <div className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
-          <h2 className="font-display text-lg font-semibold">Recent Activity</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold">Recent Activity</h2>
+            <Link href="/activity" className="text-xs font-medium text-primary hover:underline">
+              View all →
+            </Link>
+          </div>
           <ul className="mt-4 space-y-3">
             {activity && activity.length > 0 ? (
               activity.map((a, i) => (

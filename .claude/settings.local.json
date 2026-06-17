@@ -13,7 +13,12 @@
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; \"node stopped: $\\(\\(Get-Process node -ErrorAction SilentlyContinue | Measure-Object\\).Count\\)\")",
       "PowerShell(cd d:\\\\JHB-website; $env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npm run dev:website)",
       "Read(//c/Users/HP/AppData/Local/Temp/claude/d--JHB-website/2128af96-6d3f-48c8-8f83-361a72ab339b/tasks/**)",
-      "mcp__claude_ai_Supabase__list_tables"
+      "mcp__claude_ai_Supabase__list_tables",
+      "PowerShell(cd d:\\\\JHB-website\\\\apps\\\\admin; $env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit; \"admin exit=$LASTEXITCODE\"; cd d:\\\\JHB-website\\\\apps\\\\website; npx tsc --noEmit; \"website exit=$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\JHB-website\\\\apps\\\\admin; $env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit; \"admin exit=$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\JHB-website\\\\apps\\\\website; $env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit; \"website exit=$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\JHB-website\\\\apps\\\\website; $env:NODE_OPTIONS=\"--max-old-space-size=6144\"; npx tsc --noEmit; \"website exit=$LASTEXITCODE\")",
+      "PowerShell(try { $r=Invoke-WebRequest \"http://localhost:3001/client-logos\" -UseBasicParsing -TimeoutSec 120 -MaximumRedirection 0 -ErrorAction Stop; \"admin -> $\\($r.StatusCode\\)\" } catch { $sc=$_.Exception.Response.StatusCode.value__; \"admin -> $\\(if\\($sc\\){$sc}else{$_.Exception.Message}\\)\" })"
     ]
   }
 }

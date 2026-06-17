@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ServicesIndex() {
   const services = await getServices();
   return (
-    <main className="relative pt-32">
+    <main className="relative pt-28">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 

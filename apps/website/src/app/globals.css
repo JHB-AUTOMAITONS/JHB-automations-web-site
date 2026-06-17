@@ -2,10 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Dark "AI automation platform" theme.
+ * Semantic tokens are space-separated RGB channels so Tailwind utilities
+ * (mapped to rgb(var(--x) / <alpha>)) and the /opacity modifier keep working.
+ */
 :root {
-  --base: #f5f6fb;
-  --surface: #ffffff;
-  --ink: #0e1116;
+  --base: 5 8 22; /* #050816 deep space black — page backdrop */
+  --surface: 13 20 38; /* #0D1426 dark navy — glass card base */
+  --ink: 226 232 240; /* #E2E8F0 light primary text */
+  --muted: 148 163 184; /* #94A3B8 muted slate text */
   --primary: #2563eb;
   --secondary: #7c3aed;
   --accent: #ff2e7e;
@@ -21,8 +27,8 @@ html {
 }
 
 body {
-  background-color: var(--base);
-  color: var(--ink);
+  background-color: rgb(var(--base));
+  color: rgb(var(--ink));
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   cursor: none;
@@ -37,8 +43,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(37, 99, 235, 0.18);
-  color: #0e1116;
+  background: rgba(37, 99, 235, 0.4);
+  color: #ffffff;
 }
 
 /* Scrollbar */
@@ -46,7 +52,7 @@ body {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #eceef6;
+  background: #0b1120;
 }
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #2563eb, #7c3aed);
@@ -62,21 +68,21 @@ body {
     @apply bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent;
   }
 
-  /* Frosted white cards */
+  /* Frosted dark-glass cards */
   .glass {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(13, 20, 38, 0.55);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(14, 17, 22, 0.08);
-    box-shadow: 0 10px 40px -16px rgba(14, 17, 22, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 40px -16px rgba(0, 0, 0, 0.55);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(11, 17, 32, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(14, 17, 22, 0.08);
-    box-shadow: 0 18px 50px -20px rgba(14, 17, 22, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.65);
   }
 
   .glow-border {
@@ -106,30 +112,39 @@ body {
   .btn-primary {
     @apply text-white;
     background: linear-gradient(135deg, #2563eb, #7c3aed);
-    box-shadow: 0 12px 30px -10px rgba(37, 99, 235, 0.55);
+    box-shadow: 0 12px 30px -10px rgba(37, 99, 235, 0.6);
   }
   .btn-primary:hover {
-    box-shadow: 0 18px 40px -10px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 18px 40px -10px rgba(124, 58, 237, 0.7);
     transform: translateY(-2px);
   }
   .btn-ghost {
     @apply text-ink;
-    background: rgba(14, 17, 22, 0.04);
-    border: 1px solid rgba(14, 17, 22, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
   }
   .btn-ghost:hover {
-    background: rgba(14, 17, 22, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
   }
 
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary;
+    @apply inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary;
   }
+}
+
+/* Hide scrollbar while keeping scroll (e.g. nav dropdowns) */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / old Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
 }
 
 /* Radial glow helper */
 .radial-glow {
-  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.12), transparent 60%);
+  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.18), transparent 60%);
 }
 
 /* Animated gradient text underline for links */
@@ -179,7 +194,7 @@ body {
   line-height: 1.25;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
-  color: var(--ink);
+  color: rgb(var(--ink));
 }
 .prose-jhb h3 {
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
@@ -187,7 +202,7 @@ body {
   font-size: 1.25rem;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
-  color: var(--ink);
+  color: rgb(var(--ink));
 }
 .prose-jhb li {
   margin-top: 0.35rem;

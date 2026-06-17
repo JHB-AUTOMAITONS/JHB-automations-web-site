@@ -3,10 +3,12 @@ import {
   HERO_DEFAULT,
   STATS_DEFAULT,
   SETTINGS_DEFAULT,
+  LOGO_DEFAULT,
   type HeroContent,
   type StatsContent,
   type StatItem,
   type SiteSettings,
+  type LogoSettings,
 } from "./content";
 
 async function fetchBlock(
@@ -37,7 +39,13 @@ export async function getStats(): Promise<StatsContent> {
 }
 
 export async function getSettings(): Promise<SiteSettings> {
-  return { ...SETTINGS_DEFAULT, ...(await fetchBlock("jhb_settings", "site")) };
+  const saved = (await fetchBlock("jhb_settings", "site")) ?? {};
+  return {
+    ...SETTINGS_DEFAULT,
+    ...saved,
+    // Deep-merge nested branding so older saved docs keep every default field.
+    branding: { ...LOGO_DEFAULT, ...((saved.branding as Partial<LogoSettings>) ?? {}) },
+  };
 }
 
 export type SeoRow = {

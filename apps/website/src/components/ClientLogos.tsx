@@ -1,32 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { ClientLogo } from "@jhb/shared/client-logos";
 
-/**
- * Replace these with real clients.
- * - Add a logo image to apps/website/public/clients/<file> and set `logo`.
- * - If `logo` is omitted, a clean wordmark is shown as a placeholder.
- */
-type Client = { name: string; logo?: string };
+type Logo = { id: string; logo: string; alt?: string | null; title?: string | null };
 
-const clients: Client[] = [
-  { name: "MediCare Plus" },
-  { name: "Urban Nest" },
-  { name: "PureGlow" },
-  { name: "FinEdge" },
-  { name: "ShopSphere" },
-  { name: "EduSpark" },
-  { name: "LogiFlow" },
-  { name: "Trendora" },
-  { name: "FreshCart" },
-  { name: "NovaBank" },
-];
-
-export default function ClientLogos() {
+export default function ClientLogos({ items = [] }: { items?: ClientLogo[] }) {
+  // Logo-only, fully database-driven: render uploaded logos, no text names.
+  const clients: Logo[] = (items ?? [])
+    .filter((c) => c.logo_url)
+    .map((c) => ({ id: c.id, logo: c.logo_url as string, alt: c.alt_text, title: c.image_title }));
+  if (clients.length === 0) return null;
   return (
     <section
       id="clients"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-20 sm:py-24"
+      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-16 sm:py-20"
       aria-labelledby="clients-heading"
     >
       {/* ambient glow */}
@@ -60,7 +48,7 @@ export default function ClientLogos() {
         <div className="mt-12 hidden grid-cols-3 gap-4 sm:grid sm:grid-cols-4 lg:grid-cols-5">
           {clients.map((c, i) => (
             <motion.div
-              key={c.name}
+              key={c.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
@@ -76,7 +64,7 @@ export default function ClientLogos() {
           <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
             <div className="flex w-max gap-4 animate-marquee group-hover:[animation-play-state:paused]">
               {[...clients, ...clients].map((c, i) => (
-                <div key={`${c.name}-${i}`} className="w-36 shrink-0">
+                <div key={`${c.id}-${i}`} className="w-36 shrink-0">
                   <LogoCard client={c} />
                 </div>
               ))}
@@ -88,23 +76,24 @@ export default function ClientLogos() {
   );
 }
 
-function LogoCard({ client }: { client: Client }) {
+function LogoCard({ client }: { client: Logo }) {
   return (
-    <div className="group/logo flex h-24 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-[0_18px_40px_-12px_rgba(37,99,235,0.5)]">
-      {client.logo ? (
-        // eslint-disable-next-line @next/next/no-img-element
+    <div className="group/logo h-24 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-[0_18px_40px_-12px_rgba(37,99,235,0.5)]">
+      {/* Dedicated logo container: fixed size, centered, padded, clipped */}
+      <div className="flex h-full w-full items-center justify-center overflow-hidden p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={client.logo}
-          alt={`${client.name} logo`}
+          alt={client.alt || "Client logo"}
+          title={client.title || undefined}
           loading="lazy"
           decoding="async"
-          className="max-h-12 w-auto max-w-full object-contain opacity-80 grayscale transition-all duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0"
+          // max-* (not h/w-full) → logos scale DOWN to fit but never upscale past
+          // native resolution, so they stay crisp; object-contain keeps aspect.
+          className="max-h-full max-w-full object-contain object-center transition-transform duration-300 group-hover/logo:scale-105"
+          style={{ imageRendering: "auto" }}
         />
-      ) : (
-        <span className="text-center font-display text-base font-semibold text-white/70 transition-colors duration-300 group-hover/logo:text-white">
-          {client.name}
-        </span>
-      )}
+      </div>
     </div>
   );
 }

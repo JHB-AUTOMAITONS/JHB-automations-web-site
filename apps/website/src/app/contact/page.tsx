@@ -6,7 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 export const metadata: Metadata = {
   title: "Contact Us — JHB Automations",
   description:
-    "Book a free consultation. Tell us about your goals and we'll map the fastest path to automated, predictable growth.",
+    "Get in touch. Tell us about your goals and we'll map the fastest path to automated, predictable growth.",
   alternates: { canonical: "/contact" },
 };
 
@@ -18,7 +18,7 @@ const channels = [
 
 export default function ContactPage() {
   return (
-    <main className="relative pt-32">
+    <main className="relative pt-28">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-secondary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 

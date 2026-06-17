@@ -1,6 +1,9 @@
 import { createClient } from "@jhb/shared/supabase/server";
 import { getDraftHome, getPublishedHome } from "@jhb/shared/home-server";
 import { getServices } from "@jhb/shared/services-server";
+import { getInternalPages } from "@jhb/shared/service-pages-server";
+import { getAllHomeFaqs } from "@jhb/shared/home-faqs-server";
+import { getStats } from "@jhb/shared/content-server";
 import HomeManager from "@/components/HomeManager";
 
 export default async function AdminHome() {
@@ -31,10 +34,13 @@ export default async function AdminHome() {
     );
   }
 
-  const [draft, published, services] = await Promise.all([
+  const [draft, published, services, internalPages, faqs, stats] = await Promise.all([
     getDraftHome(),
     getPublishedHome(),
     getServices(),
+    getInternalPages(),
+    getAllHomeFaqs(),
+    getStats(),
   ]);
 
   const serviceList = services.map((s) => ({
@@ -48,6 +54,10 @@ export default async function AdminHome() {
       draft={draft}
       published={published}
       services={serviceList}
+      faqs={faqs}
+      stats={stats}
+      internalPages={internalPages}
     />
   );
 }
+

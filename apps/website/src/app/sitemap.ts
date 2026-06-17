@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { serviceDetails } from "@jhb/shared/data";
 import { getPublishedSlugs } from "@jhb/shared/posts-server";
+import { getPublishedProducts } from "@jhb/shared/products-server";
+import { productHref } from "@jhb/shared/products";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -30,5 +32,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...services, ...posts];
+  // JHB Products — include each product's internal destination (e.g. the tools
+  // hub, or its /products/{slug} detail page).
+  const products = (await getPublishedProducts())
+    .map((p) => productHref(p))
+    .filter((h) => h.startsWith("/"))
+    .map((h) => ({
+      url: `${BASE}${h}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
+  return [...staticRoutes, ...services, ...products, ...posts];
 }

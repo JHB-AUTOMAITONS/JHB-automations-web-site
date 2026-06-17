@@ -10,6 +10,8 @@ import {
   getPublishedSlugs,
 } from "@jhb/shared/posts-server";
 import { formatDate } from "@jhb/shared/posts";
+import { getMediaAltMap, getMediaTitleMap } from "@jhb/shared/media-server";
+import { altFor } from "@jhb/shared/media";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -55,6 +57,7 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   const related = await getRelatedPosts(post.slug, post.category, 3);
+  const [altMap, titleMap] = await Promise.all([getMediaAltMap(), getMediaTitleMap()]);
   const url = `${SITE}/blog/${post.slug}`;
 
   const schema = {
@@ -84,7 +87,7 @@ export default async function BlogPostPage({
   };
 
   return (
-    <main className="relative pt-32">
+    <main className="relative pt-28">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
@@ -95,7 +98,7 @@ export default async function BlogPostPage({
       />
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
 
-      <article className="container-x pb-24">
+      <article className="container-x pb-16">
         {/* breadcrumb */}
         <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
           <Link href="/#home" className="transition-colors hover:text-ink">Home</Link>
@@ -132,7 +135,8 @@ export default async function BlogPostPage({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={post.cover_image}
-                alt={post.title}
+                alt={altFor(post.cover_image, altMap, post.title)}
+                {...(altFor(post.cover_image, titleMap, "") ? { title: altFor(post.cover_image, titleMap, "") } : {})}
                 className="aspect-[16/9] w-full object-cover"
               />
             </div>
@@ -166,7 +170,7 @@ export default async function BlogPostPage({
 
         {/* related */}
         {related.length > 0 && (
-          <div className="mx-auto mt-20 max-w-6xl">
+          <div className="mx-auto mt-14 max-w-6xl">
             <h2 className="mb-8 font-display text-2xl font-bold">
               Related <span className="grad-text">Articles</span>
             </h2>

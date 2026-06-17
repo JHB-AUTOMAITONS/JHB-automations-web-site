@@ -2,42 +2,28 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { HOME_FAQ_DEFAULTS, type HomeFaqItem } from "@jhb/shared/home-faqs";
 import Reveal from "./Reveal";
 
-const faqs = [
-  {
-    q: "What exactly does a business development company do?",
-    a: "A business development company helps businesses generate leads, improve sales processes, optimize marketing strategies, automate workflows, and create growth systems that increase revenue and business efficiency.",
-  },
-  {
-    q: "Do you only work with companies in Salem?",
-    a: "No. We work with businesses across India and internationally through online consultations, digital marketing, automation solutions, and web development services.",
-  },
-  {
-    q: "How long before I see results from business development?",
-    a: "Results depend on the service provided. Some improvements can be seen within a few weeks, while long-term growth strategies typically show significant results within 2–6 months.",
-  },
-  {
-    q: "Can startups afford your services?",
-    a: "Yes. We offer flexible packages suitable for startups, small businesses, and established companies, ensuring solutions that fit different budgets and growth stages.",
-  },
-];
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
-};
-
-export default function Faq() {
+export default function Faq({ items }: { items?: HomeFaqItem[] }) {
   const [open, setOpen] = useState<number | null>(0);
 
+  // DB-driven FAQs (fallback to built-in defaults when none are published)
+  const source = items && items.length > 0 ? items : HOME_FAQ_DEFAULTS;
+  const faqs = source.map((f) => ({ q: f.question, a: f.answer }));
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
-    <section id="faq" className="relative py-24 sm:py-32">
+    <section id="faq" className="relative py-16 sm:py-24">
       {/* FAQ schema for SEO (rendered in SSR output) */}
       <script
         type="application/ld+json"
@@ -65,7 +51,7 @@ export default function Faq() {
               <p className="mt-3 text-muted">
                 Everything you need to know about working with us. Can&apos;t find
                 an answer?{" "}
-                <a href="#contact" className="text-primary hover:underline">
+                <a href="/#contact" className="text-primary hover:underline">
                   Talk to our team
                 </a>
                 .

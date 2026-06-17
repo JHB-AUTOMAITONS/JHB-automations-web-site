@@ -1,0 +1,10 @@
+{
+  // Tailwind directives (@tailwind, @apply, etc.) aren't part of the CSS spec,
+  // so VSCode's built-in CSS linter flags them. Disable that check.
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  // The standard `mask` is defined alongside `-webkit-mask`, but the linter
+  // still nags about prefix order. Silence it.
+  "css.lint.vendorPrefix": "ignore"
+}

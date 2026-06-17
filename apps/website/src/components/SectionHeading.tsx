@@ -4,9 +4,11 @@ type Props = {
   eyebrow: string;
   title: React.ReactNode;
   desc?: string;
+  /** Rich-text (HTML) description — takes precedence over `desc`. */
+  descHtml?: string;
 };
 
-export default function SectionHeading({ eyebrow, title, desc }: Props) {
+export default function SectionHeading({ eyebrow, title, desc, descHtml }: Props) {
   return (
     <div className="mx-auto mb-14 max-w-2xl text-center">
       <Reveal>
@@ -17,11 +19,18 @@ export default function SectionHeading({ eyebrow, title, desc }: Props) {
           {title}
         </h2>
       </Reveal>
-      {desc && (
+      {descHtml ? (
+        <Reveal delay={0.16}>
+          <div
+            className="prose-jhb mx-auto mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0"
+            dangerouslySetInnerHTML={{ __html: descHtml }}
+          />
+        </Reveal>
+      ) : desc ? (
         <Reveal delay={0.16}>
           <p className="mt-4 text-lg text-muted">{desc}</p>
         </Reveal>
-      )}
+      ) : null}
     </div>
   );
 }

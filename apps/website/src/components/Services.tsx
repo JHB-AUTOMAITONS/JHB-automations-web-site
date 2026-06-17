@@ -19,12 +19,12 @@ export default function Services({
   subheading?: string;
 }) {
   return (
-    <section id="services" className="relative py-24 sm:py-32">
+    <section id="services" className="relative py-16 sm:py-24">
       <div className="container-x">
         <SectionHeading
           eyebrow="What We Do"
-          title={<span className="grad-text">{heading}</span>}
-          desc={subheading}
+          title={<span className="grad-text [&_p]:m-0 [&_p]:inline [&_a]:underline" dangerouslySetInnerHTML={{ __html: heading }} />}
+          descHtml={subheading}
         />
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

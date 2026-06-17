@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
@@ -16,9 +17,13 @@ const marquee = [
 export default function Hero({
   content = HERO_DEFAULT,
   heroImage = null,
+  heroImageAlt = "JHB Automations",
+  heroImageTitle,
 }: {
   content?: HeroContent;
   heroImage?: string | null;
+  heroImageAlt?: string;
+  heroImageTitle?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
@@ -47,7 +52,7 @@ export default function Hero({
   return (
     <section
       id="home"
-      className="relative flex min-h-screen items-center overflow-hidden pt-28"
+      className="relative flex min-h-screen items-center overflow-hidden pt-24"
     >
       {/* ambient blobs */}
       <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
@@ -80,14 +85,13 @@ export default function Hero({
             <span className="grad-text">{content.highlight}</span>
           </motion.h1>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
-          >
-            {content.subtitle}
-          </motion.p>
+            className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: content.subtitle }}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -145,13 +149,16 @@ export default function Hero({
           {heroImage ? (
             <motion.div
               style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-              className="glass-strong glow-border relative overflow-hidden rounded-3xl shadow-glow"
+              className="glass-strong glow-border relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-glow"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={heroImage}
-                alt="JHB Automations"
-                className="aspect-[4/3] w-full object-cover"
+                alt={heroImageAlt}
+                {...(heroImageTitle ? { title: heroImageTitle } : {})}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 512px"
+                className="object-cover"
               />
             </motion.div>
           ) : (

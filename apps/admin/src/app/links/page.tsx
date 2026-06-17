@@ -24,7 +24,14 @@ export default async function AdminLinks() {
 
   const linksByService: Record<
     string,
-    { anchor_text: string; url: string; new_tab: boolean }[]
+    {
+      anchor_text: string;
+      url: string;
+      new_tab: boolean;
+      link_type: "dofollow" | "nofollow";
+      sponsored: boolean;
+      ugc: boolean;
+    }[]
   > = {};
   for (const s of serviceList) linksByService[s.key] = [];
   for (const l of links) {
@@ -32,6 +39,9 @@ export default async function AdminLinks() {
       anchor_text: l.anchor_text,
       url: l.url,
       new_tab: l.new_tab,
+      link_type: l.link_type,
+      sponsored: l.sponsored,
+      ugc: l.ugc,
     });
   }
 

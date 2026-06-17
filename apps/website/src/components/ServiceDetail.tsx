@@ -1,11 +1,12 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
 import type { FaqItem } from "@jhb/shared/faqs";
-import type { AnchorLink } from "@jhb/shared/service-links";
+import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
@@ -23,7 +24,7 @@ function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNod
   for (const link of ordered) {
     const anchor = link.anchor_text.trim();
     if (!anchor || used.has(anchor.toLowerCase())) continue;
-    nodes = nodes.flatMap((node) => {
+    nodes = nodes.flatMap((node): ReactNode[] => {
       if (typeof node !== "string") return [node];
       const idx = node.toLowerCase().indexOf(anchor.toLowerCase());
       if (idx === -1) return [node];
@@ -32,14 +33,15 @@ function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNod
       const match = node.slice(idx, idx + anchor.length);
       const after = node.slice(idx + anchor.length);
       const isExternal = /^https?:\/\//i.test(link.url);
+      const newTab = link.new_tab || isExternal;
+      const rel = buildRel(link);
       return [
         before,
         <Link
           key={`${anchor}-${idx}`}
           href={link.url}
-          {...(link.new_tab || isExternal
-            ? { target: "_blank", rel: "noopener noreferrer" }
-            : {})}
+          {...(newTab ? { target: "_blank" } : {})}
+          {...(rel ? { rel } : {})}
           className="font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary"
         >
           {match}
@@ -51,20 +53,36 @@ function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNod
   return nodes.map((n, i) => <Fragment key={i}>{n}</Fragment>);
 }
 
+type DbContent = {
+  heroHeading: string;
+  heroDescriptionHtml: string;
+  heroLink?: string;
+  features: { title: string; desc: string; link?: string; linkText?: string }[];
+  image: string | null;
+  imageAlt: string | null;
+  imageTitle: string | null;
+} | null;
+
 export default function ServiceDetail({
   data,
   related = [],
   faqs = [],
   links = [],
+  db = null,
 }: {
   data: ServiceDetailType;
   related?: RelatedLink[];
   faqs?: FaqItem[];
   links?: AnchorLink[];
+  db?: DbContent;
 }) {
   const used = new Set<string>();
+  // Published editor content overrides code defaults, field by field.
+  const heading = db?.heroHeading || data.title;
+  const features: { title: string; desc: string; link?: string; linkText?: string }[] =
+    db?.features && db.features.length > 0 ? db.features : data.features;
   return (
-    <main className="relative pt-32">
+    <main className="relative pt-28">
       {/* ambient glows */}
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
@@ -81,7 +99,7 @@ export default function ServiceDetail({
             Services
           </Link>
           <span>/</span>
-          <span className="text-primary">{data.title}</span>
+          <span className="text-primary">{heading}</span>
         </nav>
 
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
@@ -100,16 +118,38 @@ export default function ServiceDetail({
               transition={{ duration: 0.6, delay: 0.1 }}
               className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl"
             >
-              <span className="grad-text">{data.title}</span>
+              {db?.heroLink ? (
+                <a
+                  href={db.heroLink}
+                  {...(/^https?:\/\//i.test(db.heroLink)
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  className="grad-text transition-opacity hover:opacity-80"
+                >
+                  {heading}
+                </a>
+              ) : (
+                <span className="grad-text">{heading}</span>
+              )}
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
-            >
-              {linkify(data.intro, links, used)}
-            </motion.p>
+            {db?.heroDescriptionHtml ? (
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                dangerouslySetInnerHTML={{ __html: db.heroDescriptionHtml }}
+              />
+            ) : (
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
+              >
+                {linkify(data.intro, links, used)}
+              </motion.p>
+            )}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -117,7 +157,7 @@ export default function ServiceDetail({
               className="mt-8 flex flex-wrap gap-4"
             >
               <Link href="/#contact" className="btn btn-primary">
-                Book Free Consultation →
+                Contact Us →
               </Link>
               <Link href="/services" className="btn btn-ghost">
                 All Services
@@ -134,9 +174,20 @@ export default function ServiceDetail({
           >
             <div className="absolute inset-8 animate-spin-slow rounded-full border border-dashed border-ink/10" />
             <div className="absolute inset-16 rounded-full border border-ink/[0.06]" />
-            <div className="glass-strong glow-border relative grid h-40 w-40 place-items-center rounded-[2rem] shadow-glow">
+            <div className="glass-strong glow-border relative grid h-40 w-40 place-items-center overflow-hidden rounded-[2rem] shadow-glow">
               <span className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/10 to-secondary/10" />
-              <Icon name={data.icon} className="relative h-20 w-20 text-accent" />
+              {db?.image ? (
+                <Image
+                  src={db.image}
+                  alt={db.imageAlt || heading}
+                  {...(db.imageTitle ? { title: db.imageTitle } : {})}
+                  fill
+                  sizes="160px"
+                  className="object-cover"
+                />
+              ) : (
+                <Icon name={data.icon} className="relative h-20 w-20 text-accent" />
+              )}
             </div>
             {data.stats.map((s, i) => (
               <div
@@ -156,19 +207,19 @@ export default function ServiceDetail({
       </section>
 
       {/* Features */}
-      <section className="container-x py-24">
+      <section className="container-x py-16">
         <Reveal>
           <h2 className="font-display text-3xl font-bold sm:text-4xl">
             What&apos;s <span className="grad-text">Included</span>
           </h2>
           <p className="mt-3 max-w-xl text-muted">
-            Everything you get when you partner with us on {data.title}.
+            Everything you get when you partner with us on {heading}.
           </p>
         </Reveal>
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {data.features.map((f, i) => (
+          {features.map((f, i) => (
             <motion.div
-              key={f.title}
+              key={i}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
@@ -180,12 +231,16 @@ export default function ServiceDetail({
                   0{i + 1}
                 </span>
                 <div>
-                  <h3 className="font-display text-lg font-semibold">
-                    {f.title}
-                  </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                    {linkify(f.desc, links, used)}
-                  </p>
+                  <div
+                    role="heading"
+                    aria-level={3}
+                    className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
+                    dangerouslySetInnerHTML={{ __html: f.title }}
+                  />
+                  <div
+                    className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: f.desc }}
+                  />
                 </div>
               </div>
             </motion.div>
@@ -194,7 +249,7 @@ export default function ServiceDetail({
       </section>
 
       {/* Benefits */}
-      <section className="container-x pb-24">
+      <section className="container-x pb-16">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
           <div className="relative grid gap-10 lg:grid-cols-2">
@@ -231,7 +286,7 @@ export default function ServiceDetail({
       </section>
 
       {/* Related services */}
-      <section className="container-x pb-24">
+      <section className="container-x pb-16">
         <Reveal>
           <h2 className="mb-8 font-display text-2xl font-bold sm:text-3xl">
             Explore Related <span className="grad-text">Services</span>
@@ -263,18 +318,18 @@ export default function ServiceDetail({
       )}
 
       {/* CTA */}
-      <section className="container-x pb-28">
+      <section className="container-x pb-20">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
           <h2 className="font-display text-3xl font-bold sm:text-4xl">
             Ready to get started with{" "}
             <span className="grad-text">{data.title}</span>?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted">
-            Book a free consultation and we&apos;ll show you exactly how this can
-            drive growth for your business.
+            Get in touch and we&apos;ll show you exactly how this can drive
+            growth for your business.
           </p>
           <Link href="/#contact" className="btn btn-primary mt-8">
-            Book Free Consultation →
+            Contact Us →
           </Link>
         </div>
       </section>

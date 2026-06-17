@@ -15,6 +15,37 @@ export type HeroContent = {
 export type StatItem = { value: number; suffix: string; label: string };
 export type StatsContent = { items: StatItem[] };
 
+// Logo / branding — managed from Admin → Branding (Logo Management). Empty URL
+// means "use the built-in default" (e.g. /logo.png) so nothing ever breaks.
+export type LogoSettings = {
+  headerLogo: string;
+  footerLogo: string;
+  adminLogo: string;
+  favicon: string;
+  mobileLogo: string;
+  // Header logo-box appearance
+  width: number;
+  height: number;
+  padding: number;
+  radius: number;
+  bgColor: string;
+  align: "left" | "center";
+};
+
+export const LOGO_DEFAULT: LogoSettings = {
+  headerLogo: "",
+  footerLogo: "",
+  adminLogo: "",
+  favicon: "",
+  mobileLogo: "",
+  width: 48,
+  height: 48,
+  padding: 6,
+  radius: 12,
+  bgColor: "#ffffff",
+  align: "center",
+};
+
 export type SiteSettings = {
   companyName: string;
   tagline: string;
@@ -25,6 +56,12 @@ export type SiteSettings = {
   instagram: string;
   facebook: string;
   linkedin: string;
+  // "JHB Automation Tools" navbar CTA button (admin-managed).
+  toolsButtonEnabled: boolean;
+  toolsButtonLabel: string;
+  toolsButtonHref: string;
+  toolsButtonNewTab: boolean;
+  branding: LogoSettings;
 };
 
 export const HERO_DEFAULT: HeroContent = {
@@ -58,4 +95,9 @@ export const SETTINGS_DEFAULT: SiteSettings = {
   instagram: "https://instagram.com/jhb_automations_",
   facebook: "#",
   linkedin: "#",
+  toolsButtonEnabled: true,
+  toolsButtonLabel: "JHB Automation Tools",
+  toolsButtonHref: "/jhb-automation-tools",
+  toolsButtonNewTab: false,
+  branding: LOGO_DEFAULT,
 };

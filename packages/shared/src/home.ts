@@ -4,10 +4,11 @@ export type HeroBlock = {
   badge: string;
   title: string;
   highlight: string;
-  subtitle: string;
+  subtitle: string; // rich HTML (formatting + links)
   buttonText: string;
   buttonHref: string;
   image: string | null;
+  imageTitle: string; // optional SEO title attribute for the hero image
 };
 
 export type AboutBlock = {
@@ -37,12 +38,27 @@ export type CtaBlock = {
   buttonHref: string;
 };
 
+export type FounderBlock = {
+  enabled: boolean;
+  eyebrow: string;
+  heading: string;
+  highlight: string;
+  descriptionHtml: string;
+  focusTitle: string;
+  focusPoints: string[];
+  image: string | null; // null → falls back to the bundled /founder.jpg
+  imageAlt: string;
+  name: string; // badge line 1, e.g. "Founder & CEO"
+  company: string; // badge line 2
+};
+
 export type HomeContent = {
   hero: HeroBlock;
   about: AboutBlock;
   servicesSection: ServicesSectionBlock;
   serviceCards: ServiceCardOverride[];
   cta: CtaBlock;
+  founder: FounderBlock;
 };
 
 export const HOME_DEFAULT: HomeContent = {
@@ -53,8 +69,9 @@ export const HOME_DEFAULT: HomeContent = {
     subtitle:
       "We help businesses of all sizes attract the right customers, build trust, and boost sales. With data-driven strategies, SEO, content, and digital solutions, we deliver the best digital marketing Salem—your growth is our mission every step of the way.",
     buttonText: "Contact Us",
-    buttonHref: "#contact",
+    buttonHref: "/#contact",
     image: null,
+    imageTitle: "",
   },
   about: {
     enabled: true,
@@ -74,9 +91,28 @@ export const HOME_DEFAULT: HomeContent = {
     enabled: true,
     title: "Ready to Digitalise Your Business?",
     textHtml:
-      "<p>Book a free consultation and we will show you the fastest path to predictable, automated growth.</p>",
-    buttonText: "Book Free Consultation",
-    buttonHref: "#contact",
+      "<p>Get in touch and we will show you the fastest path to predictable, automated growth.</p>",
+    buttonText: "Contact Us",
+    buttonHref: "/#contact",
+  },
+  founder: {
+    enabled: true,
+    eyebrow: "Founder Perspective",
+    heading: "Growth Depends on",
+    highlight: "Predictable Systems",
+    descriptionHtml:
+      "<p>Growth depends on predictable systems, diversified lead channels, and automated workflows. Businesses that rely on a single source or manual operations limit their scalability. At JHB Automations, we help companies create multi-channel lead generation systems, optimize digital touchpoints, and implement automation that reduces operational effort and increases revenue efficiency.</p>",
+    focusTitle: "We Focus On",
+    focusPoints: [
+      "Consistent Lead Flow",
+      "Automated Customer Journeys",
+      "Clear Messaging & Market Positioning",
+      "Data-Driven Digital Systems",
+    ],
+    image: null,
+    imageAlt: "Founder of JHB Automations",
+    name: "Founder & CEO",
+    company: "JHB Automations",
   },
 };
 
@@ -92,5 +128,6 @@ export function mergeHome(data: Partial<HomeContent> | null | undefined): HomeCo
     },
     serviceCards: d.serviceCards ?? HOME_DEFAULT.serviceCards,
     cta: { ...HOME_DEFAULT.cta, ...(d.cta ?? {}) },
+    founder: { ...HOME_DEFAULT.founder, ...(d.founder ?? {}) },
   };
 }

@@ -10,7 +10,7 @@ export default function Stats({
   items?: StatItemType[];
 }) {
   return (
-    <section id="stats" className="relative py-24">
+    <section id="stats" className="relative py-16">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl px-6 py-14 sm:px-12">
           <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />

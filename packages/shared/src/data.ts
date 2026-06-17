@@ -560,15 +560,6 @@ export const testimonials: Testimonial[] = [
   },
 ];
 
-export const processSteps = [
-  { title: "Discovery", desc: "We deeply understand your business, market and goals.", icon: "🔍" },
-  { title: "Strategy", desc: "We architect a custom growth and automation roadmap.", icon: "🧭" },
-  { title: "Development", desc: "We build your systems, sites and integrations.", icon: "🛠️" },
-  { title: "Automation", desc: "We wire AI workflows that run without you.", icon: "⚙️" },
-  { title: "Launch", desc: "We deploy, test and go live with confidence.", icon: "🚀" },
-  { title: "Optimization", desc: "We measure, refine and scale what works.", icon: "📈" },
-];
-
 export type NavItem = {
   label: string;
   href: string;
@@ -584,8 +575,8 @@ export const serviceMenu = serviceDetails.map((s) => ({
 export const navItems: NavItem[] = [
   { label: "Home", href: "/#home" },
   { label: "Services", href: "/#services", dropdown: serviceMenu },
+  { label: "JHB Products", href: "/jhb-automation-tools" },
   { label: "Testimonials", href: "/#testimonials" },
-  { label: "Process", href: "/#process" },
   { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },

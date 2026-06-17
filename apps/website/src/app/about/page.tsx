@@ -3,7 +3,6 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { processSteps } from "@jhb/shared/data";
 
 export const metadata: Metadata = {
   title: "About Us — JHB Automations",
@@ -37,7 +36,7 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <main className="relative pt-32">
+    <main className="relative pt-28">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
@@ -141,40 +140,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* How we work */}
-      <section className="container-x py-20">
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <Reveal>
-            <span className="eyebrow">How We Work</span>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-              A Proven <span className="grad-text">Process</span>
-            </h2>
-          </Reveal>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {processSteps.map((s, i) => (
-            <Reveal key={s.title} delay={(i % 3) * 0.06}>
-              <div className="glass glow-border flex h-full items-start gap-4 rounded-2xl p-6">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-xl ring-1 ring-ink/10">
-                  {s.icon}
-                </span>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-                    Phase {i + 1}
-                  </p>
-                  <h3 className="font-display text-lg font-semibold">
-                    {s.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted">{s.desc}</p>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="container-x pb-28">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
@@ -182,11 +147,11 @@ export default function AboutPage() {
             Let&apos;s Build Something <span className="grad-text">Great</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted">
-            Ready to automate and scale? Book a free consultation and we&apos;ll
-            map your fastest path to growth.
+            Ready to automate and scale? Get in touch and we&apos;ll map your
+            fastest path to growth.
           </p>
-          <Link href="/contact" className="btn btn-primary mt-8">
-            Book Free Consultation →
+          <Link href="/#contact" className="btn btn-primary mt-8">
+            Contact Us →
           </Link>
         </div>
       </section>

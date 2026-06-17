@@ -4,7 +4,6 @@ import AboutSection from "@/components/AboutSection";
 import Services from "@/components/Services";
 import Stats from "@/components/Stats";
 import Testimonials from "@/components/Testimonials";
-import Process from "@/components/Process";
 import FounderPerspective from "@/components/FounderPerspective";
 import ClientLogos from "@/components/ClientLogos";
 import Faq from "@/components/Faq";
@@ -14,6 +13,11 @@ import Contact from "@/components/Contact";
 import { getStats, getSettings, buildMetadata } from "@jhb/shared/content-server";
 import { getServices } from "@jhb/shared/services-server";
 import { getPublishedHome } from "@jhb/shared/home-server";
+import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
+import { getMediaAltMap } from "@jhb/shared/media-server";
+import { altFor } from "@jhb/shared/media";
+import { getActiveHomeFaqs } from "@jhb/shared/home-faqs-server";
+import { getActiveClientLogos } from "@jhb/shared/client-logos-server";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,12 +29,17 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [home, stats, settings, services] = await Promise.all([
-    getPublishedHome(),
-    getStats(),
-    getSettings(),
-    getServices(),
-  ]);
+  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos] =
+    await Promise.all([
+      getPublishedHome(),
+      getStats(),
+      getSettings(),
+      getServices(),
+      getActiveTestimonials(),
+      getMediaAltMap(),
+      getActiveHomeFaqs(),
+      getActiveClientLogos(),
+    ]);
 
   // Map the editable hero block onto the Hero component's props
   const heroContent = {
@@ -58,20 +67,24 @@ export default async function Home() {
 
   return (
     <main className="relative">
-      <Hero content={heroContent} heroImage={home.hero.image} />
+      <Hero
+        content={heroContent}
+        heroImage={home.hero.image}
+        heroImageAlt={altFor(home.hero.image, altMap, "JHB Automations")}
+        heroImageTitle={home.hero.imageTitle || undefined}
+      />
       <Partners />
-      <AboutSection about={home.about} />
+      <AboutSection about={home.about} imageAlt={altFor(home.about.image, altMap, home.about.title)} />
       <Services
         items={serviceCards}
         heading={home.servicesSection.title}
         subheading={home.servicesSection.subtitle}
       />
       <Stats items={stats.items} />
-      <Testimonials />
-      <Process />
-      <FounderPerspective />
-      <ClientLogos />
-      <Faq />
+      <Testimonials items={testimonialItems} />
+      <FounderPerspective founder={home.founder} />
+      <ClientLogos items={clientLogos} />
+      <Faq items={homeFaqs} />
       <BlogPreview />
       <CtaSection cta={home.cta} />
       <Contact settings={settings} />

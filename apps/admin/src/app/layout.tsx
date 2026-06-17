@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@jhb/shared/supabase/server";
 import { signOut } from "./actions";
 import AdminNav from "@/components/AdminNav";
+import { getSettings } from "@jhb/shared/content-server";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default async function AdminRootLayout({
     profile = data;
   }
   const role = profile?.role ?? "editor";
+  const adminLogo = user ? (await getSettings()).branding?.adminLogo ?? "" : "";
 
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
@@ -56,9 +58,16 @@ export default async function AdminRootLayout({
             {/* Sidebar — fixed full height, scrolls internally only if its own content overflows */}
             <aside className="hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-ink/10 bg-surface p-5 lg:flex">
               <Link href="/" className="mb-8 flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
-                  JH
-                </span>
+                {adminLogo ? (
+                  <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white p-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={adminLogo} alt="Admin logo" className="max-h-full max-w-full object-contain" />
+                  </span>
+                ) : (
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
+                    JH
+                  </span>
+                )}
                 <span className="font-display text-base font-bold">
                   JHB <span className="grad-text">Admin</span>
                 </span>
@@ -87,9 +96,16 @@ export default async function AdminRootLayout({
               {/* Mobile top bar */}
               <header className="flex shrink-0 items-center justify-between border-b border-ink/10 bg-surface px-5 py-3 lg:hidden">
                 <Link href="/" className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
-                    JH
-                  </span>
+                  {adminLogo ? (
+                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-ink/10 bg-white p-0.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={adminLogo} alt="Admin logo" className="max-h-full max-w-full object-contain" />
+                    </span>
+                  ) : (
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
+                      JH
+                    </span>
+                  )}
                   <span className="font-display text-sm font-bold">JHB Admin</span>
                 </Link>
                 <form action={signOut}>
