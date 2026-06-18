@@ -20,6 +20,9 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 export const dynamicParams = true;
+// Render per-request so a published/edited/unpublished post (and its media alt
+// text) reflects on the public page immediately — consistent with services/[slug].
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

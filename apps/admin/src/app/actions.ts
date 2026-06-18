@@ -120,6 +120,38 @@ export async function saveProducts(data: Record<string, unknown>) {
   return { ok: true };
 }
 
+// About page — one editable document in jhb_content ("about").
+export async function saveAbout(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "about", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("about.update", "Updated About page");
+  await snapshot("about", "About Page", data, "Updated About page");
+  revalidatePath("/about");
+  return { ok: true };
+}
+
+// Partners "Powered by" strip — one editable document in jhb_content ("partners").
+export async function savePartners(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "partners", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("partners.update", "Updated Partners strip");
+  await snapshot("partners", "Partners", data, "Updated Partners strip");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function saveSettings(data: Record<string, unknown>) {
   const { supabase, user } = await getStaff();
   const { error } = await supabase

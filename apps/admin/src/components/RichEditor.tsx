@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import ColorEditor from "./ColorEditor";
+import FontSizeControl, { wrapSelectionFontSize } from "./FontSizeControl";
 
 type Props = {
   value: string;
@@ -32,10 +33,7 @@ const TOOLS: { cmd: string; arg?: string; label: string; title: string }[] = [
   { cmd: "bold", label: "B", title: "Bold" },
   { cmd: "italic", label: "I", title: "Italic" },
   { cmd: "underline", label: "U", title: "Underline" },
-  { cmd: "formatBlock", arg: "H2", label: "H2", title: "Heading 2" },
-  { cmd: "formatBlock", arg: "H3", label: "H3", title: "Heading 3" },
-  { cmd: "formatBlock", arg: "H4", label: "H4", title: "Heading 4" },
-  { cmd: "formatBlock", arg: "P", label: "P", title: "Paragraph" },
+  { cmd: "strikeThrough", label: "S", title: "Strikethrough" },
   { cmd: "formatBlock", arg: "BLOCKQUOTE", label: "❝", title: "Quote" },
   { cmd: "insertUnorderedList", label: "• List", title: "Bullet list" },
   { cmd: "insertOrderedList", label: "1. List", title: "Numbered list" },
@@ -44,7 +42,16 @@ const TOOLS: { cmd: string; arg?: string; label: string; title: string }[] = [
   { cmd: "justifyRight", label: "⫸", title: "Align right" },
 ];
 
-const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64];
+// Paragraph + full heading range for the block-format dropdown.
+const BLOCKS = [
+  { tag: "P", label: "Paragraph" },
+  { tag: "H1", label: "Heading 1" },
+  { tag: "H2", label: "Heading 2" },
+  { tag: "H3", label: "Heading 3" },
+  { tag: "H4", label: "Heading 4" },
+  { tag: "H5", label: "Heading 5" },
+  { tag: "H6", label: "Heading 6" },
+];
 
 // Validate any CSS color string (HEX, rgb()/rgba(), or a colour name) using the
 // browser's own parser — returns true only if the value is understood as a colour.
@@ -96,6 +103,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
   const [colorOpen, setColorOpen] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
+  const [fontSizePx, setFontSizePx] = useState(14);
 
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) ref.current.innerHTML = value;
@@ -130,21 +138,35 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     }
   };
 
-  // Apply a px font size to the selection. execCommand has no px size, so we use
-  // the legacy size-7 wrap then convert <font size="7"> → <span style="font-size">.
+  // Apply a px font size to the saved selection (shared Word-style helper).
   const applyFontSize = (px: string) => {
-    ref.current?.focus();
+    if (!ref.current) return;
+    ref.current.focus();
     restoreSel();
-    document.execCommand("styleWithCSS", false, "false");
-    document.execCommand("fontSize", false, "7");
-    ref.current?.querySelectorAll('font[size="7"]').forEach((f) => {
-      const span = document.createElement("span");
-      span.style.fontSize = px;
-      span.innerHTML = (f as HTMLElement).innerHTML;
-      f.replaceWith(span);
-    });
+    wrapSelectionFontSize(ref.current, px);
+    const n = parseInt(px, 10);
+    if (!Number.isNaN(n)) setFontSizePx(n);
     sync();
   };
+
+  // Reflect the size at the caret in the toolbar control, like Word.
+  const readCaretSize = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const node = sel.anchorNode;
+    if (!node || !ref.current.contains(node)) return;
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
+    if (!el) return;
+    const px = parseFloat(getComputedStyle(el).fontSize);
+    if (!Number.isNaN(px)) setFontSizePx(Math.round(px));
+  };
+
+  useEffect(() => {
+    const handler = () => readCaretSize();
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pushRecent = (c: string) => {
     setRecent((prev) => {
@@ -186,6 +208,14 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
   const exec = (cmd: string, arg?: string) => {
     ref.current?.focus();
     document.execCommand(cmd, false, arg);
+    sync();
+  };
+
+  // Block format (paragraph / H1–H6) applied to the saved selection.
+  const applyBlock = (tag: string) => {
+    ref.current?.focus();
+    restoreSel();
+    document.execCommand("formatBlock", false, tag);
     sync();
   };
 
@@ -328,34 +358,52 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
             title={t.title}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec(t.cmd, t.arg)}
-            className="rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+            className={`rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink ${
+              t.cmd === "strikeThrough" ? "line-through" : ""
+            }`}
           >
             {t.label}
           </button>
         ))}
 
-        {/* Font size */}
+        {/* Headings / paragraph block format (H1–H6) */}
         <select
-          title="Font size"
+          title="Paragraph / heading"
           defaultValue=""
           onMouseDown={saveSel}
           onChange={(e) => {
             if (e.target.value) {
-              applyFontSize(e.target.value);
+              applyBlock(e.target.value);
               e.target.value = "";
             }
           }}
           className="rounded-md border border-ink/10 bg-surface px-1.5 py-1 text-xs font-semibold text-muted hover:text-ink focus:outline-none"
         >
           <option value="" disabled>
-            Size ▼
+            ¶ Style
           </option>
-          {FONT_SIZES.map((s) => (
-            <option key={s} value={`${s}px`}>
-              {s}px
+          {BLOCKS.map((b) => (
+            <option key={b.tag} value={b.tag}>
+              {b.label}
             </option>
           ))}
         </select>
+
+        {/* Horizontal divider */}
+        <button
+          type="button"
+          title="Horizontal divider"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("insertHorizontalRule")}
+          className="rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+        >
+          ―
+        </button>
+
+        {/* Font size — Word-style numeric box + presets + steppers */}
+        <span className="mx-1 h-4 w-px bg-ink/10" />
+        <FontSizeControl value={fontSizePx} onApply={applyFontSize} onBeforeChange={saveSel} />
+        <span className="mx-1 h-4 w-px bg-ink/10" />
 
         {/* Text colour — opens the advanced colour editor */}
         <button
@@ -426,7 +474,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
         contentEditable
         suppressContentEditableWarning
         onInput={sync}
-        className="prose-jhb min-h-[260px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        className="prose-jhb min-h-[260px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
       />
 
       {/* Link dialog */}

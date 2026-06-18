@@ -4,26 +4,22 @@ import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
+import { PARTNERS_DEFAULT } from "@jhb/shared/partners";
 
-const marquee = [
-  "n8n",
-  "Meta",
-  "Shopify",
-  "Google",
-  "WordPress",
-  "ChatGPT",
-];
+const MARQUEE_DEFAULT = PARTNERS_DEFAULT.items.map((p) => p.name);
 
 export default function Hero({
   content = HERO_DEFAULT,
   heroImage = null,
   heroImageAlt = "JHB Automations",
   heroImageTitle,
+  marquee = MARQUEE_DEFAULT,
 }: {
   content?: HeroContent;
   heroImage?: string | null;
   heroImageAlt?: string;
   heroImageTitle?: string;
+  marquee?: string[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);

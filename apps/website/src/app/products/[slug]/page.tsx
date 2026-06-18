@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getProductBySlug } from "@jhb/shared/products-server";
+import { faqPlainText } from "@jhb/shared/faqs";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
 
@@ -73,7 +74,7 @@ export default async function ProductPage({
           mainEntity: p.faqs.map((f) => ({
             "@type": "Question",
             name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
+            acceptedAnswer: { "@type": "Answer", text: faqPlainText(f.answer) },
           })),
         }
       : null;

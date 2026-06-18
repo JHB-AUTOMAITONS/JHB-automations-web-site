@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TestimonialRow } from "@jhb/shared/testimonials";
+import RichEditor from "./RichEditor";
 import {
   createTestimonial,
   updateTestimonial,
@@ -149,7 +150,8 @@ export default function TestimonialsManager({
 
   const submit = async () => {
     if (!form.name.trim()) return setFormErr("Customer name is required.");
-    if (!form.quote.trim()) return setFormErr("Testimonial content is required.");
+    if (!form.quote.replace(/<[^>]*>/g, "").trim())
+      return setFormErr("Testimonial content is required.");
     setFormErr("");
     setBusy(true);
     const res = editingId
@@ -345,9 +347,10 @@ export default function TestimonialsManager({
                 ))}
               </div>
 
-              <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink/80">
-                &ldquo;{t.quote}&rdquo;
-              </p>
+              <div
+                className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
+              />
 
               <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-ink/[0.06] pt-3">
                 <button
@@ -526,12 +529,9 @@ export default function TestimonialsManager({
                   </Field>
                 </div>
                 <Field label="Testimonial content *">
-                  <textarea
+                  <RichEditor
                     value={form.quote}
-                    onChange={(e) => setForm((f) => ({ ...f, quote: e.target.value }))}
-                    placeholder="What did the customer say?"
-                    rows={5}
-                    className="input resize-none"
+                    onChange={(html) => setForm((f) => ({ ...f, quote: html }))}
                   />
                 </Field>
               </div>

@@ -3,38 +3,22 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { getAbout } from "@jhb/shared/about-server";
 
-export const metadata: Metadata = {
-  title: "About Us — JHB Automations",
-  description:
-    "We help businesses automate operations, generate leads and scale faster with intelligent AI systems, web development and data-driven marketing.",
-  alternates: { canonical: "/about" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const about = await getAbout();
+  return {
+    title: about.metaTitle,
+    description: about.metaDescription,
+    alternates: { canonical: "/about" },
+  };
+}
 
-const values = [
-  {
-    icon: "🎯",
-    title: "Results Over Noise",
-    desc: "We obsess over measurable outcomes — leads, revenue and ROI — not vanity metrics.",
-  },
-  {
-    icon: "⚙️",
-    title: "Engineering Mindset",
-    desc: "We treat automation like engineering: reliable, tested and built to scale.",
-  },
-  {
-    icon: "🤝",
-    title: "Radical Transparency",
-    desc: "Clear reporting, honest timelines and full visibility into everything we do.",
-  },
-  {
-    icon: "🚀",
-    title: "Always Innovating",
-    desc: "We stay on the frontier of AI so your business is always a step ahead.",
-  },
-];
+export default async function AboutPage() {
+  // All copy is managed in Admin → About Page (jhb_content "about"); falls back
+  // to the built-in defaults until an admin saves.
+  const about = await getAbout();
 
-export default function AboutPage() {
   return (
     <main className="relative pt-28">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
@@ -51,20 +35,18 @@ export default function AboutPage() {
 
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>
-            <span className="eyebrow">Who We Are</span>
+            <span className="eyebrow">{about.heroEyebrow}</span>
           </Reveal>
           <Reveal delay={0.08}>
             <h1 className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-              We Build the <span className="grad-text">Automated Future</span> of
-              Business
+              {about.heroTitleLead}{" "}
+              <span className="grad-text">{about.heroTitleHighlight}</span>{" "}
+              {about.heroTitleTail}
             </h1>
           </Reveal>
           <Reveal delay={0.16}>
             <p className="mt-6 text-lg leading-relaxed text-muted">
-              JHB Automations is a next-generation AI automation agency. We help
-              ambitious businesses automate their operations, generate leads on
-              autopilot and scale faster — combining intelligent AI systems,
-              high-performance web development and data-driven marketing.
+              {about.heroSubtitle}
             </p>
           </Reveal>
         </div>
@@ -76,31 +58,25 @@ export default function AboutPage() {
           <Reveal>
             <div className="glass glow-border h-full rounded-3xl p-8">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 text-2xl ring-1 ring-ink/10">
-                🎯
+                {about.missionIcon}
               </span>
               <h2 className="mt-5 font-display text-2xl font-bold">
-                Our <span className="grad-text">Mission</span>
+                {about.missionLabel}{" "}
+                <span className="grad-text">{about.missionHighlight}</span>
               </h2>
-              <p className="mt-3 leading-relaxed text-muted">
-                To make world-class automation and digital growth accessible to
-                every business — removing manual bottlenecks so teams can focus
-                on what truly matters: serving customers and growing.
-              </p>
+              <p className="mt-3 leading-relaxed text-muted">{about.missionBody}</p>
             </div>
           </Reveal>
           <Reveal delay={0.1}>
             <div className="glass glow-border h-full rounded-3xl p-8">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-secondary/20 to-primary/20 text-2xl ring-1 ring-ink/10">
-                🔭
+                {about.visionIcon}
               </span>
               <h2 className="mt-5 font-display text-2xl font-bold">
-                Our <span className="grad-text">Vision</span>
+                {about.visionLabel}{" "}
+                <span className="grad-text">{about.visionHighlight}</span>
               </h2>
-              <p className="mt-3 leading-relaxed text-muted">
-                A world where every business — from startup to enterprise — runs
-                on intelligent systems that work 24/7, turning data into growth
-                and conversations into customers.
-              </p>
+              <p className="mt-3 leading-relaxed text-muted">{about.visionBody}</p>
             </div>
           </Reveal>
         </div>
@@ -113,17 +89,18 @@ export default function AboutPage() {
       <section className="container-x py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <Reveal>
-            <span className="eyebrow">Our Values</span>
+            <span className="eyebrow">{about.valuesEyebrow}</span>
           </Reveal>
           <Reveal delay={0.08}>
             <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-              What <span className="grad-text">Drives Us</span>
+              {about.valuesHeadingLead}{" "}
+              <span className="grad-text">{about.valuesHeadingHighlight}</span>
             </h2>
           </Reveal>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((v, i) => (
-            <Reveal key={v.title} delay={(i % 4) * 0.06}>
+          {about.values.map((v, i) => (
+            <Reveal key={`${v.title}-${i}`} delay={(i % 4) * 0.06}>
               <div className="glass glow-border h-full rounded-2xl p-6">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.04] text-2xl ring-1 ring-ink/10">
                   {v.icon}
@@ -144,14 +121,12 @@ export default function AboutPage() {
       <section className="container-x pb-28">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
           <h2 className="font-display text-3xl font-bold sm:text-4xl">
-            Let&apos;s Build Something <span className="grad-text">Great</span>
+            {about.ctaTitleLead}{" "}
+            <span className="grad-text">{about.ctaTitleHighlight}</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-muted">
-            Ready to automate and scale? Get in touch and we&apos;ll map your
-            fastest path to growth.
-          </p>
-          <Link href="/#contact" className="btn btn-primary mt-8">
-            Contact Us →
+          <p className="mx-auto mt-4 max-w-xl text-muted">{about.ctaBody}</p>
+          <Link href={about.ctaButtonHref} className="btn btn-primary mt-8">
+            {about.ctaButtonLabel}
           </Link>
         </div>
       </section>

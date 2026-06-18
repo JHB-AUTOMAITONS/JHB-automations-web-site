@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import type { SiteSettings } from "@jhb/shared/content";
 
-const OFFICE = {
+// Built-in defaults; each is used only when the matching admin setting is empty,
+// so the section renders identically until an admin customises it.
+const OFFICE_DEFAULT = {
   name: "JHB Automations",
   addressLines: [
     "DNO: 30, 2nd Floor,",
@@ -12,9 +14,13 @@ const OFFICE = {
     "Narasothipatti,",
     "Salem, Tamil Nadu 636004",
   ],
-  // Single-line address used for maps + schema
   addressString:
     "JHB Automations, DNO 30, 2nd Floor, Swarnapuri Annexe, Indira Nagar, Narasothipatti, Salem, Tamil Nadu 636004",
+  street: "DNO 30, 2nd Floor, Swarnapuri Annexe, Indira Nagar, Narasothipatti",
+  locality: "Salem",
+  region: "Tamil Nadu",
+  postalCode: "636004",
+  country: "IN",
 };
 
 export default function OfficeLocation({ settings }: { settings: SiteSettings }) {
@@ -23,7 +29,13 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
   const hours = settings.hours || "Mon–Sat, 9:30 AM – 6:00 PM";
   const telHref = `tel:${phone.replace(/\s+/g, "")}`;
 
-  const q = encodeURIComponent(OFFICE.addressString);
+  const name = settings.officeName || settings.companyName || OFFICE_DEFAULT.name;
+  const addressLines = settings.officeAddressLines
+    ? settings.officeAddressLines.split("\n").map((l) => l.trim()).filter(Boolean)
+    : OFFICE_DEFAULT.addressLines;
+  const addressString = settings.officeMapQuery || OFFICE_DEFAULT.addressString;
+
+  const q = encodeURIComponent(addressString);
   const embedSrc = `https://www.google.com/maps?q=${q}&output=embed`;
   const viewHref = `https://www.google.com/maps/search/?api=1&query=${q}`;
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
@@ -31,7 +43,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
   const schema = {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ProfessionalService"],
-    name: OFFICE.name,
+    name,
     description:
       "Digital Marketing Company in Salem offering IT Services and AI Automation. JHB Automations helps businesses generate leads, automate workflows and scale faster.",
     image: `${process.env.NEXT_PUBLIC_SITE_URL || ""}/founder.jpg`,
@@ -40,11 +52,11 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
     email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "DNO 30, 2nd Floor, Swarnapuri Annexe, Indira Nagar, Narasothipatti",
-      addressLocality: "Salem",
-      addressRegion: "Tamil Nadu",
-      postalCode: "636004",
-      addressCountry: "IN",
+      streetAddress: settings.addressStreet || OFFICE_DEFAULT.street,
+      addressLocality: settings.addressLocality || OFFICE_DEFAULT.locality,
+      addressRegion: settings.addressRegion || OFFICE_DEFAULT.region,
+      postalCode: settings.addressPostalCode || OFFICE_DEFAULT.postalCode,
+      addressCountry: settings.addressCountry || OFFICE_DEFAULT.country,
     },
     areaServed: "Salem, Tamil Nadu, India",
     hasMap: viewHref,
@@ -93,9 +105,9 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
                     📍
                   </span>
                   <div>
-                    <p className="font-display font-semibold">{OFFICE.name}</p>
+                    <p className="font-display font-semibold">{name}</p>
                     <address className="mt-0.5 not-italic leading-relaxed text-muted">
-                      {OFFICE.addressLines.map((l) => (
+                      {addressLines.map((l) => (
                         <span key={l} className="block">
                           {l}
                         </span>
@@ -147,7 +159,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
             >
               <div className="relative h-[300px] w-full overflow-hidden rounded-2xl shadow-soft md:h-[320px] lg:h-[340px]">
                 <iframe
-                  title={`Map showing ${OFFICE.name}, Salem`}
+                  title={`Map showing ${name}, Salem`}
                   src={embedSrc}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"

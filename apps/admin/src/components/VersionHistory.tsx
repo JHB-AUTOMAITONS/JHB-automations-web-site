@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { restoreVersion, deleteVersion } from "@/app/actions";
+import LocalDateTime from "./LocalDateTime";
 
 export type VersionRow = {
   id: string;
@@ -99,7 +100,7 @@ export default function VersionHistory({ versions }: { versions: VersionRow[] })
                         <span className="truncate text-ink">{v.summary || "Saved"}</span>
                       </p>
                       <p className="mt-0.5 text-xs text-muted">
-                        {new Date(v.created_at).toLocaleString()} · {v.user_email || "unknown"}
+                        <LocalDateTime value={v.created_at} mode="datetime" /> · {v.user_email || "unknown"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

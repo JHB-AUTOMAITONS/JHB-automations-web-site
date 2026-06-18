@@ -20,6 +20,9 @@ import {
   parseKeywords,
   type MediaLibraryItem,
 } from "@jhb/shared/media";
+import LocalDateTime from "./LocalDateTime";
+
+const DATE_FMT: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric" };
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Meta = {
@@ -313,7 +316,10 @@ export default function MediaManager({
                     <span className="truncate text-sm font-medium" title={img.name}>{m.filename || img.name}</span>
                     {!m.alt.trim() && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Missing alt</span>}
                     <span className="rounded-full bg-ink/[0.05] px-2 py-0.5 text-[10px] font-medium text-muted">{img.used_in}</span>
-                    <span className="ml-auto text-[11px] text-muted">Uploaded {fmtDate(img.created_at)} · Updated {fmtDate(img.updated_at)}</span>
+                    <span className="ml-auto text-[11px] text-muted">
+                      Uploaded <LocalDateTime value={img.created_at} options={DATE_FMT} /> · Updated{" "}
+                      <LocalDateTime value={img.updated_at} options={DATE_FMT} />
+                    </span>
                   </div>
 
                   {/* inline alt (quick + bulk editing) */}
@@ -399,7 +405,8 @@ function EditDrawer({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={img.url} alt={meta.alt} title={meta.title || undefined} className="aspect-video w-full rounded-xl border border-ink/10 object-cover" />
           <p className="text-[11px] text-muted">
-            Uploaded {fmtDate(img.created_at)} · Updated {fmtDate(img.updated_at)} · Used in: {img.used_in}
+            Uploaded <LocalDateTime value={img.created_at} options={DATE_FMT} /> · Updated{" "}
+            <LocalDateTime value={img.updated_at} options={DATE_FMT} /> · Used in: {img.used_in}
           </p>
 
           <Field label={`Alt text${requireAlt ? " *" : ""}`} hint={`${meta.alt.trim().length}/${ALT_MAX} · rec. ${ALT_MIN}–${ALT_MAX}`} warn={status === "empty" ? "Required for SEO & accessibility" : status === "short" ? "A bit short" : status === "long" ? "A bit long" : ""}>

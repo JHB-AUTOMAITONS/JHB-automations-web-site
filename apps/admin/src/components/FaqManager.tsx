@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveServiceFaqs } from "@/app/actions";
+import type { InternalPage } from "@jhb/shared/service-pages";
+import RichEditor from "./RichEditor";
 
 type Faq = { question: string; answer: string };
 type Service = { key: string; title: string };
@@ -13,9 +15,11 @@ const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:300
 export default function FaqManager({
   services,
   faqsByService,
+  internalPages = [],
 }: {
   services: Service[];
   faqsByService: Record<string, Faq[]>;
+  internalPages?: InternalPage[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState(services[0]?.key ?? "");
@@ -154,13 +158,14 @@ export default function FaqManager({
                   placeholder="Question"
                   className="w-full rounded-lg border border-ink/10 bg-base px-3 py-2 text-sm font-medium outline-none focus:border-primary"
                 />
-                <textarea
-                  value={f.answer}
-                  onChange={(e) => update(i, "answer", e.target.value)}
-                  placeholder="Answer"
-                  rows={2}
-                  className="w-full resize-none rounded-lg border border-ink/10 bg-base px-3 py-2 text-sm outline-none focus:border-primary"
-                />
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-muted">Answer (rich text)</label>
+                  <RichEditor
+                    value={f.answer}
+                    onChange={(html) => update(i, "answer", html)}
+                    internalPages={internalPages}
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <button

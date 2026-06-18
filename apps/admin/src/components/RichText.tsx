@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import FontSizeControl, { wrapSelectionFontSize } from "./FontSizeControl";
 
 type Props = {
   value: string;
@@ -17,12 +18,60 @@ const buttons: { cmd: string; label: string; arg?: string }[] = [
 
 export default function RichText({ value, onChange }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const styleRange = useRef<Range | null>(null);
+  const [fontSizePx, setFontSizePx] = useState(14);
 
   // Set initial HTML once (uncontrolled thereafter to keep the caret stable)
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) {
       ref.current.innerHTML = value;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sync = () => {
+    if (ref.current) onChange(ref.current.innerHTML);
+  };
+
+  const saveSel = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && ref.current && ref.current.contains(sel.anchorNode)) {
+      styleRange.current = sel.getRangeAt(0).cloneRange();
+    }
+  };
+  const restoreSel = () => {
+    const sel = window.getSelection();
+    if (sel && styleRange.current) {
+      sel.removeAllRanges();
+      sel.addRange(styleRange.current);
+    }
+  };
+
+  const applyFontSize = (px: string) => {
+    if (!ref.current) return;
+    ref.current.focus();
+    restoreSel();
+    wrapSelectionFontSize(ref.current, px);
+    const n = parseInt(px, 10);
+    if (!Number.isNaN(n)) setFontSizePx(n);
+    sync();
+  };
+
+  const readCaretSize = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const node = sel.anchorNode;
+    if (!node || !ref.current.contains(node)) return;
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
+    if (!el) return;
+    const px = parseFloat(getComputedStyle(el).fontSize);
+    if (!Number.isNaN(px)) setFontSizePx(Math.round(px));
+  };
+
+  useEffect(() => {
+    const handler = () => readCaretSize();
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -51,6 +100,9 @@ export default function RichText({ value, onChange }: Props) {
             {b.label}
           </button>
         ))}
+        <span className="mx-0.5 h-4 w-px bg-ink/10" />
+        <FontSizeControl value={fontSizePx} onApply={applyFontSize} onBeforeChange={saveSel} />
+        <span className="mx-0.5 h-4 w-px bg-ink/10" />
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}

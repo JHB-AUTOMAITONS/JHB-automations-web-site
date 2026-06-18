@@ -9,18 +9,12 @@ import {
   duplicateServicePage,
   resetServicePage,
 } from "@/app/actions";
+import LocalDateTime from "./LocalDateTime";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
 
-function fmt(s: string | null) {
-  if (!s) return "—";
-  try {
-    return new Date(s).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-  } catch {
-    return "—";
-  }
-}
+const EDITED_FMT: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" };
 
 export default function ServicePagesList({ items }: { items: ServicePageSummary[] }) {
   const router = useRouter();
@@ -79,7 +73,8 @@ export default function ServicePagesList({ items }: { items: ServicePageSummary[
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted">
-                  /services/{s.slug} · edited {fmt(s.content_updated_at)}
+                  /services/{s.slug} · edited{" "}
+                  <LocalDateTime value={s.content_updated_at} options={EDITED_FMT} fallback="—" />
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">

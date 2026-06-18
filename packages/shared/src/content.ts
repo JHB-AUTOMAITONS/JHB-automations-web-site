@@ -53,6 +53,16 @@ export type SiteSettings = {
   email: string;
   address: string;
   hours: string;
+  // Office location block (home "Visit Us" + map). Empty values fall back to the
+  // built-in defaults so the section never breaks.
+  officeName: string;
+  officeAddressLines: string; // multi-line display address (one line per row)
+  officeMapQuery: string; // full single-line address used for the Google Map + directions
+  addressStreet: string; // structured fields below feed the LocalBusiness JSON-LD schema
+  addressLocality: string;
+  addressRegion: string;
+  addressPostalCode: string;
+  addressCountry: string;
   instagram: string;
   facebook: string;
   linkedin: string;
@@ -92,6 +102,16 @@ export const SETTINGS_DEFAULT: SiteSettings = {
   email: "jhbautomations@gmail.com",
   address: "Indira Nagar, Narasothipatti, Salem-4, Tamil Nadu",
   hours: "Mon-Sat, 9:30 AM - 6:00 PM",
+  // Empty by default — OfficeLocation falls back to its built-in address until
+  // an admin fills these in.
+  officeName: "",
+  officeAddressLines: "",
+  officeMapQuery: "",
+  addressStreet: "",
+  addressLocality: "",
+  addressRegion: "",
+  addressPostalCode: "",
+  addressCountry: "",
   instagram: "https://instagram.com/jhb_automations_",
   facebook: "#",
   linkedin: "#",

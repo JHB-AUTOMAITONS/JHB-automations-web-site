@@ -56,7 +56,7 @@ function ServiceCard({
   slug: string;
   index: number;
 }) {
-  const ref = useRef<HTMLAnchorElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (e: React.MouseEvent) => {
     const el = ref.current;
@@ -75,6 +75,13 @@ function ServiceCard({
     if (el) el.style.transform = "";
   };
 
+  // Rich-text classes shared by the title/description HTML so editor formatting
+  // (font size, colour, bold, lists, alignment) renders correctly. `pointer-
+  // events-none` lets clicks on plain text fall through to the card-wide link,
+  // while word-links re-enable pointer events so they stay individually clickable.
+  const richText =
+    "pointer-events-none [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_b]:font-semibold [&_strong]:font-semibold";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -82,38 +89,52 @@ function ServiceCard({
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5, delay: (index % 5) * 0.06 }}
     >
-      <Link
-        href={`/services/${slug}`}
+      <div
         ref={ref}
         data-tilt
         onMouseMove={onMove}
         onMouseLeave={onLeave}
-        className="group glass glow-border relative block h-full overflow-hidden rounded-2xl p-6 transition-transform duration-200 will-change-transform"
+        className="group glass glow-border relative h-full overflow-hidden rounded-2xl p-6 transition-transform duration-200 will-change-transform"
       >
+        {/* Card-wide navigation: a stretched link sits beneath the content so the
+            whole card is clickable, yet it is a sibling (not an ancestor) of the
+            word-links inside the title/description — keeping the HTML valid. */}
+        <Link
+          href={`/services/${slug}`}
+          aria-label={`Learn more about ${slug.replace(/-/g, " ")}`}
+          className="absolute inset-0 z-0"
+        />
+
         {/* spotlight */}
         <div
-          className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          className="pointer-events-none absolute -inset-px z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{
             background:
               "radial-gradient(220px circle at var(--mx) var(--my), rgba(0,212,255,0.14), transparent 60%)",
           }}
         />
-        <div className="relative">
-          <span className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all duration-300 group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">
+        <div className="relative z-10">
+          <span className="pointer-events-none grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all duration-300 group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">
             <Icon
               name={icon}
               className="h-6 w-6 transition-transform duration-300 group-hover:animate-wiggle"
             />
           </span>
-          <h3 className="mt-5 font-display text-lg font-semibold leading-tight">
-            {title}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{desc}</p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+          <div
+            role="heading"
+            aria-level={3}
+            className={`mt-5 font-display text-lg font-semibold leading-tight ${richText}`}
+            dangerouslySetInnerHTML={{ __html: title }}
+          />
+          <div
+            className={`mt-2 text-sm leading-relaxed text-muted ${richText}`}
+            dangerouslySetInnerHTML={{ __html: desc }}
+          />
+          <span className="pointer-events-none mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
             Learn more →
           </span>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

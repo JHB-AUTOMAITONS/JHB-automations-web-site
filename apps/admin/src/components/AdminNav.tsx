@@ -13,6 +13,7 @@ const isGroup = (e: Entry): e is Group => "children" in e;
 const items: Entry[] = [
   { href: "/", label: "Dashboard", icon: "▦" },
   { href: "/home", label: "Home Page", icon: "🏠", adminOnly: true },
+  { href: "/about", label: "About Page", icon: "📖", adminOnly: true },
   { href: "/client-logos", label: "Client Logos", icon: "🏢", adminOnly: true },
   { href: "/services", label: "Services", icon: "🧩" },
   { href: "/service-pages", label: "Service Pages", icon: "📄", adminOnly: true },

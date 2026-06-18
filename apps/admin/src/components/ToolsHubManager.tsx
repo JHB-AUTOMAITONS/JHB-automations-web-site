@@ -210,7 +210,9 @@ export default function ToolsHubManager({
                   <button onClick={() => rmFaq(i)} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
                 </div>
               </div>
-              <textarea value={f.answer} onChange={(e) => setFaq(i, { answer: e.target.value })} placeholder="Answer" rows={2} className="input mt-2 resize-none" />
+              <div className="mt-2">
+                <RichEditor value={f.answer} onChange={(html) => setFaq(i, { answer: html })} internalPages={internalPages} />
+              </div>
             </div>
           ))}
           <button onClick={addFaq} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary">+ Add FAQ</button>

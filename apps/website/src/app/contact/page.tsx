@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSettings } from "@jhb/shared/content-server";
 import Contact from "@/components/Contact";
 import Reveal from "@/components/Reveal";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -10,13 +11,33 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-const channels = [
-  { icon: "📞", label: "Call us", value: "+91 97918 22718", href: "tel:+919791822718" },
-  { icon: "✉️", label: "Email us", value: "jhbautomations@gmail.com", href: "mailto:jhbautomations@gmail.com" },
-  { icon: "💬", label: "WhatsApp", value: "Chat with us", href: "https://wa.me/919791822718" },
-];
+export default async function ContactPage() {
+  // Contact details are managed in Admin → Settings (jhb_settings). Reading them
+  // here keeps the quick-channel cards, hours strip and the contact form in sync
+  // with every admin edit (no hardcoded numbers/addresses).
+  const settings = await getSettings();
+  const telDigits = settings.phone.replace(/[^\d]/g, "");
+  const channels = [
+    {
+      icon: "📞",
+      label: "Call us",
+      value: settings.phone,
+      href: `tel:${settings.phone.replace(/\s+/g, "")}`,
+    },
+    {
+      icon: "✉️",
+      label: "Email us",
+      value: settings.email,
+      href: `mailto:${settings.email}`,
+    },
+    {
+      icon: "💬",
+      label: "WhatsApp",
+      value: "Chat with us",
+      href: `https://wa.me/${telDigits}`,
+    },
+  ];
 
-export default function ContactPage() {
   return (
     <main className="relative pt-28">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-secondary/15 blur-[140px]" />
@@ -73,18 +94,18 @@ export default function ContactPage() {
       </section>
 
       {/* Full contact form + info (reused component) */}
-      <Contact />
+      <Contact settings={settings} />
 
       {/* Hours strip */}
       <section className="container-x pb-28">
         <div className="glass flex flex-col items-center justify-between gap-3 rounded-2xl p-6 text-center sm:flex-row sm:text-left">
           <p className="flex items-center gap-3 text-sm text-muted">
             <span className="text-xl">🕘</span>
-            Office Hours: Monday – Saturday, 9:30 AM – 6:00 PM
+            Office Hours: {settings.hours}
           </p>
           <p className="flex items-center gap-3 text-sm text-muted">
             <span className="text-xl">📍</span>
-            Indira Nagar, Narasothipatti, Salem-4, Tamil Nadu
+            {settings.address}
           </p>
         </div>
       </section>

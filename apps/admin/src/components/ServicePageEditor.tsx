@@ -12,6 +12,7 @@ import {
 import { saveServicePage, checkServiceLinks } from "@/app/actions";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
+import LocalDateTime from "./LocalDateTime";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Device = "desktop" | "tablet" | "mobile";
@@ -95,11 +96,13 @@ export default function ServicePageEditor({
     return internalPages.filter((p) => !linked.has(p.url)).slice(0, 6);
   }, [form.hero_description, internalPages]);
 
-  const savedLabel = saving
-    ? "Saving…"
-    : savedAt
-    ? `Saved ${new Date(savedAt).toLocaleTimeString()}`
-    : "Not saved yet";
+  const savedLabel = saving ? (
+    "Saving…"
+  ) : savedAt ? (
+    <LocalDateTime value={savedAt} mode="time" prefix="Saved " fallback="Saved" />
+  ) : (
+    "Not saved yet"
+  );
 
   // ---- feature list helpers ----
   const setFeature = (i: number, k: "title" | "desc" | "link" | "linkText", v: string) =>
@@ -245,7 +248,9 @@ export default function ServicePageEditor({
                     <input value={q.question} onChange={(e) => set("faq", form.faq.map((x, idx) => (idx === i ? { ...x, question: e.target.value } : x)))} placeholder="Question" className="input flex-1" />
                     <button onClick={() => set("faq", form.faq.filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
                   </div>
-                  <textarea value={q.answer} onChange={(e) => set("faq", form.faq.map((x, idx) => (idx === i ? { ...x, answer: e.target.value } : x)))} placeholder="Answer" rows={2} className="input mt-2 resize-none" />
+                  <div className="mt-2">
+                    <RichEditor value={q.answer} onChange={(html) => set("faq", form.faq.map((x, idx) => (idx === i ? { ...x, answer: html } : x)))} internalPages={internalPages} />
+                  </div>
                 </div>
               ))}
               <button onClick={() => set("faq", [...form.faq, { question: "", answer: "" }])} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary">
@@ -325,7 +330,7 @@ export default function ServicePageEditor({
                       {form.faq.filter((q) => q.question).map((q, i) => (
                         <div key={i} className="rounded-xl border border-ink/10 p-3">
                           <p className="text-sm font-semibold">{q.question}</p>
-                          <p className="mt-1 text-xs text-muted">{q.answer}</p>
+                          <div className="mt-1 text-xs text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4" dangerouslySetInnerHTML={{ __html: q.answer }} />
                         </div>
                       ))}
                     </div>

@@ -139,7 +139,7 @@ export default function ProductsManager({
                   <PricingEditor plans={p.pricing} onChange={(pricing) => set(i, { pricing })} />
 
                   {/* FAQs */}
-                  <FaqsEditor faqs={p.faqs} onChange={(faqs) => set(i, { faqs })} />
+                  <FaqsEditor faqs={p.faqs} onChange={(faqs) => set(i, { faqs })} internalPages={internalPages} />
 
                   {/* SEO */}
                   <p className="pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted">SEO</p>
@@ -242,7 +242,7 @@ function PricingEditor({ plans, onChange }: { plans: PricingPlan[]; onChange: (p
   );
 }
 
-function FaqsEditor({ faqs, onChange }: { faqs: ProductFaq[]; onChange: (f: ProductFaq[]) => void }) {
+function FaqsEditor({ faqs, onChange, internalPages = [] }: { faqs: ProductFaq[]; onChange: (f: ProductFaq[]) => void; internalPages?: InternalPage[] }) {
   const upd = (i: number, patch: Partial<ProductFaq>) => onChange(faqs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
   return (
     <div className="rounded-xl border border-ink/10 p-3">
@@ -254,7 +254,9 @@ function FaqsEditor({ faqs, onChange }: { faqs: ProductFaq[]; onChange: (f: Prod
               <input value={f.question} onChange={(e) => upd(i, { question: e.target.value })} placeholder="Question" className="input flex-1 font-medium" />
               <button onClick={() => onChange(faqs.filter((_, idx) => idx !== i))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
             </div>
-            <textarea value={f.answer} onChange={(e) => upd(i, { answer: e.target.value })} placeholder="Answer" rows={2} className="input mt-2 resize-none" />
+            <div className="mt-2">
+              <RichEditor value={f.answer} onChange={(html) => upd(i, { answer: html })} internalPages={internalPages} />
+            </div>
           </div>
         ))}
         <button onClick={() => onChange([...faqs, { question: "", answer: "" }])} className="rounded-lg border border-ink/10 px-3 py-1.5 text-sm font-medium text-muted hover:border-primary hover:text-primary">+ Add FAQ</button>

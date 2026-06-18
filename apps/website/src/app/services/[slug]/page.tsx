@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { serviceDetails } from "@jhb/shared/data";
 import { getServiceBySlug, getServices } from "@jhb/shared/services-server";
 import { getServiceFaqs } from "@jhb/shared/faqs-server";
+import { faqPlainText } from "@jhb/shared/faqs";
 import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
 import ServiceDetailView from "@/components/ServiceDetail";
@@ -125,7 +126,7 @@ export default async function ServicePage({
           mainEntity: faqs.map((f) => ({
             "@type": "Question",
             name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
+            acceptedAnswer: { "@type": "Answer", text: faqPlainText(f.answer) },
           })),
         }
       : null;

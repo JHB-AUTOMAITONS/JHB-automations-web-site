@@ -31,6 +31,10 @@
     "./tools-hub-server": "./src/toolsHub.server.ts",
     "./products": "./src/products.ts",
     "./products-server": "./src/products.server.ts",
+    "./partners": "./src/partners.ts",
+    "./partners-server": "./src/partners.server.ts",
+    "./about": "./src/about.ts",
+    "./about-server": "./src/about.server.ts",
     "./types": "./src/types.ts"
   },
   "dependencies": {

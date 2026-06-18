@@ -221,10 +221,11 @@ function TestimonialCard({ t }: { t: Card }) {
         ))}
       </div>
 
-      {/* quote */}
-      <p className="mt-3 text-sm leading-relaxed text-ink/80">
-        &ldquo;{t.quote}&rdquo;
-      </p>
+      {/* quote — rich HTML (supports font size, bold, links, colour from the editor) */}
+      <div
+        className="mt-3 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+        dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
+      />
 
       {/* result */}
       {t.result && (

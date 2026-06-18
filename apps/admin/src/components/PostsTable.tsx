@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deletePost } from "@/app/actions";
+import LocalDateTime from "./LocalDateTime";
 
 type Row = {
   id: string;
@@ -66,7 +67,7 @@ export default function PostsTable({ posts }: { posts: Row[] }) {
                 {p.category ?? "—"}
               </td>
               <td className="hidden px-5 py-3 text-muted md:table-cell">
-                {new Date(p.updated_at).toLocaleDateString()}
+                <LocalDateTime value={p.updated_at} />
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">

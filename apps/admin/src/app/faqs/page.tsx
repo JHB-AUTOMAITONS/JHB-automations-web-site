@@ -1,11 +1,13 @@
 import { getServices } from "@jhb/shared/services-server";
 import { getAllServiceFaqs } from "@jhb/shared/faqs-server";
+import { getInternalPages } from "@jhb/shared/service-pages-server";
 import FaqManager from "@/components/FaqManager";
 
 export default async function AdminFaqs() {
-  const [services, faqs] = await Promise.all([
+  const [services, faqs, internalPages] = await Promise.all([
     getServices(),
     getAllServiceFaqs(),
+    getInternalPages(),
   ]);
 
   const serviceList = services.map((s) => ({ key: s.key, title: s.title }));
@@ -28,7 +30,7 @@ export default async function AdminFaqs() {
       <p className="mt-1 text-sm text-muted">
         Manage the FAQ accordion shown on each service page. Drag to reorder.
       </p>
-      <FaqManager services={serviceList} faqsByService={faqsByService} />
+      <FaqManager services={serviceList} faqsByService={faqsByService} internalPages={internalPages} />
     </div>
   );
 }

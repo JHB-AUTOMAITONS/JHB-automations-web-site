@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
+import type { InternalPage } from "@jhb/shared/service-pages";
+import RichEditor from "./RichEditor";
 import {
   createHomeFaq,
   updateHomeFaq,
@@ -16,8 +18,15 @@ type Toast = { type: "success" | "error"; msg: string } | null;
 type Row = { id: string; question: string; answer: string; active: boolean };
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
+const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
 
-export default function HomeFaqManager({ initial }: { initial: HomeFaq[] }) {
+export default function HomeFaqManager({
+  initial,
+  internalPages = [],
+}: {
+  initial: HomeFaq[];
+  internalPages?: InternalPage[];
+}) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active })));
   const [busy, setBusy] = useState(false);
@@ -79,7 +88,7 @@ export default function HomeFaqManager({ initial }: { initial: HomeFaq[] }) {
     if (okk) setOrderDirty(false);
   };
   const add = async () => {
-    if (!addForm.question.trim() || !addForm.answer.trim()) return flash({ type: "error", msg: "Question and answer are required." });
+    if (!addForm.question.trim() || !stripHtml(addForm.answer)) return flash({ type: "error", msg: "Question and answer are required." });
     const okk = await run(() => createHomeFaq(addForm), "FAQ added.");
     if (okk) {
       setAddOpen(false);
@@ -128,7 +137,10 @@ export default function HomeFaqManager({ initial }: { initial: HomeFaq[] }) {
                 <span className="mt-2 cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
                 <div className="flex-1 space-y-2">
                   <input value={r.question} onChange={(e) => set(i, { question: e.target.value })} placeholder="Question" className="input font-medium" />
-                  <textarea value={r.answer} onChange={(e) => set(i, { answer: e.target.value })} placeholder="Answer" rows={2} className="input resize-none" />
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-muted">Answer (rich text)</label>
+                    <RichEditor value={r.answer} onChange={(html) => set(i, { answer: html })} internalPages={internalPages} />
+                  </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${r.active ? "bg-green-100 text-green-700" : "bg-ink/[0.06] text-muted"}`}>{r.active ? "Active" : "Inactive"}</span>
                     <button onClick={() => run(() => setHomeFaqActive(r.id, !r.active), r.active ? "Unpublished." : "Published.")} disabled={busy} className="text-xs font-medium text-muted hover:text-primary disabled:opacity-60">{r.active ? "Unpublish" : "Publish"}</button>
@@ -156,8 +168,8 @@ export default function HomeFaqManager({ initial }: { initial: HomeFaq[] }) {
             <div className="mt-4 space-y-3">
               <label className="block"><span className="mb-1 block text-xs font-medium text-muted">Question *</span>
                 <input value={addForm.question} onChange={(e) => setAddForm((f) => ({ ...f, question: e.target.value }))} className="input" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-medium text-muted">Answer *</span>
-                <textarea value={addForm.answer} onChange={(e) => setAddForm((f) => ({ ...f, answer: e.target.value }))} rows={4} className="input resize-none" /></label>
+              <div><span className="mb-1 block text-xs font-medium text-muted">Answer * (rich text)</span>
+                <RichEditor value={addForm.answer} onChange={(html) => setAddForm((f) => ({ ...f, answer: html }))} internalPages={internalPages} /></div>
               <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={addForm.active} onChange={(e) => setAddForm((f) => ({ ...f, active: e.target.checked }))} />Active (visible on site)</label>
             </div>
             <div className="mt-6 flex items-center justify-end gap-2">

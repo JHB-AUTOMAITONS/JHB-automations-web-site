@@ -18,6 +18,7 @@ import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
 import { getActiveHomeFaqs } from "@jhb/shared/home-faqs-server";
 import { getActiveClientLogos } from "@jhb/shared/client-logos-server";
+import { getPartners } from "@jhb/shared/partners-server";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos] =
+  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos, partners] =
     await Promise.all([
       getPublishedHome(),
       getStats(),
@@ -39,6 +40,7 @@ export default async function Home() {
       getMediaAltMap(),
       getActiveHomeFaqs(),
       getActiveClientLogos(),
+      getPartners(),
     ]);
 
   // Map the editable hero block onto the Hero component's props
@@ -72,8 +74,9 @@ export default async function Home() {
         heroImage={home.hero.image}
         heroImageAlt={altFor(home.hero.image, altMap, "JHB Automations")}
         heroImageTitle={home.hero.imageTitle || undefined}
+        marquee={partners.items.map((p) => p.name)}
       />
-      <Partners />
+      {partners.enabled && <Partners heading={partners.heading} items={partners.items} />}
       <AboutSection about={home.about} imageAlt={altFor(home.about.image, altMap, home.about.title)} />
       <Services
         items={serviceCards}

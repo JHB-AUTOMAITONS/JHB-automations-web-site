@@ -14,11 +14,13 @@ import { saveHomeDraft, publishHome } from "@/app/actions";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
 import type { StatsContent } from "@jhb/shared/content";
+import type { PartnersDoc } from "@jhb/shared/partners";
 import RichText from "./RichText";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import HomeFaqManager from "./HomeFaqManager";
 import StatsManager from "./StatsManager";
+import PartnersManager from "./PartnersManager";
 
 type ServiceLite = { slug: string; title: string; short: string };
 type Toast = { type: "success" | "error"; msg: string } | null;
@@ -29,6 +31,7 @@ export default function HomeManager({
   services,
   faqs = [],
   stats,
+  partners,
   internalPages = [],
 }: {
   draft: HomeContent;
@@ -36,6 +39,7 @@ export default function HomeManager({
   services: ServiceLite[];
   faqs?: HomeFaq[];
   stats: StatsContent;
+  partners: PartnersDoc;
   internalPages?: InternalPage[];
 }) {
   const router = useRouter();
@@ -66,6 +70,7 @@ export default function HomeManager({
   const [showPreview, setShowPreview] = useState(true);
   const [faqOpen, setFaqOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
+  const [partnersOpen, setPartnersOpen] = useState(true);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -195,6 +200,33 @@ export default function HomeManager({
             <Field label="Image title (optional, SEO)" value={hero.imageTitle} onChange={(v) => setHeroField("imageTitle", v)} />
           </Card>
 
+          {/* Partners — managed inline (instant save via its own button, independent
+              of the page Save/Publish). Moved here from the standalone Partners page. */}
+          <section className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
+            <button
+              type="button"
+              onClick={() => setPartnersOpen((o) => !o)}
+              className="flex w-full items-center justify-between text-left"
+            >
+              <span>
+                <span className="font-display text-lg font-semibold">Partners Section</span>
+                <span className="ml-2 rounded-full bg-ink/[0.06] px-2 py-0.5 text-[11px] font-medium text-muted">
+                  {partners.items.length} partner{partners.items.length === 1 ? "" : "s"}
+                </span>
+              </span>
+              <span className="text-muted">{partnersOpen ? "▾" : "▸"}</span>
+            </button>
+            <p className="mt-1 text-sm text-muted">
+              The &ldquo;Powered by&rdquo; logo strip below the hero. Saves and goes live{" "}
+              <b>instantly</b> — independent of the Save/Publish buttons above.
+            </p>
+            {partnersOpen && (
+              <div className="mt-4">
+                <PartnersManager initial={partners} />
+              </div>
+            )}
+          </section>
+
           {/* About */}
           <Card title="About Section">
             <Toggle
@@ -231,21 +263,27 @@ export default function HomeManager({
               {cards.map((c, i) => (
                 <div key={c.slug} className="rounded-xl border border-ink/10 bg-base p-3">
                   <p className="mb-2 font-mono text-[11px] text-muted">/{c.slug}</p>
-                  <div className="grid gap-2 sm:grid-cols-[1fr_1.6fr]">
-                    <input
-                      value={c.title}
-                      onChange={(e) =>
-                        setCards((p) => p.map((x, idx) => (idx === i ? { ...x, title: e.target.value } : x)))
-                      }
-                      className="rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-                    />
-                    <input
-                      value={c.short}
-                      onChange={(e) =>
-                        setCards((p) => p.map((x, idx) => (idx === i ? { ...x, short: e.target.value } : x)))
-                      }
-                      className="rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-medium text-muted">Card title</label>
+                      <RichEditor
+                        value={c.title}
+                        onChange={(html) =>
+                          setCards((p) => p.map((x, idx) => (idx === i ? { ...x, title: html } : x)))
+                        }
+                        internalPages={internalPages}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-medium text-muted">Card description</label>
+                      <RichEditor
+                        value={c.short}
+                        onChange={(html) =>
+                          setCards((p) => p.map((x, idx) => (idx === i ? { ...x, short: html } : x)))
+                        }
+                        internalPages={internalPages}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -354,7 +392,7 @@ export default function HomeManager({
               changes save and go live <b>instantly</b> — independent of the Save/Publish
               buttons above.
             </p>
-            {faqOpen && <HomeFaqManager initial={faqs} />}
+            {faqOpen && <HomeFaqManager initial={faqs} internalPages={internalPages} />}
           </section>
 
           <p className="text-xs text-muted">

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateLeadStatus, deleteLead } from "@/app/actions";
+import LocalDateTime from "./LocalDateTime";
 
 export type Lead = {
   id: number;
@@ -76,7 +77,7 @@ export default function LeadsTable({ leads }: { leads: Lead[] }) {
                 {l.status}
               </span>
               <span className="text-xs text-muted">
-                {new Date(l.created_at).toLocaleDateString()}
+                <LocalDateTime value={l.created_at} />
               </span>
             </div>
           </div>

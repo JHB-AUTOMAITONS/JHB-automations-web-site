@@ -4,6 +4,7 @@ import { getServices } from "@jhb/shared/services-server";
 import { getInternalPages } from "@jhb/shared/service-pages-server";
 import { getAllHomeFaqs } from "@jhb/shared/home-faqs-server";
 import { getStats } from "@jhb/shared/content-server";
+import { getPartners } from "@jhb/shared/partners-server";
 import HomeManager from "@/components/HomeManager";
 
 export default async function AdminHome() {
@@ -34,13 +35,14 @@ export default async function AdminHome() {
     );
   }
 
-  const [draft, published, services, internalPages, faqs, stats] = await Promise.all([
+  const [draft, published, services, internalPages, faqs, stats, partners] = await Promise.all([
     getDraftHome(),
     getPublishedHome(),
     getServices(),
     getInternalPages(),
     getAllHomeFaqs(),
     getStats(),
+    getPartners(),
   ]);
 
   const serviceList = services.map((s) => ({
@@ -56,6 +58,7 @@ export default async function AdminHome() {
       services={serviceList}
       faqs={faqs}
       stats={stats}
+      partners={partners}
       internalPages={internalPages}
     />
   );

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { serviceDetails } from "@jhb/shared/data";
+import { getServices } from "@jhb/shared/services-server";
 import { getPublishedSlugs } from "@jhb/shared/posts-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
 import { productHref } from "@jhb/shared/products";
@@ -17,7 +17,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  const services = serviceDetails.map((s) => ({
+  // Use the effective public slugs from the DB so renamed services appear with
+  // their current URL (not the hardcoded original slug).
+  const services = (await getServices()).map((s) => ({
     url: `${BASE}/services/${s.slug}`,
     lastModified: now,
     changeFrequency: "monthly" as const,

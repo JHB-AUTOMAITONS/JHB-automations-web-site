@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { FaqItem } from "@jhb/shared/faqs";
+import { faqPlainText, type FaqItem } from "@jhb/shared/faqs";
+
+// Shared rich-text styling for FAQ answers (lists, headings, links, etc.).
+const FAQ_ANSWER_CLASS =
+  "px-5 pb-5 text-sm leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_p+p]:mt-2 [&_strong]:font-semibold [&_s]:line-through [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_h1]:font-display [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_hr]:my-3 [&_hr]:border-ink/15";
 
 export default function FaqAccordion({
   items,
@@ -21,7 +25,7 @@ export default function FaqAccordion({
     return items.filter(
       (f) =>
         f.question.toLowerCase().includes(q) ||
-        f.answer.toLowerCase().includes(q)
+        faqPlainText(f.answer).toLowerCase().includes(q)
     );
   }, [items, query]);
 
@@ -33,7 +37,7 @@ export default function FaqAccordion({
     mainEntity: items.map((f) => ({
       "@type": "Question",
       name: f.question,
-      acceptedAnswer: { "@type": "Answer", text: f.answer },
+      acceptedAnswer: { "@type": "Answer", text: faqPlainText(f.answer) },
     })),
   };
 
@@ -105,9 +109,10 @@ export default function FaqAccordion({
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden"
                     >
-                      <p className="px-5 pb-5 text-sm leading-relaxed text-muted">
-                        {f.answer}
-                      </p>
+                      <div
+                        className={FAQ_ANSWER_CLASS}
+                        dangerouslySetInnerHTML={{ __html: f.answer }}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
