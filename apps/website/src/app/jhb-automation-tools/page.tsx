@@ -4,10 +4,6 @@ import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
 import ToolsHubView from "@/components/ToolsHubView";
 
-// SSR per request: the hub document is read via the cookie-aware Supabase client,
-// so admin edits appear immediately.
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata(): Promise<Metadata> {
   const hub = await getToolsHub();
   const canonical = "/jhb-automation-tools";

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { serviceDetails } from "@jhb/shared/data";
 import { getServiceBySlug, getServices } from "@jhb/shared/services-server";
 import { getServiceFaqs } from "@jhb/shared/faqs-server";
 import { faqPlainText } from "@jhb/shared/faqs";
@@ -8,15 +7,12 @@ import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
 import ServiceDetailView from "@/components/ServiceDetail";
 
-// Pre-render the default slugs; changed slugs render on-demand (dynamicParams).
-export function generateStaticParams() {
-  return serviceDetails.map((s) => ({ slug: s.slug }));
+// Static export: pre-render every service at its effective (DB) slug.
+export async function generateStaticParams() {
+  const services = await getServices();
+  return services.map((s) => ({ slug: s.slug }));
 }
-export const dynamicParams = true;
-// Render per-request (SSR): the published content fetcher uses the cookie-aware
-// Supabase client, so the page must be dynamic. This guarantees admin edits to a
-// service page appear immediately and removes the build-time prerender warning.
-export const dynamic = "force-dynamic";
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,

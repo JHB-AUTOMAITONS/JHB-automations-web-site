@@ -3,10 +3,17 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { existsSync } from "fs";
 import { join } from "path";
-import { getProductBySlug } from "@jhb/shared/products-server";
+import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import Reveal from "@/components/Reveal";
 
-export const dynamic = "force-dynamic";
+// Static export: pre-render the About page for each product that has a detail page.
+export async function generateStaticParams() {
+  const products = await getPublishedProducts();
+  return products
+    .filter((p) => !p.href || !p.href.trim())
+    .map((p) => ({ slug: p.slug }));
+}
+export const dynamicParams = false;
 
 // Only render an image we actually have — remote (storage) URLs always; local
 // /public paths only if the file exists. Prevents broken-image placeholders.

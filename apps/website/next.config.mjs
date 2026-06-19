@@ -2,33 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@jhb/shared"],
-  // Optimize images: serve AVIF/WebP + responsive sizes, including admin-uploaded
-  // images hosted on Supabase Storage (prevents oversized downloads).
+  // STATIC EXPORT for Hostinger shared hosting: `next build` emits a plain
+  // HTML/CSS/JS site into `out/` that is uploaded to public_html. No Node server.
+  output: "export",
+  // Apache serves /about/ -> /about/index.html, so emit folder-style URLs.
+  trailingSlash: true,
+  // The Next image optimizer needs a running server, which static export has not.
+  // `unoptimized` emits plain <img> tags pointing at the original (Supabase) URLs,
+  // which also removes the previous remote-hostname allowlist requirement.
   images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      { protocol: "https", hostname: "wzvzzcuennotfutklulh.supabase.co" },
-    ],
+    unoptimized: true,
   },
-  // CRM is now a section of the JHB Automation Tools hub. Permanently redirect
-  // the old standalone CRM URLs (root + /services/) to the hub to preserve SEO.
-  async redirects() {
-    return [
-      {
-        source: "/customer-relationship-management-software",
-        destination: "/jhb-automation-tools",
-        permanent: true,
-      },
-      {
-        source: "/services/customer-relationship-management-software",
-        destination: "/jhb-automation-tools",
-        permanent: true,
-      },
-      // Friendly top-level URLs for the Vasool App product + its About page.
-      { source: "/vasool-app", destination: "/products/vasool-app", permanent: true },
-      { source: "/about-vasool", destination: "/products/vasool-app/about", permanent: true },
-    ];
-  },
+  // NOTE: redirects() is NOT supported with output: "export". The 4 migrated-URL
+  // 301s are implemented in the uploaded .htaccess (Apache) instead.
   webpack: (config, { dev }) => {
     // In-memory cache in dev avoids the on-disk PackFileCache OOM seen on this machine.
     if (dev) {

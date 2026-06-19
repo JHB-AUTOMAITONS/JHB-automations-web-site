@@ -1,0 +1,20 @@
+# JHB Automations — static site (Next.js static export) on Hostinger
+# Place this file in public_html (same folder as index.html).
+# -------------------------------------------------------------------
+RewriteEngine On
+
+# --- Migrated URL 301 redirects (preserve SEO from the old site) ---
+RewriteRule ^customer-relationship-management-software/?$ /jhb-automation-tools/ [R=301,L]
+RewriteRule ^services/customer-relationship-management-software/?$ /jhb-automation-tools/ [R=301,L]
+RewriteRule ^vasool-app/?$ /products/vasool-app/ [R=301,L]
+RewriteRule ^about-vasool/?$ /products/vasool-app/about/ [R=301,L]
+
+# --- Clean URLs: the export uses folder/index.html (trailingSlash) ---
+DirectoryIndex index.html
+
+# --- Custom 404 from the exported not-found page ---
+ErrorDocument 404 /404.html
+
+# NOTE: HTTPS is forced by Hostinger's "Force HTTPS" toggle in hPanel
+# (already active — your site loads over https). Do NOT add an HTTPS
+# RewriteRule here; behind Hostinger's CDN it can cause a redirect loop.

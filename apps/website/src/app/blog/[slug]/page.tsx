@@ -17,12 +17,12 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export async function generateStaticParams() {
   const slugs = await getPublishedSlugs();
-  return slugs.map((slug) => ({ slug }));
+  // Static export requires at least one param. When no posts are published yet,
+  // emit a sentinel that renders the 404 page (nothing links to it). Once posts
+  // exist and the site is rebuilt, the real article pages are generated.
+  return slugs.length ? slugs.map((slug) => ({ slug })) : [{ slug: "no-posts-yet" }];
 }
-export const dynamicParams = true;
-// Render per-request so a published/edited/unpublished post (and its media alt
-// text) reflects on the public page immediately — consistent with services/[slug].
-export const dynamic = "force-dynamic";
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,

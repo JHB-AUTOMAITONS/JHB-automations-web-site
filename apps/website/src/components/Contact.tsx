@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { SETTINGS_DEFAULT, type SiteSettings } from "@jhb/shared/content";
-import { submitLead } from "@/app/actions";
+import { createClient } from "@jhb/shared/supabase/client";
 
 type Fields = {
   name: string;
@@ -47,18 +47,25 @@ export default function Contact({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setSent(true);
     const payload = {
       name: fields.name,
-      company: fields.company,
+      company: fields.company || null,
       email: fields.email,
-      phone: fields.phone,
+      phone: fields.phone || null,
       message: fields.details,
+      source: "contact",
     };
-    setSent(true);
     setFields(empty);
     setTimeout(() => setSent(false), 6000);
-    // Persist the lead (non-blocking for the success animation)
-    await submitLead(payload);
+    // Persist the lead directly from the browser (static site, no server).
+    // Requires an RLS INSERT policy on jhb_leads for the anon role.
+    try {
+      const supabase = createClient();
+      await supabase.from("jhb_leads").insert(payload);
+    } catch {
+      // Swallow — the visitor already saw the success state; we don't block on it.
+    }
   };
 
   return (
