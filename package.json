@@ -7,16 +7,21 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently -n website,admin -c blue,green \"npm run dev:website\" \"npm run dev:admin\"",
     "dev:website": "npm run dev --workspace website",
     "dev:admin": "npm run dev --workspace admin",
+    "build": "npm run build:website && npm run build:admin",
     "build:website": "npm run build --workspace website",
     "build:admin": "npm run build --workspace admin",
-    "build": "npm run build:website && npm run build:admin",
+    "start": "concurrently -n website,admin -c blue,green \"npm run start:website\" \"npm run start:admin\"",
     "start:website": "npm run start --workspace website",
     "start:admin": "npm run start --workspace admin"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.3"
   }
 }
