@@ -7,6 +7,11 @@ import { getServiceLinks } from "@jhb/shared/services-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
 import { productHref } from "@jhb/shared/products";
 
+// ISR: every route under this layout is regenerated at most once per 30s, so
+// admin edits go live within ~30s without a rebuild. Lower for fresher content
+// (e.g. 10), or set 0 to render fully dynamically on every request.
+export const revalidate = 30;
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",

@@ -6,14 +6,15 @@ import { faqPlainText } from "@jhb/shared/faqs";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
 
-// Static export: pre-render only products that have a real detail page (no href).
+// Pre-render products that have a real detail page (no external href).
 export async function generateStaticParams() {
   const products = await getPublishedProducts();
   return products
     .filter((p) => !p.href || !p.href.trim())
     .map((p) => ({ slug: p.slug }));
 }
-export const dynamicParams = false;
+// New products added in the admin render on demand (no rebuild needed).
+export const dynamicParams = true;
 
 // Plain-text version of rich HTML, for meta/schema descriptions.
 const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();

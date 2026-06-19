@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// Required for `output: export` — generate robots.txt at build time.
+// Static content — generate robots.txt once at build time.
 export const dynamic = "force-static";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";

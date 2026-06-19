@@ -4,8 +4,9 @@ import { getPublishedSlugs } from "@jhb/shared/posts-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
 import { productHref } from "@jhb/shared/products";
 
-// Required for `output: export` — generate sitemap.xml at build time.
-export const dynamic = "force-static";
+// Regenerate hourly (ISR) so newly published posts/products appear in the
+// sitemap without a rebuild.
+export const revalidate = 3600;
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 

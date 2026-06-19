@@ -2,19 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@jhb/shared"],
-  // STATIC EXPORT for Hostinger shared hosting: `next build` emits a plain
-  // HTML/CSS/JS site into `out/` that is uploaded to public_html. No Node server.
-  output: "export",
-  // Apache serves /about/ -> /about/index.html, so emit folder-style URLs.
+  // Runs on the Netlify Next.js runtime (SSR/ISR) so admin content edits appear
+  // live without a rebuild — see the `revalidate` in app/layout.tsx. NOT a static
+  // export anymore.
+  // Keep folder-style URLs (/about/ -> /about/index.html) to preserve existing
+  // links, the sitemap and canonical tags.
   trailingSlash: true,
-  // The Next image optimizer needs a running server, which static export has not.
-  // `unoptimized` emits plain <img> tags pointing at the original (Supabase) URLs,
-  // which also removes the previous remote-hostname allowlist requirement.
+  // Images stay unoptimized: plain <img> tags pointing at Supabase CDN URLs, so no
+  // Image Optimization or remote-hostname allowlist is required.
   images: {
     unoptimized: true,
   },
-  // NOTE: redirects() is NOT supported with output: "export". The 4 migrated-URL
-  // 301s are implemented in the uploaded .htaccess (Apache) instead.
+  // The 4 migrated-URL 301 redirects run at the Netlify edge (netlify.toml
+  // [[redirects]]), so they don't need to be declared here.
   webpack: (config, { dev }) => {
     // In-memory cache in dev avoids the on-disk PackFileCache OOM seen on this machine.
     if (dev) {

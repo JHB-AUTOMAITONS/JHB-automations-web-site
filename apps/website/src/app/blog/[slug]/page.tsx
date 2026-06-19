@@ -16,13 +16,12 @@ import { altFor } from "@jhb/shared/media";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export async function generateStaticParams() {
+  // Pre-render currently-published posts for fast first loads; newly published
+  // posts render on demand (dynamicParams below), no rebuild needed.
   const slugs = await getPublishedSlugs();
-  // Static export requires at least one param. When no posts are published yet,
-  // emit a sentinel that renders the 404 page (nothing links to it). Once posts
-  // exist and the site is rebuilt, the real article pages are generated.
-  return slugs.length ? slugs.map((slug) => ({ slug })) : [{ slug: "no-posts-yet" }];
+  return slugs.map((slug) => ({ slug }));
 }
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,

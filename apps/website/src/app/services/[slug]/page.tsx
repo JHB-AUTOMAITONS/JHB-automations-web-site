@@ -7,12 +7,13 @@ import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
 import ServiceDetailView from "@/components/ServiceDetail";
 
-// Static export: pre-render every service at its effective (DB) slug.
+// Pre-render every known service at its effective (DB) slug for fast first loads.
 export async function generateStaticParams() {
   const services = await getServices();
   return services.map((s) => ({ slug: s.slug }));
 }
-export const dynamicParams = false;
+// New services added in the admin render on demand (no rebuild needed).
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,

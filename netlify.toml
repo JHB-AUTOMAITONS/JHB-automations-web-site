@@ -1,0 +1,48 @@
+# Netlify deployment — JHB Automations monorepo (npm workspaces)
+# Public website: apps/website (Next.js 15, SSR/ISR via the Netlify Next.js runtime).
+#
+# Base directory stays at the repo ROOT so `npm install` resolves the workspaces
+# (incl. the local @jhb/shared package) before building. The @netlify/plugin-nextjs
+# turns the build into serverless/edge functions so pages render on demand and ISR
+# (app/layout.tsx `revalidate`) keeps admin edits live without a rebuild.
+
+[build]
+  command = "npm run build:website"
+  publish = "apps/website/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # REQUIRED — add these in Netlify -> Site -> Settings -> Environment variables
+  # (they live in git-ignored .env.local, so they are NOT in the repo):
+  #   NEXT_PUBLIC_SUPABASE_URL
+  #   NEXT_PUBLIC_SUPABASE_ANON_KEY
+  # STATIC_EXPORT=true and NEXT_PUBLIC_SITE_URL come from the committed .env.production.
+
+# Netlify's official Next.js runtime (SSR + ISR + image handling + redirects()).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# --- SEO 301 redirects (ported from the Apache .htaccess), run at the edge ---
+[[redirects]]
+  from = "/customer-relationship-management-software"
+  to = "/jhb-automation-tools/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/services/customer-relationship-management-software"
+  to = "/jhb-automation-tools/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/vasool-app"
+  to = "/products/vasool-app/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/about-vasool"
+  to = "/products/vasool-app/about/"
+  status = 301
+  force = true

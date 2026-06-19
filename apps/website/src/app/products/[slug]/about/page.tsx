@@ -6,14 +6,15 @@ import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import Reveal from "@/components/Reveal";
 
-// Static export: pre-render the About page for each product that has a detail page.
+// Pre-render the About page for each product that has a detail page.
 export async function generateStaticParams() {
   const products = await getPublishedProducts();
   return products
     .filter((p) => !p.href || !p.href.trim())
     .map((p) => ({ slug: p.slug }));
 }
-export const dynamicParams = false;
+// New products added in the admin render on demand (no rebuild needed).
+export const dynamicParams = true;
 
 // Only render an image we actually have — remote (storage) URLs always; local
 // /public paths only if the file exists. Prevents broken-image placeholders.
