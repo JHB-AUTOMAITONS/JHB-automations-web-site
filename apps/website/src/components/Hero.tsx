@@ -57,7 +57,7 @@ export default function Hero({
 
       <div className="container-x grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left copy */}
-        <div>
+        <div className="min-w-0">
           <motion.span
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,7 +75,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+            className="mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl"
           >
             {content.title}{" "}
             <span className="grad-text">{content.highlight}</span>
@@ -85,7 +85,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="prose-jhb mt-6 max-w-full break-words text-base leading-relaxed text-muted sm:max-w-xl sm:text-lg [&_a]:break-words [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: content.subtitle }}
           />
 
@@ -93,13 +93,19 @@ export default function Hero({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-9 flex flex-wrap items-center gap-4"
+            className="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"
           >
-            <a href={content.ctaPrimaryHref} className="btn btn-primary">
+            <a
+              href={content.ctaPrimaryHref}
+              className="btn btn-primary w-full sm:w-auto"
+            >
               {content.ctaPrimaryLabel}
               <span aria-hidden>→</span>
             </a>
-            <a href={content.ctaSecondaryHref} className="btn btn-ghost">
+            <a
+              href={content.ctaSecondaryHref}
+              className="btn btn-ghost w-full sm:w-auto"
+            >
               <span className="grid h-5 w-5 place-items-center rounded-full bg-ink/[0.06]">
                 ▶
               </span>
@@ -140,7 +146,7 @@ export default function Hero({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, delay: 0.25 }}
-          className="relative mx-auto w-full max-w-lg"
+          className="relative mx-auto w-full min-w-0 max-w-lg"
         >
           {heroImage ? (
             <motion.div
