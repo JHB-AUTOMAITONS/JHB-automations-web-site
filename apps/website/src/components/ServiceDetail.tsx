@@ -90,7 +90,7 @@ export default function ServiceDetail({
       {/* Hero */}
       <section className="container-x">
         {/* breadcrumb */}
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
+        <nav className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
           <Link href="/#home" className="transition-colors hover:text-ink">
             Home
           </Link>
@@ -99,11 +99,11 @@ export default function ServiceDetail({
             Services
           </Link>
           <span>/</span>
-          <span className="text-primary">{heading}</span>
+          <span className="min-w-0 break-words text-primary">{heading}</span>
         </nav>
 
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
+          <div className="min-w-0">
             <motion.span
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -116,7 +116,7 @@ export default function ServiceDetail({
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl"
+              className="mt-6 break-words font-display text-[2rem] font-bold leading-[1.12] tracking-tight sm:text-5xl sm:leading-[1.08]"
             >
               {db?.heroLink ? (
                 <a
@@ -230,15 +230,15 @@ export default function ServiceDetail({
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 font-display text-sm font-bold text-primary ring-1 ring-ink/10">
                   0{i + 1}
                 </span>
-                <div>
+                <div className="min-w-0">
                   <div
                     role="heading"
                     aria-level={3}
-                    className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
+                    className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
                     dangerouslySetInnerHTML={{ __html: f.title }}
                   />
                   <div
-                    className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                    className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
                     dangerouslySetInnerHTML={{ __html: f.desc }}
                   />
                 </div>
@@ -277,7 +277,9 @@ export default function ServiceDetail({
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                     ✓
                   </span>
-                  <span className="text-ink/90">{linkify(b, links, used)}</span>
+                  <span className="min-w-0 break-words text-ink/90">
+                    {linkify(b, links, used)}
+                  </span>
                 </motion.li>
               ))}
             </ul>
@@ -302,7 +304,7 @@ export default function ServiceDetail({
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover:from-primary group-hover:to-secondary group-hover:text-white">
                 <Icon name={s.icon} className="h-5 w-5" />
               </span>
-              <span className="text-sm font-medium text-muted transition-colors group-hover:text-ink">
+              <span className="min-w-0 break-words text-sm font-medium text-muted transition-colors group-hover:text-ink">
                 {s.title}
               </span>
             </Link>
@@ -320,7 +322,7 @@ export default function ServiceDetail({
       {/* CTA */}
       <section className="container-x pb-20">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
-          <h2 className="font-display text-3xl font-bold sm:text-4xl">
+          <h2 className="break-words font-display text-3xl font-bold sm:text-4xl">
             Ready to get started with{" "}
             <span className="grad-text">{data.title}</span>?
           </h2>

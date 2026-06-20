@@ -24,12 +24,15 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 90px;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
   background-color: rgb(var(--base));
   color: rgb(var(--ink));
   overflow-x: hidden;
+  max-width: 100%;
   -webkit-font-smoothing: antialiased;
   cursor: none;
 }

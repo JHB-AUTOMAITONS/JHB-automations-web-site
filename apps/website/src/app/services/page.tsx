@@ -59,10 +59,10 @@ export default async function ServicesIndex() {
                   className="h-6 w-6 transition-transform duration-300 group-hover:animate-wiggle"
                 />
                 </span>
-                <h2 className="mt-5 font-display text-lg font-semibold">
+                <h2 className="mt-5 break-words font-display text-lg font-semibold">
                   {s.title}
                 </h2>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+                <p className="mt-2 flex-1 break-words text-sm leading-relaxed text-muted">
                   {s.short}
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
