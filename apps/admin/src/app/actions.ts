@@ -410,6 +410,14 @@ export async function deleteLead(id: number) {
   return { ok: true };
 }
 
+// Slugs that collide with existing top-level routes. Service pages now live at the
+// root (/[slug]), so a reserved slug would be shadowed by a real page and 404.
+const RESERVED_SLUGS = new Set([
+  "about", "contact", "blog", "services", "products",
+  "jhb-automation-tools", "admin", "dashboard", "login", "api",
+  "sitemap.xml", "robots.txt", "favicon.ico", "_next",
+]);
+
 export async function saveService(
   key: string,
   data: {
@@ -426,6 +434,11 @@ export async function saveService(
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
   if (!slug) return { ok: false, error: "Slug cannot be empty" };
+  if (RESERVED_SLUGS.has(slug))
+    return {
+      ok: false,
+      error: `"${slug}" is a reserved path and can't be used as a service slug. Choose a different slug.`,
+    };
 
   const { error } = await supabase
     .from("jhb_services")
@@ -447,8 +460,7 @@ export async function saveService(
   await log("service.update", `Updated service "${key}" (slug: ${slug})`);
   revalidatePath("/", "layout");
   revalidatePath("/services");
-  revalidatePath(`/services/${slug}`);
-  revalidatePath("/services");
+  revalidatePath(`/${slug}`);
   return { ok: true, slug };
 }
 
@@ -707,6 +719,11 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
   const slug = (payload.slug || "").trim().toLowerCase();
   if (!slug || !slugOk(slug))
     return { ok: false, error: "Slug must be lowercase words separated by hyphens." };
+  if (RESERVED_SLUGS.has(slug))
+    return {
+      ok: false,
+      error: `"${slug}" is a reserved path and can't be used as a service slug. Choose a different slug.`,
+    };
 
   // Normalise + validate feature list (incl. the per-feature "Word Link").
   const features = (payload.features ?? []).map((f) => ({
@@ -1246,7 +1263,7 @@ export async function saveServiceFaqs(
 
   await log("faq.update", `Updated FAQs for "${serviceKey}"`);
   revalidatePath("/faqs");
-  revalidatePath(`/services/${serviceKey}`);
+  revalidatePath(`/${serviceKey}`);
   return { ok: true };
 }
 

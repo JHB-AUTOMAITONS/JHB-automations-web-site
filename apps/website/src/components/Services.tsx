@@ -100,7 +100,7 @@ function ServiceCard({
             whole card is clickable, yet it is a sibling (not an ancestor) of the
             word-links inside the title/description — keeping the HTML valid. */}
         <Link
-          href={`/services/${slug}`}
+          href={`/${slug}`}
           aria-label={`Learn more about ${slug.replace(/-/g, " ")}`}
           className="absolute inset-0 z-0"
         />

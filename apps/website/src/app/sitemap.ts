@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Use the effective public slugs from the DB so renamed services appear with
   // their current URL (not the hardcoded original slug).
   const services = (await getServices()).map((s) => ({
-    url: `${BASE}/services/${s.slug}`,
+    url: `${BASE}/${s.slug}`,
     lastModified: now,
     changeFrequency: "monthly" as const,
     priority: 0.6,

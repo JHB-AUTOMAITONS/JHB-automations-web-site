@@ -57,7 +57,7 @@ function ServiceCard({ entry }: { entry: ServiceEntry }) {
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">{entry.title}</h2>
         <a
-          href={`/services/${slug}`}
+          href={`/${slug}`}
           target="_blank"
           className="text-xs text-primary hover:underline"
         >
@@ -71,7 +71,7 @@ function ServiceCard({ entry }: { entry: ServiceEntry }) {
             URL slug
           </span>
           <div className="flex items-center overflow-hidden rounded-xl border border-ink/10 bg-base">
-            <span className="px-3 py-2.5 text-sm text-muted">/services/</span>
+            <span className="px-3 py-2.5 text-sm text-muted">/</span>
             <input
               value={slug}
               onChange={(e) => setSlug(e.target.value)}

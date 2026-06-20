@@ -158,7 +158,7 @@ export default function LinkManager({
         </label>
         <div className="flex items-center gap-2">
           <a
-            href={`${WEBSITE_URL}/services/${selected}`}
+            href={`${WEBSITE_URL}/${selected}`}
             target="_blank"
             className="text-xs text-primary hover:underline"
           >

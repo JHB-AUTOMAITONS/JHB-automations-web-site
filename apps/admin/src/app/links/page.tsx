@@ -18,7 +18,7 @@ export default async function AdminLinks() {
     { label: "Contact", url: "/contact" },
     { label: "Blog", url: "/blog" },
     { label: "All Services", url: "/services" },
-    ...services.map((s) => ({ label: `Service · ${s.title}`, url: `/services/${s.slug}` })),
+    ...services.map((s) => ({ label: `Service · ${s.title}`, url: `/${s.slug}` })),
     ...posts.map((p) => ({ label: `Blog · ${p.title}`, url: `/blog/${p.slug}` })),
   ];
 

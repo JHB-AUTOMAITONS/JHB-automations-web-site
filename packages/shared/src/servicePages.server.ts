@@ -152,7 +152,7 @@ export async function getInternalPages(): Promise<InternalPage[]> {
     ]);
     for (const d of serviceDetails) {
       const row = ((svc.data as { key: string; slug: string }[]) ?? []).find((r) => r.key === d.slug);
-      services.push({ label: `Service · ${d.title}`, url: `/services/${row?.slug || d.slug}` });
+      services.push({ label: `Service · ${d.title}`, url: `/${row?.slug || d.slug}` });
     }
     for (const p of (pst.data as { slug: string; title: string }[]) ?? []) {
       posts.push({ label: `Blog · ${p.title}`, url: `/blog/${p.slug}` });

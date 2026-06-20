@@ -73,7 +73,7 @@ export default function ServicePagesList({ items }: { items: ServicePageSummary[
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted">
-                  /services/{s.slug} · edited{" "}
+                  /{s.slug} · edited{" "}
                   <LocalDateTime value={s.content_updated_at} options={EDITED_FMT} fallback="—" />
                 </p>
               </div>
@@ -85,7 +85,7 @@ export default function ServicePagesList({ items }: { items: ServicePageSummary[
                   Edit
                 </Link>
                 <a
-                  href={`${WEBSITE_URL}/services/${s.slug}`}
+                  href={`${WEBSITE_URL}/${s.slug}`}
                   target="_blank"
                   className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary"
                 >

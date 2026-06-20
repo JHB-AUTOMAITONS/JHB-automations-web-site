@@ -104,7 +104,7 @@ export default function FaqManager({
         </label>
         <div className="flex items-center gap-2">
           <a
-            href={`${WEBSITE_URL}/services/${selected}#faq`}
+            href={`${WEBSITE_URL}/${selected}#faq`}
             target="_blank"
             className="text-xs text-primary hover:underline"
           >

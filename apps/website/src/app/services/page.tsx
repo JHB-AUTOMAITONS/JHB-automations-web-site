@@ -50,7 +50,7 @@ export default async function ServicesIndex() {
           {services.map((s, i) => (
             <Reveal key={s.slug} delay={(i % 3) * 0.06}>
               <Link
-                href={`/services/${s.slug}`}
+                href={`/${s.slug}`}
                 className="group glass glow-border flex h-full flex-col rounded-2xl p-6 transition-transform hover:-translate-y-1.5"
               >
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">

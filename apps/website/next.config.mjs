@@ -13,8 +13,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // The 4 migrated-URL 301 redirects run at the Netlify edge (netlify.toml
-  // [[redirects]]), so they don't need to be declared here.
+  // Legacy migrated-URL 301s run at the Netlify edge (netlify.toml). The services
+  // move (/services/[slug] -> /[slug]) is a 301 here so old indexed service URLs
+  // keep their SEO. `/services` (the listing index) is NOT matched because `:slug`
+  // requires a segment after it.
+  async redirects() {
+    return [
+      { source: "/services/:slug", destination: "/:slug", statusCode: 301 },
+    ];
+  },
   webpack: (config, { dev }) => {
     // In-memory cache in dev avoids the on-disk PackFileCache OOM seen on this machine.
     if (dev) {

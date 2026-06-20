@@ -159,7 +159,7 @@ export default function ServicePageEditor({
           <Section title="SEO & URL">
             <Field label="Service slug (URL)">
               <input value={form.slug} onChange={(e) => set("slug", e.target.value)} className="input" placeholder="search-engine-optimization" />
-              <p className="mt-1 text-[11px] text-muted">Public path: /services/{form.slug || "…"}</p>
+              <p className="mt-1 text-[11px] text-muted">Public path: /{form.slug || "…"}</p>
             </Field>
             <Field label="SEO title">
               <input value={form.meta_title} onChange={(e) => set("meta_title", e.target.value)} className="input" />
@@ -189,7 +189,7 @@ export default function ServicePageEditor({
                 value={form.hero_link ?? ""}
                 onChange={(e) => set("hero_link", e.target.value)}
                 className="input"
-                placeholder="https://… or /services/seo (optional) — makes the hero heading a link"
+                placeholder="https://… or /seo (optional) — makes the hero heading a link"
               />
             </Field>
             <Field label="Service image">

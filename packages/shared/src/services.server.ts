@@ -76,7 +76,7 @@ export async function getServiceLinks(): Promise<ServiceLink[]> {
   const services = await getServices();
   return services.map((s) => ({
     label: s.title,
-    href: `/services/${s.slug}`,
+    href: `/${s.slug}`,
     icon: s.icon,
   }));
 }

@@ -298,7 +298,7 @@ export default function ServiceDetail({
           {related.map((s) => (
             <Link
               key={s.slug}
-              href={`/services/${s.slug}`}
+              href={`/${s.slug}`}
               className="group glass glow-border flex items-center gap-3 rounded-2xl p-4 transition-transform hover:-translate-y-1"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover:from-primary group-hover:to-secondary group-hover:text-white">

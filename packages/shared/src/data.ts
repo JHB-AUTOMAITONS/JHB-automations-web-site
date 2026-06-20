@@ -568,7 +568,7 @@ export type NavItem = {
 
 export const serviceMenu = serviceDetails.map((s) => ({
   label: s.title,
-  href: `/services/${s.slug}`,
+  href: `/${s.slug}`,
   icon: s.icon,
 }));
 

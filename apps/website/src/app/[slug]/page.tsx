@@ -23,7 +23,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const data = await getServiceBySlug(slug);
   if (!data) return { title: "Service Not Found — JHB Automations" };
-  const canonical = `/services/${data.slug}`;
+  const canonical = `/${data.slug}`;
   return {
     title: data.metaTitle,
     description: data.metaDescription,
@@ -93,7 +93,7 @@ export default async function ServicePage({
     name: data.title,
     serviceType: data.title,
     description: data.metaDescription || data.intro,
-    url: `${site}/services/${data.slug}`,
+    url: `${site}/${data.slug}`,
     areaServed: "Salem, Tamil Nadu, India",
     provider: {
       "@type": "Organization",
@@ -111,7 +111,7 @@ export default async function ServicePage({
         "@type": "ListItem",
         position: 3,
         name: data.title,
-        item: `${site}/services/${data.slug}`,
+        item: `${site}/${data.slug}`,
       },
     ],
   };

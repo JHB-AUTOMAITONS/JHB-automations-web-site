@@ -524,7 +524,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
             <input
               value={draft.url}
               onChange={(e) => { setDraft((d) => ({ ...d, url: e.target.value })); setUrlError(""); }}
-              placeholder="/services/seo or https://…"
+              placeholder="/seo or https://…"
               className={`input ${urlError ? "!border-red-400" : ""}`}
               autoFocus
             />
