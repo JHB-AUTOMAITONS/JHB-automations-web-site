@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline';" />
+    <title>JHB Admin Dashboard — Problem</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(120% 120% at 50% 0%, #2a1620 0%, #0b1220 60%);
+        color: #e7eefc; padding: 28px; display: flex; flex-direction: column; height: 100%;
+      }
+      .badge { font-size: 28px; }
+      h1 { font-size: 18px; margin: 8px 0 4px; }
+      .msg { font-size: 14px; color: #d7e0f2; margin-bottom: 14px; }
+      .detail {
+        flex: 1; overflow: auto; white-space: pre-wrap; word-break: break-word;
+        font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; line-height: 1.5;
+        color: #ffb4b4; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.08);
+        border-radius: 8px; padding: 12px;
+      }
+      .row { margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end; }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer; border: none; border-radius: 8px;
+        padding: 9px 16px; color: #fff;
+      }
+      .primary { background: linear-gradient(90deg, #00d4ff, #1877f2); }
+      .ghost { background: rgba(255,255,255,.08); }
+      a.linkbtn {
+        text-decoration: none; font-weight: 600; border-radius: 8px; padding: 9px 16px;
+        background: rgba(255,255,255,.08); color: #9fd0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="badge">⚠️</div>
+    <h1 id="title">Something went wrong</h1>
+    <div class="msg" id="msg"></div>
+    <div class="detail" id="detail"></div>
+    <div class="row">
+      <a class="linkbtn" id="link" style="display:none" href="#"></a>
+      <button class="ghost" id="copy">Copy details</button>
+      <button class="primary" id="close">Close</button>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+      const titleEl = document.getElementById("title");
+      const msgEl = document.getElementById("msg");
+      const detailEl = document.getElementById("detail");
+      const linkEl = document.getElementById("link");
+      let linkUrl = "";
+      ipcRenderer.on("error-info", (_e, info) => {
+        titleEl.textContent = info.title || "Something went wrong";
+        msgEl.textContent = info.message || "";
+        detailEl.textContent = info.detail || "";
+        if (info.link) {
+          linkUrl = info.link;
+          linkEl.textContent = info.linkLabel || info.link;
+          linkEl.style.display = "inline-block";
+        }
+      });
+      linkEl.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (linkUrl) ipcRenderer.send("open-external", linkUrl);
+      });
+      document.getElementById("copy").addEventListener("click", () => {
+        navigator.clipboard.writeText(
+          titleEl.textContent + "\n" + msgEl.textContent + "\n\n" + detailEl.textContent
+        );
+      });
+      document.getElementById("close").addEventListener("click", () => {
+        ipcRenderer.send("quit-app");
+      });
+    </script>
+  </body>
+</html>

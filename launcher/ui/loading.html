@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline';" />
+    <title>Starting JHB Admin Dashboard…</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(120% 120% at 50% 0%, #15233f 0%, #0b1220 60%);
+        color: #e7eefc;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 26px; user-select: none; -webkit-app-region: drag;
+      }
+      .logo {
+        font-size: 22px; font-weight: 700; letter-spacing: .3px;
+        background: linear-gradient(90deg, #00d4ff, #1877f2);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .sub { margin-top: 2px; font-size: 12px; color: #8aa0c6; }
+      .spinner {
+        margin: 22px 0 14px; width: 38px; height: 38px; border-radius: 50%;
+        border: 3px solid rgba(255,255,255,.12); border-top-color: #00d4ff;
+        animation: spin .8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .status { font-size: 14px; font-weight: 600; text-align: center; min-height: 20px; }
+      .detail { margin-top: 5px; font-size: 11px; color: #8aa0c6; text-align: center; min-height: 14px; max-width: 440px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .log {
+        margin-top: 16px; width: 100%; max-width: 460px; height: 64px; overflow: hidden;
+        font-family: "Cascadia Code", Consolas, monospace; font-size: 10px; line-height: 1.5;
+        color: #6f86ad; background: rgba(0,0,0,.25);
+        border: 1px solid rgba(255,255,255,.06); border-radius: 8px; padding: 8px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="logo">JHB Admin Dashboard</div>
+    <div class="sub">Local control panel · Supabase</div>
+    <div class="spinner"></div>
+    <div class="status" id="status">Starting…</div>
+    <div class="detail" id="detail"></div>
+    <div class="log" id="log"></div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+      const statusEl = document.getElementById("status");
+      const detailEl = document.getElementById("detail");
+      const logEl = document.getElementById("log");
+      const lines = [];
+      ipcRenderer.on("status", (_e, { message, detail }) => {
+        statusEl.textContent = message || "";
+        detailEl.textContent = detail || "";
+      });
+      ipcRenderer.on("log", (_e, line) => {
+        lines.push(line);
+        while (lines.length > 6) lines.shift();
+        logEl.textContent = lines.join("\n");
+      });
+    </script>
+  </body>
+</html>

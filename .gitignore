@@ -36,3 +36,8 @@ apps/website/deploy/.ftp-pass
 *.tsbuildinfo
 next-env.d.ts
 **/next-env.d.ts
+
+# launcher binary (regenerate via launcher/ npm run dist)
+AdminDashboard.exe
+launcher/dist/
+launcher/node_modules/
