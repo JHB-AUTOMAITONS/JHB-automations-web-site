@@ -84,7 +84,7 @@ export default function FaqAccordion({
                     aria-controls={`svc-faq-${i}`}
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-ink/[0.02]"
                   >
-                    <span className="min-w-0 break-words font-display text-base font-semibold text-[#1877F2] sm:text-lg">
+                    <span className="min-w-0 break-words font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
                       {f.question}
                     </span>
                     <span

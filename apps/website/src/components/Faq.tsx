@@ -80,7 +80,7 @@ export default function Faq({ items }: { items?: HomeFaqItem[] }) {
                           id={`faq-trigger-${i}`}
                           className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-ink/[0.02]"
                         >
-                          <span className="font-display text-base font-semibold text-[#1877F2] sm:text-lg">
+                          <span className="font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
                             {f.q}
                           </span>
                           <span
