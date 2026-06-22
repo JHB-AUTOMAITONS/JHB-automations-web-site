@@ -428,11 +428,9 @@ export async function saveService(
   }
 ) {
   const { supabase, user } = await getStaff();
-  const slug = data.slug
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  // Same normalisation as service-page slugs (lowercase, spaces/invalid -> hyphen,
+  // collapse repeats, trim) so both editors store identical, valid slugs.
+  const slug = slugify(data.slug);
   if (!slug) return { ok: false, error: "Slug cannot be empty" };
   if (RESERVED_SLUGS.has(slug))
     return {
@@ -694,8 +692,6 @@ export async function seedTestimonials() {
 
 // ---- Service Page Editor (Super Admin only) ----
 
-const slugOk = (s: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s);
-
 // A feature "Word Link" may be empty, an internal path/anchor, mailto/tel, or
 // an absolute http(s) URL.
 const featureUrlOk = (u: string) => {
@@ -716,9 +712,11 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
   if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
   const { supabase, user } = ctx;
 
-  const slug = (payload.slug || "").trim().toLowerCase();
-  if (!slug || !slugOk(slug))
-    return { ok: false, error: "Slug must be lowercase words separated by hyphens." };
+  // Normalise the slug (lowercase, spaces/invalid -> hyphen, collapse repeats,
+  // trim) rather than rejecting messy-but-fixable input. Fall back to the page
+  // key (the original slug) so a blank slug never blocks a content save.
+  const slug = slugify(payload.slug || "") || slugify(key);
+  if (!slug) return { ok: false, error: "Could not generate a valid slug." };
   if (RESERVED_SLUGS.has(slug))
     return {
       ok: false,

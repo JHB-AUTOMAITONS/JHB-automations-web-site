@@ -20,6 +20,13 @@ type LinkResult = { href: string; type: string; ok: boolean; reason: string };
 
 const DEVICE_W: Record<Device, number> = { desktop: 1100, tablet: 768, mobile: 390 };
 
+// Slug input helpers: lowercase, spaces/invalid -> hyphen, collapse repeats.
+// A trailing hyphen is kept while typing; full trim happens on blur (and the
+// server normalises again, so storage always matches).
+const normalizeSlugInput = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+/, "");
+const finalizeSlug = (s: string) => normalizeSlugInput(s).replace(/-+$/g, "");
+
 export default function ServicePageEditor({
   page,
   internalPages,
@@ -158,8 +165,14 @@ export default function ServicePageEditor({
         <div className="space-y-6">
           <Section title="SEO & URL">
             <Field label="Service slug (URL)">
-              <input value={form.slug} onChange={(e) => set("slug", e.target.value)} className="input" placeholder="search-engine-optimization" />
-              <p className="mt-1 text-[11px] text-muted">Public path: /{form.slug || "…"}</p>
+              <input
+                value={form.slug}
+                onChange={(e) => set("slug", normalizeSlugInput(e.target.value))}
+                onBlur={(e) => set("slug", finalizeSlug(e.target.value))}
+                className="input"
+                placeholder="search-engine-optimization"
+              />
+              <p className="mt-1 text-[11px] text-muted">Public path: /{finalizeSlug(form.slug) || "…"}</p>
             </Field>
             <Field label="SEO title">
               <input value={form.meta_title} onChange={(e) => set("meta_title", e.target.value)} className="input" />
