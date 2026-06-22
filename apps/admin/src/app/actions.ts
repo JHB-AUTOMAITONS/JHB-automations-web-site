@@ -428,9 +428,10 @@ export async function saveService(
   }
 ) {
   const { supabase, user } = await getStaff();
-  // Same normalisation as service-page slugs (lowercase, spaces/invalid -> hyphen,
-  // collapse repeats, trim) so both editors store identical, valid slugs.
-  const slug = slugify(data.slug);
+  // Same normalisation as service-page slugs (accepts a bare slug or a full URL,
+  // lowercase, spaces/invalid -> hyphen, collapse repeats, trim) so both editors
+  // store identical, valid slugs.
+  const slug = toSlug(data.slug);
   if (!slug) return { ok: false, error: "Slug cannot be empty" };
   if (RESERVED_SLUGS.has(slug))
     return {
@@ -715,7 +716,7 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
   // Normalise the slug (lowercase, spaces/invalid -> hyphen, collapse repeats,
   // trim) rather than rejecting messy-but-fixable input. Fall back to the page
   // key (the original slug) so a blank slug never blocks a content save.
-  const slug = slugify(payload.slug || "") || slugify(key);
+  const slug = toSlug(payload.slug || "") || slugify(key);
   if (!slug) return { ok: false, error: "Could not generate a valid slug." };
   if (RESERVED_SLUGS.has(slug))
     return {
@@ -1152,6 +1153,19 @@ function slugify(s: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+// Accept a bare slug OR a full URL/path and reduce it to just the slug, e.g.
+// "https://jhbautomations.com/services/influencer-marketing/" -> "influencer-marketing".
+function toSlug(raw: string) {
+  let s = (raw || "").trim();
+  if (s.includes("/")) {
+    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, ""); // drop scheme://host
+    s = s.split(/[?#]/)[0]; // drop query/hash
+    const parts = s.split("/").filter(Boolean);
+    if (parts.length) s = parts[parts.length - 1]; // last path segment
+  }
+  return slugify(s);
 }
 
 export async function savePost(input: PostInput) {

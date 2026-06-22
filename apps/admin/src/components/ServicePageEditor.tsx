@@ -20,11 +20,22 @@ type LinkResult = { href: string; type: string; ok: boolean; reason: string };
 
 const DEVICE_W: Record<Device, number> = { desktop: 1100, tablet: 768, mobile: 390 };
 
-// Slug input helpers: lowercase, spaces/invalid -> hyphen, collapse repeats.
-// A trailing hyphen is kept while typing; full trim happens on blur (and the
-// server normalises again, so storage always matches).
+// If a full URL/path is pasted, keep only the last segment (the slug):
+// "https://jhbautomations.com/services/influencer-marketing/" -> "influencer-marketing".
+const stripUrl = (raw: string) => {
+  let s = raw.trim();
+  if (s.includes("/")) {
+    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "").split(/[?#]/)[0];
+    const parts = s.split("/").filter(Boolean);
+    if (parts.length) s = parts[parts.length - 1];
+  }
+  return s;
+};
+// Slug input helpers: extract from a URL, lowercase, spaces/invalid -> hyphen,
+// collapse repeats. A trailing hyphen is kept while typing; full trim on blur
+// (and the server normalises again, so storage always matches).
 const normalizeSlugInput = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+/, "");
+  stripUrl(s).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+/, "");
 const finalizeSlug = (s: string) => normalizeSlugInput(s).replace(/-+$/g, "");
 
 export default function ServicePageEditor({
@@ -172,7 +183,12 @@ export default function ServicePageEditor({
                 className="input"
                 placeholder="search-engine-optimization"
               />
-              <p className="mt-1 text-[11px] text-muted">Public path: /{finalizeSlug(form.slug) || "…"}</p>
+              <p className="mt-1 text-[11px] text-muted">
+                Public path: /{finalizeSlug(form.slug) || "…"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted/80">
+                Example: <code>influencer-marketing</code> — enter only the slug, not a full URL.
+              </p>
             </Field>
             <Field label="SEO title">
               <input value={form.meta_title} onChange={(e) => set("meta_title", e.target.value)} className="input" />

@@ -4,6 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveService } from "@/app/actions";
 
+// Accept a bare slug or a pasted full URL; keep only the slug portion, lowercase,
+// spaces/invalid -> hyphen, collapse repeats (trailing hyphen kept while typing).
+const cleanSlugInput = (raw: string) => {
+  let s = raw.trim();
+  if (s.includes("/")) {
+    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "").split(/[?#]/)[0];
+    const parts = s.split("/").filter(Boolean);
+    if (parts.length) s = parts[parts.length - 1];
+  }
+  return s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+/, "");
+};
+
 export type ServiceEntry = {
   key: string;
   title: string;
@@ -74,10 +86,15 @@ function ServiceCard({ entry }: { entry: ServiceEntry }) {
             <span className="px-3 py-2.5 text-sm text-muted">/</span>
             <input
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
+              onChange={(e) => setSlug(cleanSlugInput(e.target.value))}
+              onBlur={(e) => setSlug(cleanSlugInput(e.target.value).replace(/-+$/g, ""))}
               className="flex-1 bg-transparent py-2.5 pr-4 text-sm outline-none"
+              placeholder="influencer-marketing"
             />
           </div>
+          <span className="mt-1 block text-[11px] text-muted/80">
+            Example: <code>influencer-marketing</code> — enter only the slug, not a full URL.
+          </span>
         </label>
 
         <label className="block">
