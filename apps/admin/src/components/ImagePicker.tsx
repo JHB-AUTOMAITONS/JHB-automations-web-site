@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { uploadMedia, getMediaAlt, updateMediaAltByUrl } from "@/app/actions";
 import { ALT_MIN, ALT_MAX, altStatus } from "@jhb/shared/media";
+import { optimizeImage, readImageDimensions, fmtBytes } from "@/lib/optimizeImage";
 
 type Props = {
   value: string | null;
@@ -12,9 +13,16 @@ type Props = {
   alt?: boolean;
 };
 
+const MAX_DIM = 1600; // cap longest edge — keeps 16:9 thumbnails crisp but small
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // reject absurdly large source files
+
+type Info = { from: number; to: number; w: number; h: number };
+
 export default function ImagePicker({ value, onChange, label, alt = true }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [info, setInfo] = useState<Info | null>(null);
   const [error, setError] = useState("");
 
   // alt-text state (kept in sync with the media row by URL)
@@ -39,15 +47,50 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setError(`Image is too large (${fmtBytes(file.size)}). Please use one under 25 MB.`);
+      return;
+    }
     setBusy(true);
     setError("");
-    const fd = new FormData();
-    fd.append("file", file);
-    if (altText.trim()) fd.append("alt", altText.trim());
-    const res = await uploadMedia(fd);
-    setBusy(false);
-    if (res.ok && res.url) onChange(res.url);
-    else setError(res.error || "Upload failed");
+    setInfo(null);
+    setProgress(10);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    try {
+      const orig = await readImageDimensions(file);
+      setProgress(30);
+      // Resize + compress to WebP in the browser (SVG/GIF pass through).
+      const opt = await optimizeImage(file, { maxDim: MAX_DIM, quality: 0.85 });
+      setProgress(55);
+      const filename = opt.passthrough
+        ? file.name
+        : file.name.replace(/\.[^.]+$/, "") + ".webp";
+      const fd = new FormData();
+      fd.append("file", new File([opt.blob], filename, { type: opt.type }));
+      if (altText.trim()) fd.append("alt", altText.trim());
+      // Server actions don't expose upload progress; creep the bar while it runs.
+      timer = setInterval(() => setProgress((p) => (p < 90 ? p + 3 : p)), 180);
+      const res = await uploadMedia(fd);
+      clearInterval(timer);
+      setProgress(100);
+      if (res.ok && res.url) {
+        onChange(res.url);
+        setInfo({
+          from: file.size,
+          to: opt.blob.size,
+          w: opt.width || orig.width,
+          h: opt.height || orig.height,
+        });
+      } else {
+        setError(res.error || "Upload failed");
+      }
+    } catch (e) {
+      if (timer) clearInterval(timer);
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+      setTimeout(() => setProgress(0), 1200);
+    }
   };
 
   const saveAlt = async () => {
@@ -63,6 +106,8 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
 
   const status = altStatus(altText);
   const len = altText.trim().length;
+  const savedPct =
+    info && info.from > info.to ? Math.round((1 - info.to / info.from) * 100) : 0;
 
   return (
     <div>
@@ -73,7 +118,13 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
         <div className="grid h-20 w-28 shrink-0 place-items-center overflow-hidden rounded-xl border border-ink/10 bg-base">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt={altText || ""} className="h-full w-full object-cover" />
+            <img
+              src={value}
+              alt={altText || ""}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <span className="text-2xl text-muted">🖼</span>
           )}
@@ -82,7 +133,7 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
             className="hidden"
             onChange={(e) => pick(e.target.files?.[0])}
           />
@@ -92,12 +143,15 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
             disabled={busy}
             className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
           >
-            {busy ? "Uploading…" : value ? "Replace" : "Upload"}
+            {busy ? "Optimizing…" : value ? "Replace" : "Upload"}
           </button>
-          {value && (
+          {value && !busy && (
             <button
               type="button"
-              onClick={() => onChange(null)}
+              onClick={() => {
+                onChange(null);
+                setInfo(null);
+              }}
               className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-red-300 hover:text-red-500"
             >
               Remove
@@ -105,7 +159,32 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
           )}
         </div>
       </div>
-      <p className="mt-1.5 text-[11px] text-muted">JPG, PNG, WebP or SVG.</p>
+
+      {/* upload progress */}
+      {progress > 0 && (
+        <div className="mt-2 max-w-xs">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-150"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-0.5 text-[10px] text-muted">
+            {progress < 55 ? "Optimizing…" : progress < 100 ? "Uploading…" : "Done"} {progress}%
+          </p>
+        </div>
+      )}
+
+      <p className="mt-1.5 text-[11px] text-muted">
+        JPG, PNG, WebP, GIF or SVG — auto-optimized to WebP (max {MAX_DIM}px).
+        Recommended <strong>16:9</strong> (1280×720) for blog/thumbnail images.
+      </p>
+      {info && progress === 0 && (
+        <p className="mt-1 text-[11px] text-green-600">
+          ✓ {info.w}×{info.h} · {fmtBytes(info.from)} → {fmtBytes(info.to)}
+          {savedPct > 0 ? ` (−${savedPct}%)` : ""}
+        </p>
+      )}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
       {/* SEO alt text */}

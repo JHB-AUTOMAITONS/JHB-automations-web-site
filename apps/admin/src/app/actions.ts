@@ -207,7 +207,13 @@ export async function uploadMedia(formData: FormData) {
 
   const { error: upErr } = await supabase.storage
     .from("jhb-media")
-    .upload(path, file, { contentType: file.type, upsert: false });
+    // Long cache: filenames are unique (Date.now() prefix), so a 1-year
+    // immutable cache header lets the CDN/browser serve images fast on repeat.
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: "31536000",
+    });
   if (upErr) return { ok: false, error: upErr.message };
 
   const {
