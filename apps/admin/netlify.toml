@@ -14,9 +14,9 @@
 
 [build]
   command = "npm run build"
-  # Full path from the repo root — the Next.js plugin resolves publish from the
-  # repository root, not the base directory, in this monorepo setup.
-  publish = "apps/admin/.next"
+  # No hardcoded `publish` — @netlify/plugin-nextjs auto-detects the .next output
+  # from the Netlify "Package directory" (apps/admin). Hardcoding it double-nests
+  # the path in this monorepo (e.g. apps/admin/apps/admin/.next) and 404s.
 
 [build.environment]
   NODE_VERSION = "20"
