@@ -396,6 +396,16 @@ export async function saveSeo(
   return { ok: true };
 }
 
+export async function deleteSeo(path: string) {
+  const { supabase } = await getStaff();
+  const { error } = await supabase.from("jhb_seo").delete().eq("path", path);
+  if (error) return { ok: false, error: error.message };
+  await log("seo.delete", `Deleted SEO override for "${path}"`);
+  revalidatePath(path);
+  revalidatePath("/seo");
+  return { ok: true };
+}
+
 export async function updateLeadStatus(id: number, status: string) {
   const { supabase } = await getStaff();
   const { error } = await supabase
