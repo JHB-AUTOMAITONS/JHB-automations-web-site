@@ -9,7 +9,11 @@ export default function AdminLogin() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    params.get("error") === "not_authorized"
+      ? "This account isn't authorized for the admin panel."
+      : ""
+  );
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {

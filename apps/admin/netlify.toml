@@ -1,0 +1,25 @@
+# Netlify configuration for the JHB ADMIN DASHBOARD (apps/admin).
+# This is a SEPARATE Netlify site from the public website.
+#
+# When you create the admin site in Netlify from this repo, set:
+#   Site settings → Build & deploy → Base directory:  apps/admin
+# Netlify then reads THIS file and (because the repo root package.json declares
+# npm workspaces) installs the whole workspace so @jhb/shared resolves.
+#
+# REQUIRED environment variables (Netlify → Site settings → Environment vars):
+#   NEXT_PUBLIC_SUPABASE_URL       = https://ossvdnwcmsjbdlstldhh.supabase.co
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  = sb_publishable_...   (your anon key)
+#
+# DO NOT set STATIC_EXPORT here. The admin needs the cookie-aware Supabase client
+# for login/sessions; STATIC_EXPORT makes it cookieless and would break auth.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Netlify's official Next.js runtime — SSR, middleware (the auth gate) and ISR.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
