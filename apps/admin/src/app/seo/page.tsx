@@ -1,15 +1,16 @@
 import { createClient } from "@jhb/shared/supabase/server";
 import SeoEditor, { type SeoEntry } from "@/components/SeoEditor";
+import HomeSeoEditor, { type HomeSeo } from "@/components/HomeSeoEditor";
 
-// Pages whose <title>/meta is driven by jhb_seo (via buildMetadata). These are
-// always shown in the editor — pre-filled if a row exists, empty otherwise — so
-// SEO can be set even before any row exists (the table starts empty).
-const SEO_PATHS = ["/", "/services", "/blog"];
+// Other pages whose meta is driven by jhb_seo (Home has its own rich editor).
+const OTHER_PATHS = ["/services", "/blog"];
 const PATH_LABELS: Record<string, string> = {
-  "/": "Home page",
   "/services": "Services listing",
   "/blog": "Blog listing",
 };
+
+const FULL_COLS =
+  "path, title, meta_title, description, keywords, canonical, og_title, og_description, og_image, robots, structured_data, seo_content, slug";
 
 const emptyEntry = (path: string): SeoEntry => ({
   path,
@@ -19,20 +20,44 @@ const emptyEntry = (path: string): SeoEntry => ({
   og_image: null,
 });
 
+const emptyHome = (): HomeSeo => ({
+  path: "/",
+  title: null,
+  meta_title: null,
+  description: null,
+  keywords: null,
+  canonical: null,
+  og_title: null,
+  og_description: null,
+  og_image: null,
+  robots: null,
+  structured_data: null,
+  seo_content: null,
+  slug: "/",
+});
+
 export default async function AdminSeo() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  // (1) Simple cards — basic columns, always works even before the migration.
+  const { data: basic } = await supabase
     .from("jhb_seo")
     .select("path, title, description, keywords, og_image")
     .order("path");
 
-  if (error) console.error("[seo] load failed:", error.message);
+  // (2) Home row — full columns; errors gracefully if the migration isn't run.
+  const { data: homeRow, error: homeErr } = await supabase
+    .from("jhb_seo")
+    .select(FULL_COLS)
+    .eq("path", "/")
+    .maybeSingle();
+  if (homeErr) console.error("[seo] home load failed:", homeErr.message);
 
-  const rows = (data as SeoEntry[]) ?? [];
+  const home = (homeRow as HomeSeo) ?? emptyHome();
+  const rows = (basic as SeoEntry[]) ?? [];
   const byPath = new Map(rows.map((r) => [r.path, r]));
-  // Always include the SEO-driven pages (default entries), then any other rows.
-  const known = SEO_PATHS.map((p) => byPath.get(p) ?? emptyEntry(p));
-  const extra = rows.filter((r) => !SEO_PATHS.includes(r.path));
+  const known = OTHER_PATHS.map((p) => byPath.get(p) ?? emptyEntry(p));
+  const extra = rows.filter((r) => r.path !== "/" && !OTHER_PATHS.includes(r.path));
   const entries = [...known, ...extra];
 
   return (
@@ -49,11 +74,13 @@ export default async function AdminSeo() {
         </a>{" "}
         are generated automatically.
       </p>
-      <SeoEditor
-        entries={entries}
-        labels={PATH_LABELS}
-        loadError={error?.message ?? null}
-      />
+
+      <HomeSeoEditor entry={home} loadError={homeErr?.message ?? null} />
+
+      <div className="mt-10">
+        <h2 className="font-display text-lg font-semibold">Other pages</h2>
+        <SeoEditor entries={entries} labels={PATH_LABELS} loadError={null} />
+      </div>
     </div>
   );
 }

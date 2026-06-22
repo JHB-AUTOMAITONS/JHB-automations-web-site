@@ -406,6 +406,91 @@ export async function deleteSeo(path: string) {
   return { ok: true };
 }
 
+export type HomeSeoPayload = {
+  title: string;
+  meta_title: string;
+  description: string;
+  keywords: string;
+  canonical: string;
+  og_title: string;
+  og_description: string;
+  og_image: string;
+  robots: string;
+  structured_data: string;
+  seo_content: string;
+  slug: string;
+};
+
+// Home page slug: empty or "/" means the root URL; anything else is slugified
+// with a single leading slash. We never auto-generate "/home".
+function normHomeSlug(raw: string): string {
+  const s = (raw || "").trim();
+  if (s === "" || s === "/") return "/";
+  const cleaned = toSlug(s);
+  return cleaned ? `/${cleaned}` : "/";
+}
+
+export async function saveHomeSeo(payload: HomeSeoPayload) {
+  const { supabase, user } = await getStaff();
+
+  // Validate JSON-LD if provided.
+  const sd = (payload.structured_data || "").trim();
+  if (sd) {
+    try {
+      JSON.parse(sd);
+    } catch {
+      return { ok: false, error: "Structured Data (JSON-LD) must be valid JSON." };
+    }
+  }
+
+  const slug = normHomeSlug(payload.slug);
+  // Duplicate-slug guard: no other page may use the same (non-root) slug.
+  if (slug !== "/") {
+    const { data: dup } = await supabase
+      .from("jhb_seo")
+      .select("path")
+      .eq("slug", slug)
+      .neq("path", "/")
+      .maybeSingle();
+    if (dup) return { ok: false, error: `That slug is already used by "${dup.path}".` };
+  }
+
+  const { error } = await supabase.from("jhb_seo").upsert(
+    {
+      path: "/",
+      title: payload.title.trim() || null,
+      meta_title: payload.meta_title.trim() || null,
+      description: payload.description.trim() || null,
+      keywords: payload.keywords.trim() || null,
+      canonical: payload.canonical.trim() || null,
+      og_title: payload.og_title.trim() || null,
+      og_description: payload.og_description.trim() || null,
+      og_image: payload.og_image.trim() || null,
+      robots: payload.robots.trim() || null,
+      structured_data: sd || null,
+      seo_content: payload.seo_content.trim() || null,
+      slug,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    },
+    { onConflict: "path" }
+  );
+  if (error) {
+    // Most likely the new columns don't exist yet — point the admin at the migration.
+    return {
+      ok: false,
+      error:
+        error.message +
+        " (If this mentions a missing column, run the jhb_seo migration SQL first.)",
+    };
+  }
+  await log("seo.home.save", "Updated Home Page SEO");
+  await snapshot("seo:/", "SEO — Home", payload, "Updated Home Page SEO");
+  revalidatePath("/");
+  revalidatePath("/seo");
+  return { ok: true };
+}
+
 export async function updateLeadStatus(id: number, status: string) {
   const { supabase } = await getStaff();
   const { error } = await supabase

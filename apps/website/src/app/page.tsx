@@ -10,7 +10,7 @@ import Faq from "@/components/Faq";
 import BlogPreview from "@/components/BlogPreview";
 import CtaSection from "@/components/CtaSection";
 import Contact from "@/components/Contact";
-import { getStats, getSettings, buildMetadata } from "@jhb/shared/content-server";
+import { getStats, getSettings, buildMetadata, getSeo } from "@jhb/shared/content-server";
 import { getServices } from "@jhb/shared/services-server";
 import { getPublishedHome } from "@jhb/shared/home-server";
 import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos, partners] =
+  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos, partners, seo] =
     await Promise.all([
       getPublishedHome(),
       getStats(),
@@ -41,6 +41,7 @@ export default async function Home() {
       getActiveHomeFaqs(),
       getActiveClientLogos(),
       getPartners(),
+      getSeo("/"),
     ]);
 
   // Map the editable hero block onto the Hero component's props
@@ -69,6 +70,12 @@ export default async function Home() {
 
   return (
     <main className="relative">
+      {seo?.structured_data && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: seo.structured_data }}
+        />
+      )}
       <Hero
         content={heroContent}
         heroImage={home.hero.image}
@@ -90,6 +97,14 @@ export default async function Home() {
       <Faq items={homeFaqs} />
       <BlogPreview />
       <CtaSection cta={home.cta} />
+      {seo?.seo_content && (
+        <section className="container-x py-12">
+          <div
+            className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: seo.seo_content }}
+          />
+        </section>
+      )}
       <Contact settings={settings} />
     </main>
   );
