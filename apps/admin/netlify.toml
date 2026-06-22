@@ -14,9 +14,11 @@
 
 [build]
   command = "npm run build"
-  # No hardcoded `publish` — @netlify/plugin-nextjs auto-detects the .next output
-  # from the Netlify "Package directory" (apps/admin). Hardcoding it double-nests
-  # the path in this monorepo (e.g. apps/admin/apps/admin/.next) and 404s.
+  # publish is resolved RELATIVE to the Base/Package directory (apps/admin), so
+  # ".next" -> apps/admin/.next. Notes: a full path ("apps/admin/.next") double-
+  # nests to apps/admin/apps/admin/.next (404); an empty publish defaults to the
+  # base dir and errors "publish cannot be the same as base directory".
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
