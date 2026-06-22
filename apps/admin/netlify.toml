@@ -6,9 +6,8 @@
 # Netlify then reads THIS file and (because the repo root package.json declares
 # npm workspaces) installs the whole workspace so @jhb/shared resolves.
 #
-# REQUIRED environment variables (Netlify → Site settings → Environment vars):
-#   NEXT_PUBLIC_SUPABASE_URL       = https://ossvdnwcmsjbdlstldhh.supabase.co
-#   NEXT_PUBLIC_SUPABASE_ANON_KEY  = sb_publishable_...   (your anon key)
+# Supabase env vars are committed in apps/admin/.env.production (they are public
+# NEXT_PUBLIC values), so no Netlify dashboard env vars are required.
 #
 # DO NOT set STATIC_EXPORT here. The admin needs the cookie-aware Supabase client
 # for login/sessions; STATIC_EXPORT makes it cookieless and would break auth.
