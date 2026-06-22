@@ -9,6 +9,19 @@ import ImagePicker from "./ImagePicker";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 
+// Accept a bare slug, a title, or a pasted full URL; keep only the slug portion,
+// lowercase, spaces/symbols -> hyphen, collapse repeats (trailing hyphen kept
+// while typing; the server normalises again on save).
+const cleanSlugInput = (raw: string) => {
+  let s = raw.trim();
+  if (s.includes("/")) {
+    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "").split(/[?#]/)[0];
+    const parts = s.split("/").filter(Boolean);
+    if (parts.length) s = parts[parts.length - 1];
+  }
+  return s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+/, "");
+};
+
 export default function PostEditor({
   post,
   categories,
@@ -147,7 +160,7 @@ export default function PostEditor({
               label="Slug (URL)"
               value={slug}
               onChange={(v) => {
-                setSlug(v);
+                setSlug(cleanSlugInput(v));
                 setSlugTouched(true);
               }}
               prefix="/blog/"

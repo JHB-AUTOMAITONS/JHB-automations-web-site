@@ -1170,7 +1170,9 @@ function toSlug(raw: string) {
 
 export async function savePost(input: PostInput) {
   const { supabase, user } = await getStaff();
-  const slug = slugify(input.slug || input.title);
+  // Accept a bare slug, a title, or a pasted full URL for the slug field; fall
+  // back to the title. toSlug strips a URL/path down to its last segment.
+  const slug = toSlug(input.slug || "") || slugify(input.title);
   if (!slug) return { ok: false, error: "A title or slug is required." };
   if (!input.title.trim()) return { ok: false, error: "Title is required." };
 

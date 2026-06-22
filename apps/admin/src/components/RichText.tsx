@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import FontSizeControl, { wrapSelectionFontSize } from "./FontSizeControl";
+import ColorEditor from "./ColorEditor";
 
 type Props = {
   value: string;
@@ -16,15 +17,38 @@ const buttons: { cmd: string; label: string; arg?: string }[] = [
   { cmd: "insertOrderedList", label: "1. List" },
 ];
 
+// Validate any CSS colour string (HEX, rgb()/rgba(), or a colour name) using the
+// browser's own parser — returns true only if the value is understood as a colour.
+function isValidColor(c: string): boolean {
+  const s = c.trim();
+  if (!s) return false;
+  const probe = new Option().style;
+  probe.color = "";
+  probe.color = s;
+  return probe.color !== "";
+}
+
 export default function RichText({ value, onChange }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const styleRange = useRef<Range | null>(null);
   const [fontSizePx, setFontSizePx] = useState(14);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [saved, setSaved] = useState<string[]>([]);
 
-  // Set initial HTML once (uncontrolled thereafter to keep the caret stable)
+  // Set initial HTML once (uncontrolled thereafter to keep the caret stable),
+  // and load any saved/recent colours shared with the other editors.
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) {
       ref.current.innerHTML = value;
+    }
+    try {
+      const r = JSON.parse(localStorage.getItem("jhb_recent_colors") || "[]");
+      if (Array.isArray(r)) setRecent(r.slice(0, 8));
+      const s = JSON.parse(localStorage.getItem("jhb_saved_colors") || "[]");
+      if (Array.isArray(s)) setSaved(s.slice(0, 16));
+    } catch {
+      /* ignore */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,6 +99,42 @@ export default function RichText({ value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const pushRecent = (c: string) =>
+    setRecent((prev) => {
+      const next = [c, ...prev.filter((x) => x.toLowerCase() !== c.toLowerCase())].slice(0, 8);
+      try {
+        localStorage.setItem("jhb_recent_colors", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+
+  const saveCustom = (c: string) =>
+    setSaved((prev) => {
+      const next = [c, ...prev.filter((x) => x.toLowerCase() !== c.toLowerCase())].slice(0, 16);
+      try {
+        localStorage.setItem("jhb_saved_colors", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+
+  // Apply any CSS colour (HEX / rgb() / hsl() / name) to the selection inline.
+  // Works on selected text inside headings, paragraphs, lists, etc.
+  const applyColor = (raw: string) => {
+    const c = raw.trim();
+    if (!isValidColor(c)) return;
+    ref.current?.focus();
+    restoreSel();
+    document.execCommand("styleWithCSS", false, "true");
+    document.execCommand("foreColor", false, c);
+    pushRecent(c);
+    setColorOpen(false);
+    sync();
+  };
+
   const exec = (cmd: string, arg?: string) => {
     ref.current?.focus();
     document.execCommand(cmd, false, arg);
@@ -105,6 +165,17 @@ export default function RichText({ value, onChange }: Props) {
         <span className="mx-0.5 h-4 w-px bg-ink/10" />
         <button
           type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            saveSel();
+          }}
+          onClick={() => setColorOpen(true)}
+          className="rounded-md px-2.5 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+        >
+          🎨 Color
+        </button>
+        <button
+          type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={addLink}
           className="rounded-md px-2.5 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
@@ -126,6 +197,16 @@ export default function RichText({ value, onChange }: Props) {
         suppressContentEditableWarning
         onInput={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
         className="prose-jhb min-h-[120px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+      />
+
+      <ColorEditor
+        open={colorOpen}
+        initialColor={recent[0] || "#2563EB"}
+        recent={recent}
+        saved={saved}
+        onApply={applyColor}
+        onSaveCustom={saveCustom}
+        onClose={() => setColorOpen(false)}
       />
     </div>
   );
