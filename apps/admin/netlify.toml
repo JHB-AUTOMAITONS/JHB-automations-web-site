@@ -15,7 +15,9 @@
 
 [build]
   command = "npm run build"
-  publish = ".next"
+  # Full path from the repo root — the Next.js plugin resolves publish from the
+  # repository root, not the base directory, in this monorepo setup.
+  publish = "apps/admin/.next"
 
 [build.environment]
   NODE_VERSION = "20"
