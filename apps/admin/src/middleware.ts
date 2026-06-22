@@ -6,12 +6,17 @@ import { NextResponse, type NextRequest } from "next/server";
 // are bounced to /login (defense-in-depth on top of database RLS).
 const STAFF_ROLES = ["admin", "editor", "manager"];
 
+// Tolerate an accidental "Value: "/"Key: " prefix or quotes/whitespace pasted
+// into the env vars (a common dashboard mistake) -> avoids "Invalid API key".
+const cleanEnv = (v?: string) =>
+  (v ?? "").trim().replace(/^(?:value|key)\s*:\s*/i, "").replace(/^["']|["']$/g, "").trim();
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     {
       cookies: {
         getAll() {
