@@ -22,13 +22,13 @@ Everything here is reversible: if anything looks wrong, flip the two `.env.local
 ## Step 3 — Create the admin login
 Auth users don't transfer via SQL, so create the admin fresh:
 1. New project dashboard → **Authentication** → **Users** → **Add user** → **Create new user**.
-   - Email: `asudhakar@live.in`
+   - Email: `<your-admin-email>`
    - Password: (choose one)
    - **Tick "Auto Confirm User"** so the email is confirmed immediately.
 2. The `jhb_on_auth_user_created` trigger auto-inserts the matching `jhb_profiles` row (role defaults to `editor`).
 3. Promote to admin — run in SQL Editor:
    ```sql
-   update public.jhb_profiles set role = 'admin' where email = 'asudhakar@live.in';
+   update public.jhb_profiles set role = 'admin' where email = '<your-admin-email>';
    ```
 4. (Optional) verify:
    ```sql

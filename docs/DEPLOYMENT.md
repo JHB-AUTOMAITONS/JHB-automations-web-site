@@ -58,7 +58,7 @@ Your Supabase project (`ossvdnwcmsjbdlstldhh`) is already created and seeded
 
 1. **Schema + data loaded** — runbook Steps 1–2 (18 `jhb_*` tables, content rows).
 2. **Admin user created + promoted** — runbook Step 3
-   (`asudhakar@live.in`, role set to `admin`).
+   (your admin email, role set to `admin`).
 3. **Auth URLs** (do this AFTER you know your domain):
    Supabase dashboard → **Authentication → URL Configuration**:
    - **Site URL:** `https://admin.yourdomain.com`
@@ -154,7 +154,7 @@ Hostinger proxies the domain to it.
 - [ ] Contact form submits → a row appears in Supabase `jhb_leads`
       (Admin → Leads).
 - [ ] `https://admin.yourdomain.com` redirects to `/login`.
-- [ ] Logging in with `asudhakar@live.in` works and you can edit + save content.
+- [ ] Logging in with your admin email works and you can edit + save content.
 - [ ] Edited content shows on the public site.
 - [ ] Old Supabase project (`wzvzzcuennotfutklulh`) still alive (images load).
 
