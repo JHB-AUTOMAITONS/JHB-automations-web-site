@@ -34,14 +34,19 @@ body {
   overflow-x: hidden;
   max-width: 100%;
   -webkit-font-smoothing: antialiased;
-  cursor: none;
 }
 
-/* Hide custom cursor fallback on touch devices */
-@media (hover: none) {
-  body {
-    cursor: auto;
-  }
+/* Standard cursor behavior: pointer on interactive elements */
+button,
+[role="button"],
+a[href],
+summary,
+label[for] {
+  cursor: pointer;
+}
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 /* Selection */

@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import CursorGlow from "./CursorGlow";
 
 // Lazy-load the canvas background (client-only) so it never blocks first paint.
 const AutomationBackground = dynamic(() => import("./AutomationBackground"), {
@@ -39,7 +38,6 @@ export default function SiteChrome({
     <>
       <PageViewTracker />
       <AutomationBackground />
-      <CursorGlow />
       <ScrollProgress />
       <Navbar serviceLinks={serviceLinks} productLinks={productLinks} branding={settings.branding} />
       {children}
