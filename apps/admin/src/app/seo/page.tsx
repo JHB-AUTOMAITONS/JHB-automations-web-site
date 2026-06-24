@@ -1,6 +1,7 @@
 import { createClient } from "@jhb/shared/supabase/server";
 import SeoEditor, { type SeoEntry } from "@/components/SeoEditor";
 import HomeSeoEditor, { type HomeSeo } from "@/components/HomeSeoEditor";
+import SeoMigrationButton from "@/components/SeoMigrationButton";
 
 // Other pages whose meta is driven by jhb_seo (Home has its own rich editor).
 const OTHER_PATHS = ["/services", "/blog"];
@@ -74,6 +75,24 @@ export default async function AdminSeo() {
         </a>{" "}
         are generated automatically.
       </p>
+
+      {homeErr ? (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-amber-800">
+            <p className="font-semibold">SEO schema needs a quick update</p>
+            <p className="mt-0.5 text-xs">
+              The <code>jhb_seo</code> table is missing some columns
+              {homeErr.message ? ` (${homeErr.message})` : ""}. Click{" "}
+              <strong>Run Migration</strong> to add them and reload the schema cache.
+            </p>
+          </div>
+          <SeoMigrationButton hasError />
+        </div>
+      ) : (
+        <div className="mt-5 flex justify-end">
+          <SeoMigrationButton />
+        </div>
+      )}
 
       <HomeSeoEditor entry={home} loadError={homeErr?.message ?? null} />
 

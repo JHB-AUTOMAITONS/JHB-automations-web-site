@@ -491,6 +491,39 @@ export async function saveHomeSeo(payload: HomeSeoPayload) {
   return { ok: true };
 }
 
+// Self-service schema repair for Admin → SEO. Calls the SECURITY DEFINER
+// function installed by supabase/migrations/jhb_seo_setup.sql, which adds any
+// missing jhb_seo columns and reloads the PostgREST schema cache. If the
+// function isn't installed yet, we return a clear instruction to run the SQL
+// once (the very first bootstrap can't create the function from the client).
+export async function runSeoMigration() {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can run the SEO migration." };
+  const { supabase } = ctx;
+
+  const { data, error } = await supabase.rpc("jhb_seo_run_migration");
+  if (error) {
+    const missing =
+      error.code === "PGRST202" ||
+      /jhb_seo_run_migration|function .* does not exist|schema cache/i.test(error.message);
+    if (missing) {
+      return {
+        ok: false,
+        needsSql: true,
+        error:
+          "First-time setup: open the Supabase SQL Editor and run " +
+          "supabase/migrations/jhb_seo_setup.sql once. After that, this button " +
+          "will repair the schema and reload the cache on its own.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  await log("seo.migration", "Ran jhb_seo schema migration");
+  revalidatePath("/seo");
+  return { ok: true, columns: (data as { columns?: string[] } | null)?.columns ?? [] };
+}
+
 export async function updateLeadStatus(id: number, status: string) {
   const { supabase } = await getStaff();
   const { error } = await supabase
