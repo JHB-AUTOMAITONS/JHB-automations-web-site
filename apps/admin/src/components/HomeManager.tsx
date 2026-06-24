@@ -21,30 +21,26 @@ import ImagePicker from "./ImagePicker";
 import HomeFaqManager from "./HomeFaqManager";
 import StatsManager from "./StatsManager";
 import PartnersManager from "./PartnersManager";
-import LivePreview, { type PreviewTab } from "./LivePreview";
-
-const WEBSITE_URL =
-  process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
 
 type ServiceLite = { slug: string; title: string; short: string };
 type Toast = { type: "success" | "error"; msg: string } | null;
 
 export default function HomeManager({
   draft,
+  published,
   services,
   faqs = [],
   stats,
   partners,
   internalPages = [],
-  blogDetailSlug = null,
 }: {
   draft: HomeContent;
+  published: HomeContent;
   services: ServiceLite[];
   faqs?: HomeFaq[];
   stats: StatsContent;
   partners: PartnersDoc;
   internalPages?: InternalPage[];
-  blogDetailSlug?: string | null;
 }) {
   const router = useRouter();
 
@@ -89,28 +85,6 @@ export default function HomeManager({
     cta,
     founder,
   });
-
-  // Draft content streamed live into the preview iframe. Memoised so the preview
-  // only re-posts when an editable block actually changes.
-  const previewHome = useMemo<HomeContent>(
-    () => ({ hero, about, servicesSection, serviceCards: cards, cta, founder }),
-    [hero, about, servicesSection, cards, cta, founder]
-  );
-
-  const previewTabs = useMemo<PreviewTab[]>(
-    () => [
-      { id: "home", label: "Home Page", path: "/preview/", live: true },
-      { id: "blog", label: "Blog Listing", path: "/blog/" },
-      {
-        id: "blog-detail",
-        label: "Blog Detail",
-        path: blogDetailSlug ? `/blog/${blogDetailSlug}/` : "/blog/",
-        disabled: !blogDetailSlug,
-        disabledHint: "No published blog posts yet",
-      },
-    ],
-    [blogDetailSlug]
-  );
 
   const save = async () => {
     setBusy("save");
@@ -196,9 +170,13 @@ export default function HomeManager({
         </div>
       </div>
 
-      <div className={`mt-8 gap-6 ${showPreview ? "xl:flex xl:items-start" : ""}`}>
+      <div
+        className={`mt-8 grid gap-6 ${
+          showPreview ? "xl:grid-cols-[1fr_440px]" : ""
+        }`}
+      >
         {/* ---- Editor ---- */}
-        <div className="min-w-0 flex-1 space-y-6">
+        <div className="space-y-6">
           {/* Hero */}
           <Card title="Hero Section">
             <Field label="Badge" value={hero.badge} onChange={(v) => setHeroField("badge", v)} />
@@ -425,12 +403,21 @@ export default function HomeManager({
 
         {/* ---- Live preview ---- */}
         {showPreview && (
-          <LivePreview
-            tabs={previewTabs}
-            draft={previewHome}
-            websiteUrl={WEBSITE_URL}
-            storageKey="jhb.preview.width.home"
-          />
+          <div className="xl:sticky xl:top-6 xl:h-fit">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              Live preview (draft)
+            </div>
+            <Preview
+              hero={hero}
+              about={about}
+              servicesSection={servicesSection}
+              cta={cta}
+            />
+            <p className="mt-3 text-[11px] text-muted">
+              Published {published.hero.title === hero.title ? "matches" : "differs from"} this draft.
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -509,3 +496,60 @@ function Toggle({
   );
 }
 
+function Preview({
+  hero,
+  about,
+  servicesSection,
+  cta,
+}: {
+  hero: HeroBlock;
+  about: AboutBlock;
+  servicesSection: ServicesSectionBlock;
+  cta: CtaBlock;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-ink/10 bg-base shadow-soft">
+      {/* hero */}
+      <div className="bg-surface p-5">
+        <span className="eyebrow !text-[10px]">{hero.badge}</span>
+        <h3 className="mt-3 font-display text-lg font-bold leading-tight">
+          {hero.title} <span className="grad-text">{hero.highlight}</span>
+        </h3>
+        <div
+          className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
+          dangerouslySetInnerHTML={{ __html: hero.subtitle }}
+        />
+        <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hero.buttonText}</span>
+        {hero.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={hero.image} alt="" className="mt-3 aspect-[4/3] w-full rounded-lg object-cover" />
+        )}
+      </div>
+      {/* about */}
+      {about.enabled && (
+        <div className="border-t border-ink/10 p-5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
+          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: about.title }} />
+          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.descriptionHtml }} />
+          {about.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={about.image} alt="" className="mt-2 aspect-[4/3] w-full rounded-lg object-cover" />
+          )}
+        </div>
+      )}
+      {/* services heading */}
+      <div className="border-t border-ink/10 p-5 text-center">
+        <div className="font-display text-base font-bold grad-text [&_p]:m-0 [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
+        <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
+      </div>
+      {/* cta */}
+      {cta.enabled && (
+        <div className="border-t border-ink/10 bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
+          <h4 className="font-display text-base font-bold">{cta.title}</h4>
+          <div className="prose-jhb mt-1 text-xs text-muted" dangerouslySetInnerHTML={{ __html: cta.textHtml }} />
+          <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{cta.buttonText}</span>
+        </div>
+      )}
+    </div>
+  );
+}
