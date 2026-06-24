@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Post } from "@jhb/shared/posts";
 import { savePost, deletePost } from "@/app/actions";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
+import LivePreview, { type PreviewTab } from "./LivePreview";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
+
+const WEBSITE_URL =
+  process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
+
+const PREVIEW_TABS: PreviewTab[] = [
+  { id: "post", label: "Blog Post", path: "/preview/blog/", live: true },
+  { id: "list", label: "Blog Listing", path: "/blog/" },
+];
 
 // Accept a bare slug, a title, or a pasted full URL; keep only the slug portion,
 // lowercase, spaces/symbols -> hyphen, collapse repeats (trailing hyphen kept
@@ -46,6 +55,30 @@ export default function PostEditor({
 
   const [busy, setBusy] = useState<"" | "draft" | "publish">("");
   const [toast, setToast] = useState<Toast>(null);
+  const [showPreview, setShowPreview] = useState(true);
+
+  // The unsaved post, shaped exactly like a DB row, streamed live into the
+  // preview so it renders through the real BlogArticle component as you type.
+  const blogDraft = useMemo<Post>(
+    () => ({
+      id: post?.id ?? "preview",
+      slug: slug || "your-post-slug",
+      title,
+      excerpt: excerpt || null,
+      content_html: content || null,
+      cover_image: cover,
+      category: category || null,
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      author: author || "JHB Automations",
+      status: post?.status ?? "draft",
+      meta_title: metaTitle || null,
+      meta_description: metaDesc || null,
+      published_at: post?.published_at ?? null,
+      created_at: post?.created_at ?? new Date(0).toISOString(),
+      updated_at: post?.updated_at ?? new Date(0).toISOString(),
+    }),
+    [post, slug, title, excerpt, content, cover, category, tags, author, metaTitle, metaDesc]
+  );
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -126,6 +159,12 @@ export default function PostEditor({
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPreview((s) => !s)}
+            className="rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
+          >
+            {showPreview ? "Hide preview" : "Show preview"}
+          </button>
           {editing && (
             <button
               onClick={remove}
@@ -151,7 +190,8 @@ export default function PostEditor({
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className={`mt-8 gap-6 ${showPreview ? "xl:flex xl:items-start" : ""}`}>
+       <div className="min-w-0 flex-1 grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* main */}
         <div className="space-y-6">
           <Card>
@@ -206,6 +246,17 @@ export default function PostEditor({
             <Field label="Author" value={author} onChange={setAuthor} />
           </Card>
         </div>
+       </div>
+
+        {/* ---- Live preview ---- */}
+        {showPreview && (
+          <LivePreview
+            tabs={PREVIEW_TABS}
+            draft={blogDraft}
+            websiteUrl={WEBSITE_URL}
+            storageKey="jhb.preview.width.blog"
+          />
+        )}
       </div>
     </div>
   );
