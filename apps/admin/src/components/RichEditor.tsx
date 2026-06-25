@@ -42,7 +42,7 @@ const TOOLS: { cmd: string; arg?: string; label: string; title: string }[] = [
   { cmd: "justifyRight", label: "⫸", title: "Align right" },
 ];
 
-// Paragraph + full heading range for the block-format dropdown.
+// Paragraph + headings + quote/code for the block-format dropdown.
 const BLOCKS = [
   { tag: "P", label: "Paragraph" },
   { tag: "H1", label: "Heading 1" },
@@ -51,7 +51,10 @@ const BLOCKS = [
   { tag: "H4", label: "Heading 4" },
   { tag: "H5", label: "Heading 5" },
   { tag: "H6", label: "Heading 6" },
+  { tag: "BLOCKQUOTE", label: "Block Quote" },
+  { tag: "PRE", label: "Code" },
 ];
+const BLOCK_TAGS = new Set(BLOCKS.map((b) => b.tag));
 
 // Validate any CSS color string (HEX, rgb()/rgba(), or a colour name) using the
 // browser's own parser — returns true only if the value is understood as a colour.
@@ -104,6 +107,8 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
   const [recent, setRecent] = useState<string[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   const [fontSizePx, setFontSizePx] = useState(14);
+  // The block style at the caret, so the Style dropdown shows the active style.
+  const [blockTag, setBlockTag] = useState("P");
 
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) ref.current.innerHTML = value;
@@ -161,8 +166,31 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     if (!Number.isNaN(px)) setFontSizePx(Math.round(px));
   };
 
+  // Reflect the block style (paragraph / heading / quote / code) at the caret,
+  // so the Style dropdown always shows the currently-applied style — and only
+  // for THIS editor (selectionchange fires globally; ignore other editors).
+  const readCaretBlock = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const node = sel.anchorNode;
+    if (!node || !ref.current.contains(node)) return;
+    let el: HTMLElement | null =
+      node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
+    while (el && el !== ref.current) {
+      if (BLOCK_TAGS.has(el.tagName)) {
+        setBlockTag(el.tagName);
+        return;
+      }
+      el = el.parentElement;
+    }
+    setBlockTag("P"); // no explicit block wrapper → treat as Paragraph
+  };
+
   useEffect(() => {
-    const handler = () => readCaretSize();
+    const handler = () => {
+      readCaretSize();
+      readCaretBlock();
+    };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,6 +244,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     ref.current?.focus();
     restoreSel();
     document.execCommand("formatBlock", false, tag);
+    setBlockTag(tag);
     sync();
   };
 
@@ -368,20 +397,12 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
 
         {/* Headings / paragraph block format (H1–H6) */}
         <select
-          title="Paragraph / heading"
-          defaultValue=""
+          title="Paragraph / heading style"
+          value={blockTag}
           onMouseDown={saveSel}
-          onChange={(e) => {
-            if (e.target.value) {
-              applyBlock(e.target.value);
-              e.target.value = "";
-            }
-          }}
+          onChange={(e) => applyBlock(e.target.value)}
           className="rounded-md border border-ink/10 bg-surface px-1.5 py-1 text-xs font-semibold text-muted hover:text-ink focus:outline-none"
         >
-          <option value="" disabled>
-            ¶ Style
-          </option>
           {BLOCKS.map((b) => (
             <option key={b.tag} value={b.tag}>
               {b.label}
@@ -474,7 +495,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
         contentEditable
         suppressContentEditableWarning
         onInput={sync}
-        className="prose-jhb min-h-[260px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        className="prose-jhb min-h-[260px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
       />
 
       {/* Link dialog */}
