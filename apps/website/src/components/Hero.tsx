@@ -75,11 +75,9 @@ export default function Hero({
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl"
-          >
-            {content.title}{" "}
-            <span className="grad-text">{content.highlight}</span>
-          </motion.h1>
+            className="mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl [&_p]:m-0 [&_p]:inline [&>div]:inline"
+            dangerouslySetInnerHTML={{ __html: content.title }}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}

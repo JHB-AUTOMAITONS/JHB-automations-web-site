@@ -10,6 +10,7 @@ import type {
   CtaBlock,
   FounderBlock,
 } from "@jhb/shared/home";
+import { composeHeroHeading } from "@jhb/shared/home";
 import { saveHomeDraft, publishHome } from "@/app/actions";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
@@ -180,8 +181,17 @@ export default function HomeManager({
           {/* Hero */}
           <Card title="Hero Section">
             <Field label="Badge" value={hero.badge} onChange={(v) => setHeroField("badge", v)} />
-            <Field label="Title" value={hero.title} onChange={(v) => setHeroField("title", v)} textarea />
-            <Field label="Highlighted phrase" value={hero.highlight} onChange={(v) => setHeroField("highlight", v)} />
+            <div>
+              <span className="mb-1 block text-xs font-medium text-muted">
+                Heading — select words and click{" "}
+                <span className="grad-text font-semibold">Highlight</span> for the gradient
+              </span>
+              <RichEditor
+                value={composeHeroHeading(hero.title, hero.highlight)}
+                onChange={(html) => setHero((p) => ({ ...p, title: html, highlight: "" }))}
+                internalPages={internalPages}
+              />
+            </div>
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">
                 Hero Description
@@ -529,9 +539,10 @@ function Preview({
       {/* hero */}
       <div className="bg-surface p-5">
         <span className="eyebrow !text-[10px]">{hero.badge}</span>
-        <h3 className="mt-3 font-display text-lg font-bold leading-tight">
-          {hero.title} <span className="grad-text">{hero.highlight}</span>
-        </h3>
+        <h3
+          className="mt-3 font-display text-lg font-bold leading-tight [&_p]:m-0 [&_p]:inline [&>div]:inline"
+          dangerouslySetInnerHTML={{ __html: composeHeroHeading(hero.title, hero.highlight) }}
+        />
         <div
           className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
           dangerouslySetInnerHTML={{ __html: hero.subtitle }}

@@ -13,6 +13,7 @@ import Contact from "@/components/Contact";
 import { getStats, getSettings, buildMetadata, getSeo } from "@jhb/shared/content-server";
 import { getServices } from "@jhb/shared/services-server";
 import { getPublishedHome } from "@jhb/shared/home-server";
+import { composeHeroHeading } from "@jhb/shared/home";
 import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
 import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
@@ -47,8 +48,8 @@ export default async function Home() {
   // Map the editable hero block onto the Hero component's props
   const heroContent = {
     badge: home.hero.badge,
-    title: home.hero.title,
-    highlight: home.hero.highlight,
+    title: composeHeroHeading(home.hero.title, home.hero.highlight),
+    highlight: "",
     subtitle: home.hero.subtitle,
     ctaPrimaryLabel: home.hero.buttonText,
     ctaPrimaryHref: home.hero.buttonHref,

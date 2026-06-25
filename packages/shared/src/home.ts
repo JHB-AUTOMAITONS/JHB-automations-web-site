@@ -116,6 +116,20 @@ export const HOME_DEFAULT: HomeContent = {
   },
 };
 
+// The hero heading is now a single rich field with inline gradient highlights.
+// For legacy content (plain `title` + separate `highlight`) we compose the old
+// shape into one HTML string the first time it renders — so existing hero
+// headings are preserved and migrate lazily once edited. Already-rich titles
+// (anything containing a tag) are returned untouched.
+export function composeHeroHeading(title: string, highlight?: string): string {
+  const t = title ?? "";
+  if (/<[a-z!/][\s\S]*>/i.test(t)) return t; // already rich HTML
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const h = (highlight ?? "").trim();
+  return h ? `${esc(t)} <span class="grad-text">${esc(h)}</span>` : esc(t);
+}
+
 // Deep-merge a stored partial over the defaults so missing keys never break rendering.
 export function mergeHome(data: Partial<HomeContent> | null | undefined): HomeContent {
   const d = data ?? {};

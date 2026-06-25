@@ -239,6 +239,55 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     sync();
   };
 
+  // Inline gradient highlight (the site's .grad-text effect) applied to the
+  // selected words — toggles like Bold/Italic. No execCommand can wrap a
+  // semantic class, so we wrap/unwrap the Range directly.
+  const gradAncestor = (node: Node | null): HTMLElement | null => {
+    let n: Node | null = node;
+    while (n && n !== ref.current) {
+      if (
+        n.nodeType === Node.ELEMENT_NODE &&
+        (n as HTMLElement).classList?.contains("grad-text")
+      )
+        return n as HTMLElement;
+      n = n.parentNode;
+    }
+    return null;
+  };
+
+  const applyHighlight = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !ref.current) return;
+    const range = sel.getRangeAt(0);
+    if (!ref.current.contains(range.commonAncestorContainer)) return;
+
+    // Toggle off: selection sits inside an existing grad-text span → unwrap it.
+    const existing = gradAncestor(range.commonAncestorContainer);
+    if (existing && existing.parentNode) {
+      const parent = existing.parentNode;
+      while (existing.firstChild) parent.insertBefore(existing.firstChild, existing);
+      parent.removeChild(existing);
+      sync();
+      return;
+    }
+
+    // Wrap the selection in <span class="grad-text">.
+    const span = document.createElement("span");
+    span.className = "grad-text";
+    try {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      // Re-select the new span so a second click toggles it off.
+      const r = document.createRange();
+      r.selectNodeContents(span);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } catch {
+      /* selection couldn't be wrapped cleanly */
+    }
+    sync();
+  };
+
   // Block format (paragraph / H1–H6) applied to the saved selection.
   const applyBlock = (tag: string) => {
     ref.current?.focus();
@@ -409,6 +458,17 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
             </option>
           ))}
         </select>
+
+        {/* Inline gradient highlight — toggles on the selection like Bold */}
+        <button
+          type="button"
+          title="Highlight selected words (gradient) — click again to remove"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={applyHighlight}
+          className="rounded-md px-2 py-1 text-xs font-bold transition-colors hover:bg-ink/[0.06]"
+        >
+          <span className="grad-text">Highlight</span>
+        </button>
 
         {/* Horizontal divider */}
         <button
