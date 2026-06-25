@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { navItems, serviceMenu } from "@jhb/shared/data";
@@ -57,7 +58,19 @@ export default function Navbar({
             scrolled ? "glass-strong shadow-glow" : "bg-transparent"
           }`}
         >
-          <a href="#home" className="flex items-center gap-3">
+          <Link
+            href="/"
+            aria-label="JHB Automations — go to homepage"
+            className="flex items-center gap-3"
+            onClick={() => {
+              // Close the mobile menu if open, and on the homepage scroll back
+              // to the top (preserves the old #home behaviour); other pages
+              // client-navigate to / via the router below.
+              setOpen(false);
+              setMobileOpen(null);
+              if (pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          >
             <span
               className={`flex shrink-0 items-center justify-center overflow-hidden border shadow-glow ${
                 logoFailed
@@ -100,7 +113,7 @@ export default function Navbar({
             <span className="font-display text-lg font-bold tracking-tight">
               JHB <span className="grad-text">Automations</span>
             </span>
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-7 lg:flex">
             {navItems.map((item) => (
