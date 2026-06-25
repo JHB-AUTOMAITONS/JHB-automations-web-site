@@ -21,7 +21,7 @@ export type {
   HeroBlock,
   AboutBlock,
   ServicesSectionBlock,
-  ServiceCardOverride,
+  ServiceCard,
   CtaBlock,
 } from "./home";
 export type { Post, PostCard, PostStatus } from "./posts";

@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type {
-  HomeContent,
-  HeroBlock,
-  AboutBlock,
-  ServicesSectionBlock,
-  CtaBlock,
-  FounderBlock,
+import {
+  buildServiceCards,
+  type HomeContent,
+  type HeroBlock,
+  type AboutBlock,
+  type ServicesSectionBlock,
+  type CtaBlock,
+  type FounderBlock,
+  type ServiceCard,
 } from "@jhb/shared/home";
 import { saveHomeDraft, publishHome } from "@/app/actions";
 import type { InternalPage } from "@jhb/shared/service-pages";
@@ -21,8 +23,9 @@ import ImagePicker from "./ImagePicker";
 import HomeFaqManager from "./HomeFaqManager";
 import StatsManager from "./StatsManager";
 import PartnersManager from "./PartnersManager";
+import ServiceCardsManager from "./ServiceCardsManager";
 
-type ServiceLite = { slug: string; title: string; short: string };
+type ServiceLite = { slug: string; title: string; short: string; icon: string };
 type Toast = { type: "success" | "error"; msg: string } | null;
 
 export default function HomeManager({
@@ -44,15 +47,12 @@ export default function HomeManager({
 }) {
   const router = useRouter();
 
-  // Initialise service-card editors from saved overrides or canonical content
-  const initialCards = useMemo(() => {
-    const map = new Map(draft.serviceCards.map((o) => [o.slug, o]));
-    return services.map((s) => ({
-      slug: s.slug,
-      title: map.get(s.slug)?.title ?? s.title,
-      short: map.get(s.slug)?.short ?? s.short,
-    }));
-  }, [draft.serviceCards, services]);
+  // Resolve the dynamic service cards: use the saved list, or seed from the live
+  // services for legacy/empty data so existing cards are preserved.
+  const initialCards = useMemo(
+    () => buildServiceCards(draft.serviceCards, services),
+    [draft.serviceCards, services]
+  );
 
   const [hero, setHero] = useState<HeroBlock>(draft.hero);
   const [about, setAbout] = useState<AboutBlock>(draft.about);
@@ -256,38 +256,11 @@ export default function HomeManager({
               <span className="mb-1 block text-xs font-medium text-muted">Subheading (rich text)</span>
               <RichEditor value={servicesSection.subtitle} onChange={(html) => setServicesSection((p) => ({ ...p, subtitle: html }))} internalPages={internalPages} />
             </div>
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Service Cards
-              </p>
-              {cards.map((c, i) => (
-                <div key={c.slug} className="rounded-xl border border-ink/10 bg-base p-3">
-                  <p className="mb-2 font-mono text-[11px] text-muted">/{c.slug}</p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-medium text-muted">Card title</label>
-                      <RichEditor
-                        value={c.title}
-                        onChange={(html) =>
-                          setCards((p) => p.map((x, idx) => (idx === i ? { ...x, title: html } : x)))
-                        }
-                        internalPages={internalPages}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-medium text-muted">Card description</label>
-                      <RichEditor
-                        value={c.short}
-                        onChange={(html) =>
-                          setCards((p) => p.map((x, idx) => (idx === i ? { ...x, short: html } : x)))
-                        }
-                        internalPages={internalPages}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ServiceCardsManager
+              cards={cards}
+              onChange={setCards}
+              internalPages={internalPages}
+            />
           </Card>
 
           {/* Why Choose Us — Statistics (merged from the old Content page; live save) */}
@@ -515,7 +488,7 @@ function Preview({
   hero: HeroBlock;
   about: AboutBlock;
   servicesSection: ServicesSectionBlock;
-  serviceCards: { slug: string; title: string; short: string }[];
+  serviceCards: ServiceCard[];
   stats: StatsContent;
   partners: PartnersDoc;
   faqs: HomeFaq[];
@@ -572,16 +545,32 @@ function Preview({
       <div className="border-t border-ink/10 p-5 text-center">
         <div className="font-display text-base font-bold grad-text [&_p]:m-0 [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
         <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
-        {serviceCards.length > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-2 text-left">
-            {serviceCards.slice(0, 6).map((c) => (
-              <div key={c.slug} className="rounded-lg border border-ink/10 bg-surface p-3">
-                <p className="text-xs font-semibold leading-tight">{c.title}</p>
-                <p className="mt-1 text-[11px] text-muted">{c.short}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        {(() => {
+          const visible = serviceCards.filter((c) => c.enabled);
+          if (!visible.length) return null;
+          return (
+            <div className="mt-4 grid grid-cols-2 gap-2 text-left">
+              {visible.map((c) => (
+                <div key={c.id} className="rounded-lg border border-ink/10 bg-surface p-3">
+                  {c.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.image} alt="" className="mb-2 h-8 w-8 rounded-md object-cover" />
+                  ) : (
+                    <span className="mb-2 block h-8 w-8 rounded-md bg-gradient-to-br from-primary/30 to-secondary/30" />
+                  )}
+                  <div
+                    className="text-xs font-semibold leading-tight [&_p]:m-0"
+                    dangerouslySetInnerHTML={{ __html: c.title || "Untitled" }}
+                  />
+                  <div
+                    className="mt-1 text-[11px] text-muted [&_p]:m-0"
+                    dangerouslySetInnerHTML={{ __html: c.short }}
+                  />
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       {/* why choose us (stats) */}
       {stats.items.length > 0 && (

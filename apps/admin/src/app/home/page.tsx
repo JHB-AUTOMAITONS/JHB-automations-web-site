@@ -49,6 +49,7 @@ export default async function AdminHome() {
     slug: s.slug,
     title: s.title,
     short: s.short,
+    icon: s.icon,
   }));
 
   return (

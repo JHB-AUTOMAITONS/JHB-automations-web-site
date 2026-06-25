@@ -13,6 +13,7 @@ import Contact from "@/components/Contact";
 import { getStats, getSettings, buildMetadata, getSeo } from "@jhb/shared/content-server";
 import { getServices } from "@jhb/shared/services-server";
 import { getPublishedHome } from "@jhb/shared/home-server";
+import { buildServiceCards } from "@jhb/shared/home";
 import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
 import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
@@ -56,17 +57,17 @@ export default async function Home() {
     ctaSecondaryHref: "#services",
   };
 
-  // Apply per-card content overrides from the Home manager
-  const overrides = new Map(home.serviceCards.map((o) => [o.slug, o]));
-  const serviceCards = services.map((s) => {
-    const o = overrides.get(s.slug);
-    return {
-      title: o?.title || s.title,
-      desc: o?.short || s.short,
-      icon: s.icon,
-      slug: s.slug,
-    };
-  });
+  // Dynamic, admin-managed service cards (seeded from services for older data).
+  // Only enabled cards render, in their saved order.
+  const serviceCards = buildServiceCards(home.serviceCards, services)
+    .filter((c) => c.enabled)
+    .map((c) => ({
+      title: c.title,
+      desc: c.short,
+      icon: c.icon,
+      image: c.image,
+      slug: c.slug,
+    }));
 
   return (
     <main className="relative">

@@ -24,11 +24,84 @@ export type ServicesSectionBlock = {
   subtitle: string;
 };
 
-export type ServiceCardOverride = {
-  slug: string;
-  title: string;
-  short: string;
+// A fully dynamic Home service card. Stored as an ordered array inside the Home
+// draft/published content (order = array index). No DB schema change required.
+export type ServiceCard = {
+  id: string; // stable id (crypto.randomUUID() in the admin)
+  title: string; // rich HTML
+  short: string; // rich HTML (description)
+  icon: string; // one of SERVICE_CARD_ICONS; used when `image` is empty
+  image: string | null; // optional; overrides the icon when set
+  slug: string; // optional link target ("" = not linked)
+  enabled: boolean;
 };
+
+// Icon names available to the card picker — MUST match the keys in
+// apps/website/src/components/Icon.tsx.
+export const SERVICE_CARD_ICONS = [
+  "spark",
+  "chat",
+  "code",
+  "crm",
+  "whatsapp",
+  "rocket",
+  "search",
+  "doc",
+  "cart",
+  "flow",
+  "app",
+  "settings",
+] as const;
+
+type ServiceSeed = { slug: string; title: string; short: string; icon: string };
+
+// Resolve the stored serviceCards into a full, ordered card list. Tolerates the
+// legacy `{slug,title,short}` override shape (and an empty list) by seeding from
+// the live services — this preserves the existing cards on first load. Once the
+// admin saves, the stored value is already the new shape and is returned as-is.
+export function buildServiceCards(
+  stored: unknown,
+  services: ServiceSeed[]
+): ServiceCard[] {
+  const arr = Array.isArray(stored) ? stored : [];
+  const isNewShape = arr.some(
+    (c) => c && typeof c === "object" && "id" in c && "enabled" in c
+  );
+
+  if (isNewShape) {
+    return arr
+      .filter((c): c is Record<string, unknown> => !!c && typeof c === "object")
+      .map((c, i) => ({
+        id: typeof c.id === "string" && c.id ? c.id : `card-${i}`,
+        title: typeof c.title === "string" ? c.title : "",
+        short: typeof c.short === "string" ? c.short : "",
+        icon: typeof c.icon === "string" && c.icon ? c.icon : "spark",
+        image: typeof c.image === "string" && c.image ? c.image : null,
+        slug: typeof c.slug === "string" ? c.slug : "",
+        enabled: c.enabled !== false,
+      }));
+  }
+
+  // Legacy: `stored` is a list of {slug,title,short} overrides — seed every
+  // service into a card, applying any matching override.
+  const overrides = new Map(
+    arr
+      .filter((o): o is Record<string, unknown> => !!o && typeof o === "object")
+      .map((o) => [String(o.slug ?? ""), o])
+  );
+  return services.map((s, i) => {
+    const o = overrides.get(s.slug);
+    return {
+      id: s.slug || `card-${i}`,
+      title: (typeof o?.title === "string" && o.title) || s.title,
+      short: (typeof o?.short === "string" && o.short) || s.short,
+      icon: s.icon || "spark",
+      image: null,
+      slug: s.slug || "",
+      enabled: true,
+    };
+  });
+}
 
 export type CtaBlock = {
   enabled: boolean;
@@ -56,7 +129,7 @@ export type HomeContent = {
   hero: HeroBlock;
   about: AboutBlock;
   servicesSection: ServicesSectionBlock;
-  serviceCards: ServiceCardOverride[];
+  serviceCards: ServiceCard[];
   cta: CtaBlock;
   founder: FounderBlock;
 };
