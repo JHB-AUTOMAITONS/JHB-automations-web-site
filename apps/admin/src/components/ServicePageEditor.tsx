@@ -13,6 +13,7 @@ import { saveServicePage, checkServiceLinks } from "@/app/actions";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import LocalDateTime from "./LocalDateTime";
+import WhyChooseEditor from "./WhyChooseEditor";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Device = "desktop" | "tablet" | "mobile";
@@ -55,6 +56,7 @@ export default function ServicePageEditor({
     hero_link: page.hero_link,
     features: page.features,
     faq: page.faq,
+    why_choose: page.why_choose,
     cta: page.cta,
     image_url: page.image_url,
     image_alt: page.image_alt,
@@ -287,6 +289,13 @@ export default function ServicePageEditor({
               </button>
             </div>
           </Section>
+
+          <Section title="Why Choose Us">
+            <WhyChooseEditor
+              value={form.why_choose}
+              onChange={(v) => set("why_choose", v)}
+            />
+          </Section>
         </div>
 
         {/* ---- preview + SEO ---- */}
@@ -364,6 +373,36 @@ export default function ServicePageEditor({
                       ))}
                     </div>
                   )}
+                  {/* Why Choose Us — one card per enabled container */}
+                  {form.why_choose.filter((c) => c.enabled).map((c) => (
+                    <div key={c.id} className="mt-5 rounded-2xl border border-ink/10 bg-base p-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          {c.badge && <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{c.badge}</span>}
+                          <p className="mt-1 font-display text-base font-bold">
+                            {c.heading} <span className="grad-text">{c.highlight}</span>
+                          </p>
+                          {c.description && <p className="mt-1 text-xs text-muted">{c.description}</p>}
+                        </div>
+                        <ul className="space-y-2">
+                          {c.benefits.filter((b) => b.enabled && (b.title || b.image)).map((b) => (
+                            <li key={b.id} className="flex items-start gap-2">
+                              {b.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={b.image} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
+                              ) : (
+                                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[9px] font-bold text-white">✓</span>
+                              )}
+                              <span className="min-w-0">
+                                <span className="block text-xs font-medium text-ink/90">{b.title}</span>
+                                {b.desc && <span className="block text-[11px] text-muted">{b.desc}</span>}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

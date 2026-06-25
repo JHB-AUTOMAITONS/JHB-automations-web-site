@@ -67,6 +67,7 @@ export default async function ServicePage({
           heroLink: dbContent.hero_link || "",
           features:
             dbContent.features && dbContent.features.length > 0 ? dbContent.features : [],
+          whyChoose: dbContent.why_choose ?? [],
           image: dbContent.image_url,
           imageAlt: dbContent.image_alt,
           imageTitle: dbContent.image_title,

@@ -2,6 +2,7 @@ import { createClient } from "./supabase/server";
 import { serviceDetails } from "./data";
 import {
   EMPTY_CTA,
+  seedWhyChoose,
   type InternalPage,
   type ServiceCta,
   type ServiceFaqItem,
@@ -9,10 +10,11 @@ import {
   type ServicePage,
   type ServicePageSummary,
   type ServiceStatus,
+  type WhyChooseContainer,
 } from "./servicePages";
 
 const COLS =
-  "key, slug, meta_title, meta_description, meta_keywords, sort_order, status, hero_heading, hero_description, hero_link, features, faq, cta, image_url, image_alt, image_title, content_updated_at";
+  "key, slug, meta_title, meta_description, meta_keywords, sort_order, status, hero_heading, hero_description, hero_link, features, faq, why_choose, cta, image_url, image_alt, image_title, content_updated_at";
 
 type Row = {
   key: string;
@@ -27,6 +29,7 @@ type Row = {
   hero_link: string | null;
   features: ServiceFeature[] | null;
   faq: ServiceFaqItem[] | null;
+  why_choose: WhyChooseContainer[] | null;
   cta: ServiceCta | null;
   image_url: string | null;
   image_alt: string | null;
@@ -53,6 +56,10 @@ function merge(key: string, row?: Row): ServicePage {
         ? row.features
         : (detail?.features ?? []).map((f) => ({ title: f.title, desc: f.desc })),
     faq: row?.faq ?? [],
+    why_choose:
+      row?.why_choose && row.why_choose.length > 0
+        ? row.why_choose
+        : seedWhyChoose({ title, benefits: detail?.benefits }),
     cta: row?.cta || EMPTY_CTA,
     image_url: row?.image_url ?? null,
     image_alt: row?.image_alt ?? null,
@@ -94,6 +101,7 @@ export type PublishedServiceContent = {
   hero_description: string | null;
   hero_link: string | null;
   features: ServiceFeature[] | null;
+  why_choose: WhyChooseContainer[] | null;
   image_url: string | null;
   image_alt: string | null;
   image_title: string | null;
@@ -106,7 +114,7 @@ export async function getPublishedServiceContent(
     const supabase = await createClient();
     const { data } = await supabase
       .from("jhb_services")
-      .select("status, hero_heading, hero_description, hero_link, features, image_url, image_alt, image_title")
+      .select("status, hero_heading, hero_description, hero_link, features, why_choose, image_url, image_alt, image_title")
       .eq("key", key)
       .maybeSingle();
     const row = (data as PublishedServiceContent) ?? null;

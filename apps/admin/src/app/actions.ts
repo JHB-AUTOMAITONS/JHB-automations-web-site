@@ -900,6 +900,7 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
     hero_link: heroLink || null,
     features: cleanFeatures,
     faq: payload.faq ?? [],
+    why_choose: payload.why_choose ?? [],
     cta: payload.cta ?? null,
     image_url: payload.image_url || null,
     image_alt: payload.image_alt || null,

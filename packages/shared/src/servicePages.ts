@@ -9,6 +9,69 @@ export type ServiceFeature = {
   linkText?: string;
 };
 export type ServiceFaqItem = { question: string; answer: string };
+
+// "Why Choose Us / JHB Advantage" — fully editable, multiple containers per page.
+export type WhyChooseBenefit = {
+  id: string;
+  icon: string; // one of WHY_CHOOSE_ICONS; falls back to a ✓ badge when empty
+  image: string | null; // optional; overrides the icon when set
+  title: string;
+  desc: string; // optional
+  enabled: boolean;
+};
+export type WhyChooseContainer = {
+  id: string;
+  enabled: boolean;
+  badge: string; // eyebrow, e.g. "Why Choose Us"
+  heading: string; // e.g. "The JHB"
+  highlight: string; // gradient text, e.g. "Advantage"
+  description: string;
+  benefits: WhyChooseBenefit[];
+};
+
+// Icon names for the benefit picker — MUST match the keys in
+// apps/website/src/components/Icon.tsx.
+export const WHY_CHOOSE_ICONS = [
+  "spark",
+  "chat",
+  "code",
+  "crm",
+  "whatsapp",
+  "rocket",
+  "search",
+  "doc",
+  "cart",
+  "flow",
+  "app",
+  "settings",
+] as const;
+
+// Seed a single default container that mirrors the original hardcoded section,
+// so existing pages keep their look/content until edited.
+export function seedWhyChoose(opts: {
+  title: string;
+  benefits?: string[];
+}): WhyChooseContainer[] {
+  const benefits: WhyChooseBenefit[] = (opts.benefits ?? []).map((t, i) => ({
+    id: `wc-0-b-${i}`,
+    icon: "",
+    image: null,
+    title: t,
+    desc: "",
+    enabled: true,
+  }));
+  return [
+    {
+      id: "wc-0",
+      enabled: true,
+      badge: "Why Choose Us",
+      heading: "The JHB",
+      highlight: "Advantage",
+      description: `We don't just deliver ${opts.title.toLowerCase()} — we deliver measurable business growth, with full transparency at every step.`,
+      benefits,
+    },
+  ];
+}
 export type ServiceCta = {
   heading: string;
   text: string;
@@ -38,6 +101,7 @@ export type ServicePage = {
   hero_link: string;
   features: ServiceFeature[];
   faq: ServiceFaqItem[];
+  why_choose: WhyChooseContainer[];
   cta: ServiceCta;
   image_url: string | null;
   image_alt: string | null;

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
+import type { WhyChooseContainer } from "@jhb/shared/service-pages";
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
 import Icon from "./Icon";
@@ -58,6 +59,7 @@ type DbContent = {
   heroDescriptionHtml: string;
   heroLink?: string;
   features: { title: string; desc: string; link?: string; linkText?: string }[];
+  whyChoose?: WhyChooseContainer[];
   image: string | null;
   imageAlt: string | null;
   imageTitle: string | null;
@@ -81,6 +83,9 @@ export default function ServiceDetail({
   const heading = db?.heroHeading || data.title;
   const features: { title: string; desc: string; link?: string; linkText?: string }[] =
     db?.features && db.features.length > 0 ? db.features : data.features;
+  // Enabled "Why Choose Us" containers (admin-managed). Falls back to the
+  // original static section below when none are configured.
+  const whyChoose = (db?.whyChoose ?? []).filter((c) => c.enabled);
   return (
     <main className="relative pt-28">
       {/* ambient glows */}
@@ -248,44 +253,96 @@ export default function ServiceDetail({
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="container-x pb-16">
-        <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
-          <div className="relative grid gap-10 lg:grid-cols-2">
-            <div>
-              <span className="eyebrow">Why Choose Us</span>
-              <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-                The JHB <span className="grad-text">Advantage</span>
-              </h2>
-              <p className="mt-4 text-muted">
-                We don&apos;t just deliver {data.title.toLowerCase()} — we
-                deliver measurable business growth, with full transparency at
-                every step.
-              </p>
+      {/* Benefits — admin-managed "Why Choose Us" containers, else the static one */}
+      {whyChoose.length > 0
+        ? whyChoose.map((c) => (
+            <section key={c.id} className="container-x pb-16">
+              <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
+                <div className="relative grid gap-10 lg:grid-cols-2">
+                  <div>
+                    {c.badge && <span className="eyebrow">{c.badge}</span>}
+                    <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+                      {c.heading} <span className="grad-text">{c.highlight}</span>
+                    </h2>
+                    {c.description && (
+                      <p className="mt-4 text-muted">{linkify(c.description, links, used)}</p>
+                    )}
+                  </div>
+                  <ul className="space-y-4">
+                    {c.benefits
+                      .filter((b) => b.enabled && (b.title || b.image))
+                      .map((b, i) => (
+                        <motion.li
+                          key={b.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.45, delay: i * 0.08 }}
+                          className={`flex gap-3 ${b.desc ? "items-start" : "items-center"}`}
+                        >
+                          {b.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={b.image} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+                          ) : b.icon ? (
+                            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-white">
+                              <Icon name={b.icon} className="h-4 w-4" />
+                            </span>
+                          ) : (
+                            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
+                              ✓
+                            </span>
+                          )}
+                          <span className="min-w-0 break-words">
+                            <span className="block text-ink/90">{linkify(b.title, links, used)}</span>
+                            {b.desc && <span className="mt-0.5 block text-sm text-muted">{b.desc}</span>}
+                          </span>
+                        </motion.li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          ))
+        : (
+          <section className="container-x pb-16">
+            <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
+              <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
+              <div className="relative grid gap-10 lg:grid-cols-2">
+                <div>
+                  <span className="eyebrow">Why Choose Us</span>
+                  <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+                    The JHB <span className="grad-text">Advantage</span>
+                  </h2>
+                  <p className="mt-4 text-muted">
+                    We don&apos;t just deliver {data.title.toLowerCase()} — we
+                    deliver measurable business growth, with full transparency at
+                    every step.
+                  </p>
+                </div>
+                <ul className="space-y-4">
+                  {data.benefits.map((b, i) => (
+                    <motion.li
+                      key={b}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.45, delay: i * 0.08 }}
+                      className="flex items-center gap-3"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
+                        ✓
+                      </span>
+                      <span className="min-w-0 break-words text-ink/90">
+                        {linkify(b, links, used)}
+                      </span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <ul className="space-y-4">
-              {data.benefits.map((b, i) => (
-                <motion.li
-                  key={b}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: i * 0.08 }}
-                  className="flex items-center gap-3"
-                >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
-                    ✓
-                  </span>
-                  <span className="min-w-0 break-words text-ink/90">
-                    {linkify(b, links, used)}
-                  </span>
-                </motion.li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+          </section>
+        )}
 
       {/* Related services */}
       <section className="container-x pb-16">
