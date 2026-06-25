@@ -61,6 +61,11 @@ export default function LivePreview({
   const [isXl, setIsXl] = useState(false);
   const [width, setWidth] = useState(620);
   const [box, setBox] = useState({ w: 0, h: 0 });
+  // Full document height of the embedded page, reported by the website over
+  // postMessage (cross-origin, so we can't read it directly). Drives the
+  // scrollable preview area so the panel scrolls Hero -> Footer. 0 until the
+  // first report — we fall back to a single viewport meanwhile.
+  const [contentH, setContentH] = useState(0);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -122,6 +127,7 @@ export default function LivePreview({
 
   const handleFailure = useCallback(() => {
     clearTimer();
+    setContentH(0);
     if (attemptsRef.current < MAX_AUTO_RETRIES) {
       attemptsRef.current += 1;
       setStatus("error");
@@ -138,6 +144,7 @@ export default function LivePreview({
     // (Re)started load — show loading and arm the timeout watchdog.
     setStatus("loading");
     handshakeRef.current = false;
+    setContentH(0);
     clearTimer();
     timerRef.current = setTimeout(handleFailure, LOAD_TIMEOUT_MS);
     return clearTimer;
@@ -161,12 +168,16 @@ export default function LivePreview({
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (origin !== "*" && e.origin !== origin) return;
-      if ((e.data as { type?: string })?.type === "jhb-preview:ready") {
+      const data = e.data as { type?: string; height?: number };
+      if (data?.type === "jhb-preview:ready") {
         handshakeRef.current = true;
         clearTimer();
         attemptsRef.current = 0;
         setStatus("ready");
         postDraft();
+      } else if (data?.type === "jhb-preview:height") {
+        const h = Number(data.height) || 0;
+        if (h > 0) setContentH(h);
       }
     };
     window.addEventListener("message", onMsg);
@@ -226,8 +237,14 @@ export default function LivePreview({
         ? box.w / baseW
         : Math.min(1, box.w / baseW)
       : 1;
-  const offsetX = Math.max(0, (box.w - baseW * scale) / 2);
-  const frameH = box.h > 0 ? box.h / scale : 0;
+  const scaledW = baseW * scale;
+  const offsetX = Math.max(0, (box.w - scaledW) / 2);
+  // Render the iframe at the page's FULL height (so nothing is cropped) and let
+  // the screen container scroll through it. Until the page reports its height we
+  // fall back to a single viewport so the frame is never zero-height.
+  const fallbackH = box.h > 0 ? box.h / scale : 0;
+  const docH = contentH > 0 ? contentH : fallbackH;
+  const scaledH = docH * scale;
 
   const rootClass = fullscreen
     ? "fixed inset-0 z-[70] flex flex-col bg-ink/40 p-3 backdrop-blur-sm"
@@ -327,22 +344,27 @@ export default function LivePreview({
           </div>
         </div>
 
-        {/* Screen */}
-        <div ref={screenRef} className="relative min-h-0 flex-1 overflow-hidden bg-white">
+        {/* Screen (scrolls vertically through the full-height frame) */}
+        <div
+          ref={screenRef}
+          className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-white"
+        >
           {box.w > 0 && (
-            <iframe
-              ref={iframeRef}
-              src={src}
-              title="Website preview"
-              loading="eager"
-              onLoad={onIframeLoad}
-              className="absolute left-0 top-0 origin-top-left border-0 bg-white"
-              style={{
-                width: baseW,
-                height: frameH,
-                transform: `translateX(${offsetX}px) scale(${scale})`,
-              }}
-            />
+            <div className="relative" style={{ width: box.w, height: scaledH }}>
+              <iframe
+                ref={iframeRef}
+                src={src}
+                title="Website preview"
+                loading="eager"
+                onLoad={onIframeLoad}
+                className="absolute left-0 top-0 origin-top-left border-0 bg-white"
+                style={{
+                  width: baseW,
+                  height: docH,
+                  transform: `translateX(${offsetX}px) scale(${scale})`,
+                }}
+              />
+            </div>
           )}
 
           {/* Loading overlay (never a blank white screen) */}

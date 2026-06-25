@@ -12,6 +12,10 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Give `next build` extra heap — the preview routes pull the full homepage
+  # component tree into a second bundle, which can push the build past Node's
+  # default heap and OOM the deploy. 4 GB is safely under the build image limit.
+  NODE_OPTIONS = "--max-old-space-size=4096"
   # REQUIRED — add these in Netlify -> Site -> Settings -> Environment variables
   # (they live in git-ignored .env.local, so they are NOT in the repo):
   #   NEXT_PUBLIC_SUPABASE_URL

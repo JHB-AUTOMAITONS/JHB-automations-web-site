@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
+import PreviewBridge from "@/components/PreviewBridge";
 import { getSettings } from "@jhb/shared/content-server";
 import { getServiceLinks } from "@jhb/shared/services-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
@@ -129,6 +130,7 @@ export default async function RootLayout({
         <SiteChrome settings={settings} serviceLinks={serviceLinks} productLinks={productLinks}>
           {children}
         </SiteChrome>
+        <PreviewBridge />
       </body>
     </html>
   );
