@@ -7,13 +7,7 @@ import { services as defaultServices } from "@jhb/shared/data";
 import Icon from "./Icon";
 import SectionHeading from "./SectionHeading";
 
-type ServiceCardData = {
-  title: string;
-  desc: string;
-  icon: string;
-  slug: string;
-  image?: string | null;
-};
+type ServiceCardData = { title: string; desc: string; icon: string; slug: string };
 
 export default function Services({
   items = defaultServices,
@@ -35,7 +29,7 @@ export default function Services({
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {items.map((s, i) => (
-            <ServiceCard key={`${s.slug}-${i}`} index={i} {...s} />
+            <ServiceCard key={s.slug} index={i} {...s} />
           ))}
         </div>
 
@@ -54,14 +48,12 @@ function ServiceCard({
   desc,
   icon,
   slug,
-  image,
   index,
 }: {
   title: string;
   desc: string;
   icon: string;
   slug: string;
-  image?: string | null;
   index: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -106,15 +98,12 @@ function ServiceCard({
       >
         {/* Card-wide navigation: a stretched link sits beneath the content so the
             whole card is clickable, yet it is a sibling (not an ancestor) of the
-            word-links inside the title/description — keeping the HTML valid. Only
-            rendered when the card has a slug; unlinked cards are static. */}
-        {slug && (
-          <Link
-            href={`/${slug}`}
-            aria-label={`Learn more about ${slug.replace(/-/g, " ")}`}
-            className="absolute inset-0 z-0"
-          />
-        )}
+            word-links inside the title/description — keeping the HTML valid. */}
+        <Link
+          href={`/${slug}`}
+          aria-label={`Learn more about ${slug.replace(/-/g, " ")}`}
+          className="absolute inset-0 z-0"
+        />
 
         {/* spotlight */}
         <div
@@ -125,21 +114,12 @@ function ServiceCard({
           }}
         />
         <div className="relative z-10">
-          {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image}
-              alt=""
-              className="pointer-events-none h-12 w-12 rounded-xl object-cover ring-1 ring-ink/10"
+          <span className="pointer-events-none grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all duration-300 group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">
+            <Icon
+              name={icon}
+              className="h-6 w-6 transition-transform duration-300 group-hover:animate-wiggle"
             />
-          ) : (
-            <span className="pointer-events-none grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all duration-300 group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">
-              <Icon
-                name={icon}
-                className="h-6 w-6 transition-transform duration-300 group-hover:animate-wiggle"
-              />
-            </span>
-          )}
+          </span>
           <div
             role="heading"
             aria-level={3}
@@ -150,11 +130,9 @@ function ServiceCard({
             className={`mt-2 text-sm leading-relaxed text-muted ${richText}`}
             dangerouslySetInnerHTML={{ __html: desc }}
           />
-          {slug && (
-            <span className="pointer-events-none mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
-              Learn more →
-            </span>
-          )}
+          <span className="pointer-events-none mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+            Learn more →
+          </span>
         </div>
       </div>
     </motion.div>
