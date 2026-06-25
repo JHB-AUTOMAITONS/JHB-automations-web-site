@@ -110,8 +110,15 @@ export default function Navbar({
                 />
               )}
             </span>
-            <span className="font-display text-lg font-bold tracking-tight">
-              JHB <span className="grad-text">Automations</span>
+            {/* Brand wordmark: large blue "JHB" over gold "AUTOMATIONS",
+                matching the official logo. Icon (above) is unchanged. */}
+            <span className="flex flex-col whitespace-nowrap leading-none">
+              <span className="font-display text-lg font-extrabold tracking-tight text-[#1F4E79] sm:text-xl">
+                JHB
+              </span>
+              <span className="font-display text-[0.55rem] font-bold uppercase tracking-[0.3em] text-[#F5C518] sm:text-[0.62rem]">
+                Automations
+              </span>
             </span>
           </Link>
 
