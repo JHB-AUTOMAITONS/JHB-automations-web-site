@@ -1,10 +1,11 @@
 import { createClient } from "@jhb/shared/supabase/server";
-import { getDraftHome, getPublishedHome } from "@jhb/shared/home-server";
+import { getDraftHome } from "@jhb/shared/home-server";
 import { getServices } from "@jhb/shared/services-server";
 import { getInternalPages } from "@jhb/shared/service-pages-server";
 import { getAllHomeFaqs } from "@jhb/shared/home-faqs-server";
 import { getStats } from "@jhb/shared/content-server";
 import { getPartners } from "@jhb/shared/partners-server";
+import { getPublishedPosts } from "@jhb/shared/posts-server";
 import HomeManager from "@/components/HomeManager";
 
 export default async function AdminHome() {
@@ -35,15 +36,16 @@ export default async function AdminHome() {
     );
   }
 
-  const [draft, published, services, internalPages, faqs, stats, partners] = await Promise.all([
-    getDraftHome(),
-    getPublishedHome(),
-    getServices(),
-    getInternalPages(),
-    getAllHomeFaqs(),
-    getStats(),
-    getPartners(),
-  ]);
+  const [draft, services, internalPages, faqs, stats, partners, latestPosts] =
+    await Promise.all([
+      getDraftHome(),
+      getServices(),
+      getInternalPages(),
+      getAllHomeFaqs(),
+      getStats(),
+      getPartners(),
+      getPublishedPosts(1),
+    ]);
 
   const serviceList = services.map((s) => ({
     slug: s.slug,
@@ -54,12 +56,12 @@ export default async function AdminHome() {
   return (
     <HomeManager
       draft={draft}
-      published={published}
       services={serviceList}
       faqs={faqs}
       stats={stats}
       partners={partners}
       internalPages={internalPages}
+      blogDetailSlug={latestPosts[0]?.slug ?? null}
     />
   );
 }
