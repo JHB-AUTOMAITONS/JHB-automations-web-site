@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Post } from "@jhb/shared/posts";
+import { formatDate, type Post } from "@jhb/shared/posts";
 import { savePost, deletePost } from "@/app/actions";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
@@ -46,6 +46,7 @@ export default function PostEditor({
 
   const [busy, setBusy] = useState<"" | "draft" | "publish">("");
   const [toast, setToast] = useState<Toast>(null);
+  const [showPreview, setShowPreview] = useState(true);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -126,6 +127,13 @@ export default function PostEditor({
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((s) => !s)}
+            className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:text-ink"
+          >
+            {showPreview ? "Hide preview" : "Show preview"}
+          </button>
           {editing && (
             <button
               onClick={remove}
@@ -151,9 +159,11 @@ export default function PostEditor({
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
-        {/* main */}
-        <div className="space-y-6">
+      <div className={`mt-8 grid gap-6 ${showPreview ? "xl:grid-cols-[1fr_440px]" : ""}`}>
+        {/* editor (left) */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          {/* main */}
+          <div className="space-y-6">
           <Card>
             <Field label="Title" value={title} onChange={onTitle} />
             <Field
@@ -205,7 +215,31 @@ export default function PostEditor({
             />
             <Field label="Author" value={author} onChange={setAuthor} />
           </Card>
+          </div>
         </div>
+
+        {/* live preview (right) */}
+        {showPreview && (
+          <div className="xl:sticky xl:top-6 xl:h-fit">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              Live preview (draft)
+            </div>
+            <BlogPreview
+              title={title}
+              slug={slug}
+              excerpt={excerpt}
+              content={content}
+              cover={cover}
+              category={category}
+              tags={tags.split(",").map((t) => t.trim()).filter(Boolean)}
+              author={author}
+              date={post?.published_at ?? null}
+              metaTitle={metaTitle}
+              metaDesc={metaDesc}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -260,5 +294,128 @@ function Field({
         />
       )}
     </label>
+  );
+}
+
+// Compact, live mock of the public blog article (apps/website blog/[slug]) plus
+// a search/SEO snippet — same card styling as the Home Live Preview. A
+// fixed-height viewport that scrolls internally so the whole article is
+// reachable while the editor on the left scrolls independently.
+function BlogPreview({
+  title,
+  slug,
+  excerpt,
+  content,
+  cover,
+  category,
+  tags,
+  author,
+  date,
+  metaTitle,
+  metaDesc,
+}: {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover: string | null;
+  category: string;
+  tags: string[];
+  author: string;
+  date: string | null;
+  metaTitle: string;
+  metaDesc: string;
+}) {
+  const heading = title.trim() || "Untitled post";
+  return (
+    <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
+      <article className="p-5">
+        {/* breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-[11px] text-muted">
+          <span>Home</span>
+          <span>/</span>
+          <span>Blog</span>
+          <span>/</span>
+          <span className="truncate text-primary">{heading}</span>
+        </nav>
+
+        {/* category */}
+        {category.trim() && (
+          <span className="mt-4 inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
+            {category}
+          </span>
+        )}
+
+        {/* title */}
+        <h3 className="mt-3 font-display text-xl font-bold leading-tight tracking-tight">
+          {heading}
+        </h3>
+
+        {/* author + date */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
+          <span className="flex items-center gap-1.5">
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[8px] font-bold text-white">
+              JH
+            </span>
+            {author.trim() || "JHB Automations"}
+          </span>
+          <span>·</span>
+          <span>{date ? formatDate(date) : "Draft — not published yet"}</span>
+        </div>
+
+        {/* cover */}
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt="" className="mt-4 aspect-[16/9] w-full rounded-xl object-cover shadow-soft" />
+        )}
+
+        {/* lead / excerpt */}
+        {excerpt.trim() && (
+          <p className="mt-4 text-sm font-medium text-ink/70">{excerpt}</p>
+        )}
+
+        {/* body */}
+        {content.trim() ? (
+          <div
+            className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        ) : (
+          <p className="mt-4 text-xs italic text-muted">Start writing content to see it render here…</p>
+        )}
+
+        {/* tags */}
+        {tags.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-md bg-ink/[0.04] px-2 py-0.5 text-[10px] font-medium text-muted ring-1 ring-ink/10"
+              >
+                #{t}
+              </span>
+            ))}
+          </div>
+        )}
+      </article>
+
+      {/* search / SEO snippet — reflects Slug, Meta title, Meta description live */}
+      <div className="border-t border-ink/10 bg-surface p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Search preview</p>
+        <div className="mt-2">
+          <p className="text-[11px] text-emerald-700">
+            jhbautomations.com › blog › {slug.trim() || "your-post-slug"}
+          </p>
+          <p className="mt-0.5 truncate text-sm font-medium text-[#1a0dab]">
+            {metaTitle.trim() || `${heading} — JHB Automations`}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted">
+            {metaDesc.trim() ||
+              excerpt.trim() ||
+              "Add a meta description to control the snippet shown in search results."}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
