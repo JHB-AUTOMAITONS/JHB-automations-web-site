@@ -136,7 +136,9 @@ export default function ServicePageEditor({
   };
 
   return (
-    <div>
+    // On xl, fill <main>'s height and let the two columns scroll independently
+    // (top bar fixed, grid flex-1). Below xl it's a normal block that flows.
+    <div className="xl:flex xl:h-full xl:flex-col">
       {toast && (
         <div
           className={`fixed right-6 top-6 z-[60] rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
@@ -148,7 +150,7 @@ export default function ServicePageEditor({
       )}
 
       {/* top bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 xl:shrink-0">
         <Link href="/service-pages" className="text-sm text-muted hover:text-ink">← Service Pages</Link>
         <h1 className="font-display text-xl font-bold sm:text-2xl">{page.title}</h1>
         <span
@@ -173,9 +175,9 @@ export default function ServicePageEditor({
         )}
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_440px]">
-        {/* ---- form ---- */}
-        <div className="space-y-6">
+      <div className="mt-6 grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_440px] xl:overflow-hidden">
+        {/* ---- form (own scroll) ---- */}
+        <div className="space-y-6 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-2">
           <Section title="SEO & URL">
             <Field label="Service slug (URL)">
               <input
@@ -298,8 +300,8 @@ export default function ServicePageEditor({
           </Section>
         </div>
 
-        {/* ---- preview + SEO ---- */}
-        <div className="space-y-5 xl:sticky xl:top-6 xl:h-fit">
+        {/* ---- preview + SEO (own scroll) ---- */}
+        <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted">Preview</span>
