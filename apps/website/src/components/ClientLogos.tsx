@@ -1,11 +1,23 @@
-"use client";
-
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 import type { ClientLogo } from "@jhb/shared/client-logos";
 
 type Logo = { id: string; logo: string; alt?: string | null; title?: string | null };
 
-export default function ClientLogos({ items = [] }: { items?: ClientLogo[] }) {
+// Server component: logo grid + mobile marquee are static (CSS animation); only
+// the heading and per-logo entrances are animated via <Reveal>.
+export default function ClientLogos({
+  items = [],
+  eyebrow = "Trusted Partnerships",
+  headingLead = "Our Valuable",
+  headingHighlight = "Clients",
+  description = "Brands across industries trust JHB Automations to drive their growth.",
+}: {
+  items?: ClientLogo[];
+  eyebrow?: string;
+  headingLead?: string;
+  headingHighlight?: string;
+  description?: string;
+}) {
   // Logo-only, fully database-driven: render uploaded logos, no text names.
   const clients: Logo[] = (items ?? [])
     .filter((c) => c.logo_url)
@@ -14,7 +26,7 @@ export default function ClientLogos({ items = [] }: { items?: ClientLogo[] }) {
   return (
     <section
       id="clients"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-16 sm:py-20"
+      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-12 sm:py-14"
       aria-labelledby="clients-heading"
     >
       {/* ambient glow */}
@@ -23,39 +35,28 @@ export default function ClientLogos({ items = [] }: { items?: ClientLogo[] }) {
       <div className="pointer-events-none absolute inset-0 bg-grid-faint [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-40" />
 
       <div className="container-x relative">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-            Trusted Partnerships
-          </span>
+        <Reveal y={24} duration={0.6} className="mx-auto max-w-2xl text-center">
+          {eyebrow && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+              {eyebrow}
+            </span>
+          )}
           <h2
             id="clients-heading"
             className="mt-5 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl"
           >
-            Our Valuable <span className="grad-text">Clients</span>
+            {headingLead}{headingLead && headingHighlight ? " " : ""}
+            {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
           </h2>
-          <p className="mt-3 text-white/60">
-            Brands across industries trust JHB Automations to drive their growth.
-          </p>
-        </motion.div>
+          {description && <p className="mt-3 text-white/60">{description}</p>}
+        </Reveal>
 
         {/* Desktop / tablet: responsive grid */}
-        <div className="mt-12 hidden grid-cols-3 gap-4 sm:grid sm:grid-cols-4 lg:grid-cols-5">
+        <div className="mt-10 hidden grid-cols-3 gap-4 sm:grid sm:grid-cols-4 lg:grid-cols-5">
           {clients.map((c, i) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.45, delay: (i % 5) * 0.06 }}
-            >
+            <Reveal key={c.id} y={20} duration={0.45} delay={(i % 5) * 0.06}>
               <LogoCard client={c} />
-            </motion.div>
+            </Reveal>
           ))}
         </div>
 

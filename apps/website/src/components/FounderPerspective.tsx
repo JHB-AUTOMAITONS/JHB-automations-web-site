@@ -1,17 +1,16 @@
-"use client";
-
 import Image from "next/image";
-import { motion } from "framer-motion";
 import type { FounderBlock } from "@jhb/shared/home";
 import Reveal from "./Reveal";
 
+// Server component: all entrances run through <Reveal>, so nothing here ships
+// to the client bundle.
 export default function FounderPerspective({ founder }: { founder: FounderBlock }) {
   if (!founder.enabled) return null;
 
   return (
-    <section id="founder" className="relative py-16 sm:py-24">
+    <section id="founder" className="relative py-12 sm:py-16">
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left: copy */}
           <div className="order-2 lg:order-1">
             <Reveal>
@@ -38,19 +37,20 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
                 </Reveal>
                 <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                   {founder.focusPoints.map((point, i) => (
-                    <motion.li
+                    <Reveal
+                      as="li"
                       key={point}
-                      initial={{ opacity: 0, x: -16 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, margin: "-60px" }}
-                      transition={{ duration: 0.45, delay: i * 0.08 }}
+                      x={-16}
+                      y={0}
+                      duration={0.45}
+                      delay={i * 0.08}
                       className="glass flex items-center gap-3 rounded-xl px-4 py-3"
                     >
                       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                         ✓
                       </span>
                       <span className="text-sm font-medium">{point}</span>
-                    </motion.li>
+                    </Reveal>
                   ))}
                 </ul>
               </>

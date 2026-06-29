@@ -9,9 +9,11 @@ type ServiceLink = { label: string; href: string; icon: string };
 export default function Footer({
   settings = SETTINGS_DEFAULT,
   serviceLinks = [],
+  legalLinks = [],
 }: {
   settings?: SiteSettings;
   serviceLinks?: ServiceLink[];
+  legalLinks?: { label: string; href: string }[];
 }) {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
@@ -30,26 +32,22 @@ export default function Footer({
   };
 
   return (
-    <footer className="relative border-t border-ink/10 pt-16">
+    <footer className="relative border-t border-ink/10 pt-12">
       <div className="container-x">
-        <div className="grid gap-10 pb-12 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
+        <div className="grid gap-8 pb-10 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
           {/* brand */}
           <div>
-            <div className="flex items-center gap-2">
-              {settings.branding?.footerLogo ? (
-                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={settings.branding.footerLogo} alt={`${settings.companyName} logo`} className="max-h-full max-w-full object-contain" />
-                </span>
-              ) : (
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white">
-                  JH
-                </span>
-              )}
-              <span className="font-display text-lg font-bold">
-                JHB <span className="grad-text">Automations</span>
-              </span>
-            </div>
+            {/* Single logo image — footer logo → header logo → built-in /logo.png */}
+            <Link href="/" aria-label={`${settings.companyName || "JHB Automations"} — go to homepage`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={settings.branding?.footerLogo || settings.branding?.headerLogo || "/logo.png"}
+                alt={settings.companyName || "JHB Automations"}
+                loading="lazy"
+                decoding="async"
+                className="h-10 w-auto object-contain transition-opacity hover:opacity-80"
+              />
+            </Link>
             <p className="mt-4 max-w-xs text-sm text-muted">{settings.tagline}</p>
             <div className="mt-5 flex gap-3">
               {socials.map((s) => (
@@ -67,7 +65,7 @@ export default function Footer({
 
           {/* links */}
           <FooterCol
-            title="Services"
+            title={settings.footerServicesTitle || "Services"}
             links={
               serviceLinks.length
                 ? serviceLinks.slice(0, 5).map((s) => ({
@@ -78,29 +76,33 @@ export default function Footer({
             }
           />
           <FooterCol
-            title="Company"
-            links={[
-              { label: "About", href: "/about" },
-              { label: "All Services", href: "/services" },
-              { label: "Testimonials", href: "/#testimonials" },
-              { label: "Contact", href: "/contact" },
-            ]}
+            title={settings.footerCompanyTitle || "Company"}
+            links={
+              settings.footerCompanyLinks?.length
+                ? settings.footerCompanyLinks
+                : [
+                    { label: "About", href: "/about" },
+                    { label: "All Services", href: "/services" },
+                    { label: "Testimonials", href: "/#testimonials" },
+                    { label: "Contact", href: "/contact" },
+                  ]
+            }
           />
 
           {/* newsletter */}
           <div>
             <h4 className="font-display text-sm font-semibold uppercase tracking-wider text-ink/90">
-              Newsletter
+              {settings.footerNewsletterTitle || "Newsletter"}
             </h4>
             <p className="mt-4 text-sm text-muted">
-              Get automation insights and growth tips in your inbox.
+              {settings.footerNewsletterDesc || "Get automation insights and growth tips in your inbox."}
             </p>
             <form onSubmit={subscribe} className="mt-4 flex gap-2">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                placeholder={settings.footerNewsletterPlaceholder || "you@company.com"}
                 className="w-full rounded-xl border border-ink/10 bg-ink/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary"
               />
               <button
@@ -119,9 +121,18 @@ export default function Footer({
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-ink/10 py-6 text-sm text-muted sm:flex-row">
-          <p>© {new Date().getFullYear()} JHB Automations. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {settings.footerCopyrightName || "JHB Automations. All rights reserved."}</p>
+          {legalLinks.length > 0 && (
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Legal">
+              {legalLinks.map((l) => (
+                <Link key={l.href} href={l.href} className="transition-colors hover:text-primary">
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+          )}
           <p className="flex items-center gap-1.5">
-            Crafted with <span className="text-accent">⚡</span> for the future.
+            {settings.footerBottomTagline || "Crafted with ⚡ for the future."}
           </p>
         </div>
       </div>

@@ -1,19 +1,16 @@
-"use client";
-
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 import type { CtaBlock } from "@jhb/shared/home";
+import SmartLink from "./SmartLink";
 
+// Server component: the card's entrance is the only animated part (<Reveal>).
 export default function CtaSection({ cta }: { cta: CtaBlock }) {
   if (!cta.enabled) return null;
 
   return (
-    <section className="relative py-16 sm:py-20">
+    <section className="relative py-12 sm:py-14">
       <div className="container-x">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7 }}
+        <Reveal
+          y={30}
           className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center shadow-soft sm:p-16"
         >
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
@@ -26,11 +23,11 @@ export default function CtaSection({ cta }: { cta: CtaBlock }) {
             dangerouslySetInnerHTML={{ __html: cta.textHtml }}
           />
           {cta.buttonText && (
-            <a href={cta.buttonHref} className="btn btn-primary relative mt-8">
+            <SmartLink href={cta.buttonHref} className="btn btn-primary relative mt-8">
               {cta.buttonText} <span aria-hidden>→</span>
-            </a>
+            </SmartLink>
           )}
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   );

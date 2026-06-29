@@ -1,8 +1,8 @@
-"use client";
-
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 import { PARTNERS_DEFAULT, type Partner } from "@jhb/shared/partners";
 
+// Server component: only the per-logo entrance is animated (via <Reveal>), so
+// none of this section's markup ships to the client bundle.
 export default function Partners({
   heading = PARTNERS_DEFAULT.heading,
   items = PARTNERS_DEFAULT.items,
@@ -11,19 +11,18 @@ export default function Partners({
   items?: Partner[];
 }) {
   return (
-    <section className="relative py-16">
+    <section className="relative py-12">
       <div className="container-x">
         <p className="mb-10 text-center text-xs font-semibold uppercase tracking-[0.25em] text-muted">
           {heading}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-8 sm:gap-x-16">
           {items.map((t, i) => (
-            <motion.div
+            <Reveal
               key={t.name}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: i * 0.07 }}
+              y={16}
+              duration={0.45}
+              delay={i * 0.07}
               className="group flex items-center gap-2"
             >
               {t.logo ? (
@@ -44,7 +43,7 @@ export default function Partners({
               <span className="font-display text-xl font-semibold text-muted transition-colors duration-300 group-hover:text-ink">
                 {t.name}
               </span>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>

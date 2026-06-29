@@ -334,6 +334,7 @@ export default function AutomationBackground() {
       scrollY = window.scrollY || 0;
     };
     const onVisibility = () => {
+      if (!started) return;
       if (document.hidden) {
         cancelAnimationFrame(raf);
         raf = 0;
@@ -342,21 +343,36 @@ export default function AutomationBackground() {
       }
     };
 
-    build();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // Defer the (heavy) canvas build + RAF loop until the browser is idle, so it
+    // never competes with hydration or the LCP paint. visibilitychange is wired
+    // up immediately but no-ops until start() has run.
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      build();
+      window.addEventListener("resize", onResize);
+      window.addEventListener("scroll", onScroll, { passive: true });
+      if (reduce) {
+        render();
+        cancelAnimationFrame(raf);
+        raf = 0;
+      } else {
+        raf = requestAnimationFrame(render);
+      }
+    };
+
     document.addEventListener("visibilitychange", onVisibility);
 
-    if (reduce) {
-      render();
-      cancelAnimationFrame(raf);
-      raf = 0;
-    } else {
-      raf = requestAnimationFrame(render);
-    }
+    const ric = window.requestIdleCallback;
+    const idleId: number =
+      typeof ric === "function" ? ric(start, { timeout: 2000 }) : window.setTimeout(start, 1200);
 
     return () => {
       cancelAnimationFrame(raf);
+      const cic = window.cancelIdleCallback;
+      if (typeof ric === "function" && typeof cic === "function") cic(idleId);
+      else clearTimeout(idleId);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
