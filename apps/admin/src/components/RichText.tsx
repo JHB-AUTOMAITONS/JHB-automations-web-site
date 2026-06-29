@@ -53,6 +53,16 @@ export default function RichText({ value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-sync the DOM when `value` changes programmatically (e.g. AI apply or a
+  // record switch). Skipped while focused so it never disturbs the caret during
+  // typing — live edits flow out through `sync()`/onChange.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.innerHTML !== value) {
+      el.innerHTML = value;
+    }
+  }, [value]);
+
   const sync = () => {
     if (ref.current) onChange(ref.current.innerHTML);
   };

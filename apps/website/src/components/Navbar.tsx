@@ -5,25 +5,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { navItems, serviceMenu } from "@jhb/shared/data";
-import { LOGO_DEFAULT, type LogoSettings } from "@jhb/shared/content";
+import { LOGO_DEFAULT, type LogoSettings, type NavItemOverride } from "@jhb/shared/content";
 import Icon from "./Icon";
+import SmartLink from "./SmartLink";
+
+// Animated client-side link for the mobile menu — keeps the framer-motion
+// entrance while routing through Next's <Link> (no full reload).
+const MotionLink = motion(Link);
 
 type DropItem = { label: string; href: string; icon: string };
+
+// Normalize a nav label to its stable id (matches NAV_ITEMS_CONFIG_DEFAULT ids).
+const toNavId = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
 export default function Navbar({
   serviceLinks = serviceMenu,
   productLinks = [],
   branding = LOGO_DEFAULT,
+  navItemsConfig = [],
 }: {
   serviceLinks?: DropItem[];
   productLinks?: DropItem[];
   branding?: LogoSettings;
+  navItemsConfig?: NavItemOverride[];
 }) {
   const pathname = usePathname();
+
+  // Apply CMS label overrides and visibility filter to the static nav structure.
+  const resolvedNavItems = navItems
+    .map((item) => {
+      const id = toNavId(item.label);
+      const override = navItemsConfig.find((o) => o.id === id);
+      if (override && !override.visible) return null;
+      return { ...item, label: override?.label || item.label };
+    })
+    .filter(Boolean) as typeof navItems;
+
   // Resolve the dropdown for a top-level item. "JHB Products" is data-driven.
   const dropdownFor = (label: string, fallback?: DropItem[]) => {
-    if (label === "Services") return serviceLinks;
-    if (label === "JHB Products") return productLinks.length ? productLinks : undefined;
+    // Match against the *original* label so dropdown wiring is immune to label edits.
+    const original = navItems.find((i) => toNavId(i.label) === toNavId(label));
+    if (original?.label === "Services") return serviceLinks;
+    if (original?.label === "JHB Products") return productLinks.length ? productLinks : undefined;
     return fallback;
   };
   // A non-hash route link is active when the current path matches it
@@ -61,73 +84,60 @@ export default function Navbar({
           <Link
             href="/"
             aria-label="JHB Automations — go to homepage"
-            className="flex items-center gap-3"
+            className="flex items-center"
             onClick={() => {
-              // Close the mobile menu if open, and on the homepage scroll back
-              // to the top (preserves the old #home behaviour); other pages
-              // client-navigate to / via the router below.
               setOpen(false);
               setMobileOpen(null);
               if (pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
-            <span
-              className={`flex shrink-0 items-center justify-center overflow-hidden border shadow-glow ${
-                logoFailed
-                  ? "border-white/15 bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white"
-                  : "border-ink/10"
-              }`}
-              style={
-                logoFailed
-                  ? { width: 44, height: 44, borderRadius: 12 }
-                  : {
-                      width: branding.width,
-                      height: branding.height,
-                      padding: branding.padding,
-                      borderRadius: branding.radius,
-                      background: branding.bgColor,
-                    }
-              }
-            >
-              {logoFailed ? (
-                "JH"
-              ) : branding.mobileLogo ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={branding.mobileLogo} alt="JHB Automations logo" onError={() => setLogoFailed(true)} decoding="async" className="max-h-full max-w-full object-contain sm:hidden" style={{ objectPosition: branding.align }} />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={branding.headerLogo || "/logo.png"} alt="JHB Automations logo" onError={() => setLogoFailed(true)} decoding="async" className="hidden max-h-full max-w-full object-contain sm:block" style={{ objectPosition: branding.align }} />
-                </>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
+            {logoFailed ? (
+              <span
+                className="grid shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary font-display text-sm font-bold text-white shadow-glow"
+                style={{ width: 44, height: 44 }}
+              >
+                JH
+              </span>
+            ) : branding.mobileLogo ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={branding.headerLogo || "/logo.png"}
-                  alt="JHB Automations logo"
+                  src={branding.mobileLogo}
+                  alt="JHB Automations"
                   onError={() => setLogoFailed(true)}
                   decoding="async"
-                  className="max-h-full max-w-full object-contain"
-                  style={{ objectPosition: branding.align }}
+                  className="w-auto object-contain sm:hidden"
+                  style={{ height: branding.height || 48 }}
                 />
-              )}
-            </span>
-            {/* Brand wordmark: large blue "JHB" over gold "AUTOMATIONS",
-                matching the official logo. Icon (above) is unchanged. */}
-            <span className="flex flex-col whitespace-nowrap leading-none">
-              <span className="font-display text-lg font-extrabold tracking-tight text-[#1F4E79] sm:text-xl">
-                JHB
-              </span>
-              <span className="font-display text-[0.55rem] font-bold uppercase tracking-[0.3em] text-[#F5C518] sm:text-[0.62rem]">
-                Automations
-              </span>
-            </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={branding.headerLogo || "/logo.png"}
+                  alt="JHB Automations"
+                  onError={() => setLogoFailed(true)}
+                  decoding="async"
+                  className="hidden w-auto object-contain sm:block"
+                  style={{ height: branding.height || 48 }}
+                />
+              </>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={branding.headerLogo || "/logo.png"}
+                alt="JHB Automations"
+                onError={() => setLogoFailed(true)}
+                decoding="async"
+                className="w-auto object-contain"
+                style={{ height: branding.height || 48 }}
+              />
+            )}
           </Link>
 
           <nav className="hidden items-center gap-7 lg:flex">
-            {navItems.map((item) => (
+            {resolvedNavItems.map((item) => (
               <Fragment key={item.label + item.href}>
                 {dropdownFor(item.label, item.dropdown) ? (
                   <div className="group relative">
-                    <a
+                    <Link
                       href={item.href}
                       className="nav-underline flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-ink"
                     >
@@ -135,14 +145,15 @@ export default function Navbar({
                       <span className="text-[10px] transition-transform duration-300 group-hover:rotate-180">
                         ▾
                       </span>
-                    </a>
+                    </Link>
                     {/* hover bridge + dropdown */}
                     <div className="invisible absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 translate-y-2 pt-4 opacity-0 transition-all duration-300 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
                       <div className="glass-strong grid max-h-[60vh] grid-cols-1 gap-1 overflow-y-auto rounded-2xl p-3 shadow-soft no-scrollbar">
                         {(dropdownFor(item.label, item.dropdown) ?? []).map((d) => (
-                          <a
+                          <SmartLink
                             key={d.label}
                             href={d.href}
+                            prefetch={false}
                             className="group/item flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-ink/[0.04]"
                           >
                             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover/item:from-primary group-hover/item:to-secondary group-hover/item:text-white">
@@ -151,20 +162,20 @@ export default function Navbar({
                             <span className="text-sm font-medium text-muted transition-colors group-hover/item:text-ink">
                               {d.label}
                             </span>
-                          </a>
+                          </SmartLink>
                         ))}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <a
+                  <Link
                     href={item.href}
                     className={`nav-underline text-sm font-medium transition-colors hover:text-ink ${
                       isActive(item.href) ? "text-primary" : "text-muted"
                     }`}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 )}
               </Fragment>
             ))}
@@ -203,7 +214,7 @@ export default function Navbar({
             className="container-x lg:hidden"
           >
             <div className="glass-strong mt-3 flex flex-col gap-1 rounded-2xl p-4">
-              {navItems.map((item, i) => (
+              {resolvedNavItems.map((item, i) => (
                 <Fragment key={item.label + item.href}>
                   {dropdownFor(item.label, item.dropdown) ? (
                     <motion.div
@@ -234,9 +245,10 @@ export default function Navbar({
                           >
                             <div className="ml-3 flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto border-l border-ink/10 py-1 pl-3 no-scrollbar">
                               {(dropdownFor(item.label, item.dropdown) ?? []).map((d) => (
-                                <a
+                                <SmartLink
                                   key={d.label}
                                   href={d.href}
+                                  prefetch={false}
                                   onClick={() => setOpen(false)}
                                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
                                 >
@@ -245,7 +257,7 @@ export default function Navbar({
                                     className="h-4 w-4 shrink-0 text-primary"
                                   />
                                   {d.label}
-                                </a>
+                                </SmartLink>
                               ))}
                             </div>
                           </motion.div>
@@ -253,7 +265,7 @@ export default function Navbar({
                       </AnimatePresence>
                     </motion.div>
                   ) : (
-                    <motion.a
+                    <MotionLink
                       href={item.href}
                       onClick={() => setOpen(false)}
                       initial={{ opacity: 0, x: -20 }}
@@ -264,7 +276,7 @@ export default function Navbar({
                       }`}
                     >
                       {item.label}
-                    </motion.a>
+                    </MotionLink>
                   )}
                 </Fragment>
               ))}

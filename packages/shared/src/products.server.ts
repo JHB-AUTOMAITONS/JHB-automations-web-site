@@ -1,9 +1,12 @@
+import { cache } from "react";
 import { createClient } from "./supabase/server";
 import { PRODUCTS_DEFAULT, withDefaults, type ProductsDoc, type Product } from "./products";
 
 // Read the editable products document (jhb_content "products"); fall back to the
 // seeded default until an admin saves. The admin persists the full document.
-export async function getProducts(): Promise<ProductsDoc> {
+// cache(): getPublishedProducts + getProductBySlug both call this within one
+// render (generateStaticParams, generateMetadata, the page) — dedupe to one read.
+export const getProducts = cache(async (): Promise<ProductsDoc> => {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -18,7 +21,7 @@ export async function getProducts(): Promise<ProductsDoc> {
   } catch {
     return PRODUCTS_DEFAULT;
   }
-}
+});
 
 // Public: published products in display order.
 export async function getPublishedProducts(): Promise<Product[]> {

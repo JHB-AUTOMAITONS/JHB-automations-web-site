@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "./supabase/server";
 import type { MediaImage, MediaLibraryItem } from "./media";
 
@@ -5,7 +6,8 @@ const IMG_COLS =
   "id, name, path, url, mime, size, alt_text, image_title, image_caption, image_description, image_keywords, image_filename, og_title, og_description, alt_updated_at, updated_at, created_at";
 
 // Public: URL → alt_text map used to render DB-driven alt on the website.
-export async function getMediaAltMap(): Promise<Record<string, string>> {
+// cache(): rendered by every page with images (home, blog, …) — dedupe per request.
+export const getMediaAltMap = cache(async (): Promise<Record<string, string>> => {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -21,10 +23,10 @@ export async function getMediaAltMap(): Promise<Record<string, string>> {
   } catch {
     return {};
   }
-}
+});
 
 // Public: URL → image_title map used to render the img title attribute.
-export async function getMediaTitleMap(): Promise<Record<string, string>> {
+export const getMediaTitleMap = cache(async (): Promise<Record<string, string>> => {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -40,7 +42,7 @@ export async function getMediaTitleMap(): Promise<Record<string, string>> {
   } catch {
     return {};
   }
-}
+});
 
 // Admin: all image media for the Image SEO management screen.
 export async function getImageMedia(): Promise<MediaImage[]> {

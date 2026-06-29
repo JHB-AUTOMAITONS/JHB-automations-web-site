@@ -20,6 +20,11 @@ type Info = { from: number; to: number; w: number; h: number };
 
 export default function ImagePicker({ value, onChange, label, alt = true }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  // Progress timers kept in refs so they can be cleared if the component
+  // unmounts mid-upload — otherwise the creep interval keeps calling setState
+  // on an unmounted component (leak + React warning).
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [info, setInfo] = useState<Info | null>(null);
@@ -45,6 +50,15 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
     };
   }, [value, alt]);
 
+  // Clear any running progress timers on unmount.
+  useEffect(
+    () => () => {
+      if (progressTimer.current) clearInterval(progressTimer.current);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    },
+    []
+  );
+
   const pick = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
@@ -55,7 +69,6 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
     setError("");
     setInfo(null);
     setProgress(10);
-    let timer: ReturnType<typeof setInterval> | undefined;
     try {
       const orig = await readImageDimensions(file);
       setProgress(30);
@@ -69,9 +82,8 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
       fd.append("file", new File([opt.blob], filename, { type: opt.type }));
       if (altText.trim()) fd.append("alt", altText.trim());
       // Server actions don't expose upload progress; creep the bar while it runs.
-      timer = setInterval(() => setProgress((p) => (p < 90 ? p + 3 : p)), 180);
+      progressTimer.current = setInterval(() => setProgress((p) => (p < 90 ? p + 3 : p)), 180);
       const res = await uploadMedia(fd);
-      clearInterval(timer);
       setProgress(100);
       if (res.ok && res.url) {
         onChange(res.url);
@@ -85,11 +97,14 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
         setError(res.error || "Upload failed");
       }
     } catch (e) {
-      if (timer) clearInterval(timer);
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
+      if (progressTimer.current) {
+        clearInterval(progressTimer.current);
+        progressTimer.current = null;
+      }
       setBusy(false);
-      setTimeout(() => setProgress(0), 1200);
+      resetTimer.current = setTimeout(() => setProgress(0), 1200);
     }
   };
 

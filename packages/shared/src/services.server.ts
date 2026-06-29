@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "./supabase/server";
 import { serviceDetails, type ServiceDetail } from "./data";
 
@@ -17,7 +18,9 @@ type ServiceRow = {
   sort_order: number;
 };
 
-async function getRows(): Promise<Map<string, ServiceRow>> {
+// cache(): one jhb_services read per request, even though getServices /
+// getServiceBySlug / getServiceLinks each call it within the same render.
+const getRows = cache(async (): Promise<Map<string, ServiceRow>> => {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -29,7 +32,7 @@ async function getRows(): Promise<Map<string, ServiceRow>> {
   } catch {
     return new Map();
   }
-}
+});
 
 function resolve(detail: ServiceDetail, row?: ServiceRow): ResolvedService {
   return {

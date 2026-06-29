@@ -13,7 +13,22 @@ import { saveServicePage, checkServiceLinks } from "@/app/actions";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import LocalDateTime from "./LocalDateTime";
+import WhatsIncludedEditor from "./WhatsIncludedEditor";
 import WhyChooseEditor from "./WhyChooseEditor";
+import { usePageContainers } from "@/lib/usePageContainers";
+import { PageContainersView } from "@jhb/shared/container-view";
+import EditorHeader from "./EditorHeader";
+import AiSeoPanel from "./ai/AiSeoPanel";
+import AuthorPublisherEditor from "./AuthorPublisherEditor";
+
+// Native sections of the live service page, in order, each with the zone after it.
+const SERVICE_SECTIONS = [
+  { label: "Hero", zone: "after-hero" },
+  { label: "What's Included", zone: "after-features" },
+  { label: "Why Choose Us", zone: "after-whychoose" },
+  { label: "FAQ", zone: "after-faq" },
+  { label: "Call to Action", zone: "bottom" },
+];
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Device = "desktop" | "tablet" | "mobile";
@@ -55,14 +70,18 @@ export default function ServicePageEditor({
     hero_description: page.hero_description,
     hero_link: page.hero_link,
     features: page.features,
+    whats_included: page.whats_included,
     faq: page.faq,
     why_choose: page.why_choose,
     cta: page.cta,
     image_url: page.image_url,
     image_alt: page.image_alt,
     image_title: page.image_title,
+    containers: page.containers,
+    chrome: page.chrome,
     status: page.status,
   });
+  const cb = usePageContainers(page.containers, SERVICE_SECTIONS);
 
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(page.content_updated_at);
@@ -71,6 +90,10 @@ export default function ServicePageEditor({
   const [linkResults, setLinkResults] = useState<LinkResult[] | null>(null);
   const [checking, setChecking] = useState(false);
   const firstRender = useRef(true);
+  // Mirror `saving` in a ref so the debounced autosave can read it without a
+  // stale closure — it must never fire a second save while one is in flight
+  // (that race could overwrite a just-published row back to draft).
+  const savingRef = useRef(false);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -82,9 +105,11 @@ export default function ServicePageEditor({
 
   const save = async (status?: ServiceStatus) => {
     setSaving(true);
-    const payload: ServicePagePayload = { ...form, status: status ?? form.status };
+    savingRef.current = true;
+    const payload: ServicePagePayload = { ...form, status: status ?? form.status, containers: cb.containers };
     const res = await saveServicePage(page.key, payload);
     setSaving(false);
+    savingRef.current = false;
     if (res.ok) {
       setSavedAt(res.savedAt ?? new Date().toISOString());
       if (status) set("status", status);
@@ -92,16 +117,21 @@ export default function ServicePageEditor({
     return res.ok;
   };
 
-  // autosave (debounced) — skips the initial render
+  // autosave (debounced) — skips the initial render. Watches `cb.containers`
+  // too, so inserting/editing/reordering/deleting a container is persisted (it
+  // lives in separate state from `form` and was previously never autosaved).
+  // Skips while a save is in flight to avoid a concurrent write race.
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    const t = setTimeout(() => void save(), 1600);
+    const t = setTimeout(() => {
+      if (!savingRef.current) void save();
+    }, 1600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form]);
+  }, [form, cb.containers]);
 
   const runLinkCheck = async () => {
     setChecking(true);
@@ -124,56 +154,35 @@ export default function ServicePageEditor({
     "Not saved yet"
   );
 
-  // ---- feature list helpers ----
-  const setFeature = (i: number, k: "title" | "desc" | "link" | "linkText", v: string) =>
-    set("features", form.features.map((f, idx) => (idx === i ? { ...f, [k]: v } : f)));
-  const moveFeature = (from: number, to: number) => {
-    if (to < 0 || to >= form.features.length) return;
-    const n = [...form.features];
-    const [m] = n.splice(from, 1);
-    n.splice(to, 0, m);
-    set("features", n);
-  };
-
   return (
     // On xl, fill <main>'s height and let the two columns scroll independently
     // (top bar fixed, grid flex-1). Below xl it's a normal block that flows.
     <div className="xl:flex xl:h-full xl:flex-col">
-      {toast && (
-        <div
-          className={`fixed right-6 top-6 z-[60] rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
-            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
-          }`}
-        >
-          {toast.msg}
-        </div>
-      )}
-
-      {/* top bar */}
-      <div className="flex flex-wrap items-center gap-3 xl:shrink-0">
-        <Link href="/service-pages" className="text-sm text-muted hover:text-ink">← Service Pages</Link>
-        <h1 className="font-display text-xl font-bold sm:text-2xl">{page.title}</h1>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-            form.status === "published" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-          }`}
-        >
-          {form.status === "published" ? "Published" : "Draft"}
-        </span>
-        <span className="ml-auto text-xs text-muted">{savedLabel}</span>
-        <button onClick={() => save()} disabled={saving} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary disabled:opacity-60">
-          Save draft
-        </button>
-        {form.status === "published" ? (
-          <button onClick={() => save("draft")} disabled={saving} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:text-ink disabled:opacity-60">
-            Unpublish
-          </button>
-        ) : (
-          <button onClick={() => save("published")} disabled={saving} className="btn btn-primary !px-5 !py-2 !text-sm disabled:opacity-60">
-            Publish
-          </button>
-        )}
-      </div>
+      <EditorHeader
+        title={page.title}
+        backHref="/service-pages"
+        backLabel="← Service Pages"
+        status={form.status}
+        busy={saving ? (form.status === "published" ? "publish" : "save") : ""}
+        toast={toast}
+        onSave={() => save()}
+        onPublish={() => save("published")}
+        extra={
+          <>
+            <span className="text-xs text-muted">{savedLabel}</span>
+            {form.status === "published" && (
+              <button
+                type="button"
+                onClick={() => save("draft")}
+                disabled={saving}
+                className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:text-ink disabled:opacity-60"
+              >
+                Unpublish
+              </button>
+            )}
+          </>
+        }
+      />
 
       <div className="mt-6 grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_440px] xl:overflow-hidden">
         {/* ---- form (own scroll) ---- */}
@@ -205,6 +214,29 @@ export default function ServicePageEditor({
             </Field>
           </Section>
 
+          <AiSeoPanel
+            route={`/${finalizeSlug(form.slug) || page.key}`}
+            getContext={() => ({
+              title: form.meta_title || form.hero_heading,
+              contentHtml: form.hero_description,
+              focusKeyword: (form.meta_keywords || "").split(",")[0]?.trim() || undefined,
+              metaTitle: form.meta_title,
+              metaDescription: form.meta_description,
+              keywords: form.meta_keywords,
+            })}
+            onApply={(r) => {
+              if (r.seoTitle) set("meta_title", r.seoTitle);
+              if (r.metaDescription) set("meta_description", r.metaDescription);
+              if (r.metaKeywords) set("meta_keywords", r.metaKeywords);
+              else if (r.secondaryKeywords?.length) set("meta_keywords", r.secondaryKeywords.join(", "));
+              if (r.contentHtml) set("hero_description", r.contentHtml);
+            }}
+          />
+
+          <AuthorPublisherEditor path={`/${finalizeSlug(form.slug) || page.key}`} />
+
+          {cb.slot("top")}
+
           <Section title="Hero">
             <Field label="Hero heading">
               <input value={form.hero_heading} onChange={(e) => set("hero_heading", e.target.value)} className="input" />
@@ -234,44 +266,64 @@ export default function ServicePageEditor({
             <Field label="Image title (optional, SEO)">
               <input value={form.image_title ?? ""} onChange={(e) => set("image_title", e.target.value)} className="input" placeholder="Title attribute shown on hover" />
             </Field>
-          </Section>
-
-          <Section title="Container list">
-            <div className="space-y-2">
-              {form.features.map((f, i) => (
-                <div key={i} className="rounded-xl border border-ink/10 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted">Container {i + 1}</span>
-                    <div className="flex gap-1">
-                      <button onClick={() => moveFeature(i, i - 1)} disabled={i === 0} className="grid h-8 w-8 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↑</button>
-                      <button onClick={() => moveFeature(i, i + 1)} disabled={i === form.features.length - 1} className="grid h-8 w-8 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↓</button>
-                      <button onClick={() => set("features", form.features.filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <span className="mb-1 block text-[11px] font-medium text-muted">Title (rich text — select a word, click 🔗 to link)</span>
-                    <RichEditor value={f.title} onChange={(html) => setFeature(i, "title", html)} internalPages={internalPages} />
-                  </div>
-                  <div className="mt-2">
-                    <span className="mb-1 block text-[11px] font-medium text-muted">Description (rich text — supports word links)</span>
-                    <RichEditor value={f.desc} onChange={(html) => setFeature(i, "desc", html)} internalPages={internalPages} />
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => set("features", [...form.features, { title: "", desc: "", link: "", linkText: "" }])} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary">
-                + Add container
-              </button>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Hero buttons</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Primary button text">
+                <input value={form.chrome.heroPrimaryText} onChange={(e) => set("chrome", { ...form.chrome, heroPrimaryText: e.target.value })} className="input" placeholder="Contact Us" />
+              </Field>
+              <Field label="Primary button URL">
+                <input value={form.chrome.heroPrimaryHref} onChange={(e) => set("chrome", { ...form.chrome, heroPrimaryHref: e.target.value })} className="input" placeholder="/#contact" />
+              </Field>
+              <Field label="Secondary button text">
+                <input value={form.chrome.heroSecondaryText} onChange={(e) => set("chrome", { ...form.chrome, heroSecondaryText: e.target.value })} className="input" placeholder="All Services" />
+              </Field>
+              <Field label="Secondary button URL">
+                <input value={form.chrome.heroSecondaryHref} onChange={(e) => set("chrome", { ...form.chrome, heroSecondaryHref: e.target.value })} className="input" placeholder="/services" />
+              </Field>
             </div>
           </Section>
+
+          {cb.slot("after-hero")}
+
+          <Section title="What's Included">
+            <WhatsIncludedEditor
+              value={form.whats_included}
+              onChange={(v) => set("whats_included", v)}
+              items={form.features}
+              onChangeItems={(v) => set("features", v)}
+              internalPages={internalPages}
+            />
+          </Section>
+
+          {cb.slot("after-features")}
 
           <Section title="CTA section">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="CTA heading"><input value={form.cta.heading} onChange={(e) => set("cta", { ...form.cta, heading: e.target.value })} className="input" /></Field>
-              <Field label="Button label"><input value={form.cta.button_label} onChange={(e) => set("cta", { ...form.cta, button_label: e.target.value })} className="input" /></Field>
-              <Field label="CTA text"><input value={form.cta.text} onChange={(e) => set("cta", { ...form.cta, text: e.target.value })} className="input" /></Field>
-              <Field label="Button URL"><input value={form.cta.button_href} onChange={(e) => set("cta", { ...form.cta, button_href: e.target.value })} className="input" /></Field>
+              <Field label="CTA heading">
+                <input value={form.cta.heading} onChange={(e) => set("cta", { ...form.cta, heading: e.target.value })} className="input" placeholder={`Ready to get started with ${page.title}?`} />
+              </Field>
+              <Field label="Button label">
+                <input value={form.cta.button_label} onChange={(e) => set("cta", { ...form.cta, button_label: e.target.value })} className="input" placeholder="Contact Us" />
+              </Field>
+              <Field label="CTA text">
+                <input value={form.cta.text} onChange={(e) => set("cta", { ...form.cta, text: e.target.value })} className="input" placeholder="Get in touch and we'll show you exactly how this can drive growth for your business." />
+              </Field>
+              <Field label="Button URL">
+                <input value={form.cta.button_href} onChange={(e) => set("cta", { ...form.cta, button_href: e.target.value })} className="input" placeholder="/#contact" />
+              </Field>
+            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Related services heading</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Heading lead">
+                <input value={form.chrome.relatedHeadingLead} onChange={(e) => set("chrome", { ...form.chrome, relatedHeadingLead: e.target.value })} className="input" placeholder="Explore Related" />
+              </Field>
+              <Field label="Heading highlight (gradient)">
+                <input value={form.chrome.relatedHeadingHighlight} onChange={(e) => set("chrome", { ...form.chrome, relatedHeadingHighlight: e.target.value })} className="input" placeholder="Services" />
+              </Field>
             </div>
           </Section>
+
+          {cb.slot("bottom")}
 
           <Section title="FAQ section">
             <div className="space-y-2">
@@ -292,12 +344,17 @@ export default function ServicePageEditor({
             </div>
           </Section>
 
+          {cb.slot("after-faq")}
+
           <Section title="Why Choose Us">
             <WhyChooseEditor
               value={form.why_choose}
               onChange={(v) => set("why_choose", v)}
             />
           </Section>
+
+          {cb.slot("after-whychoose")}
+          {cb.modal}
         </div>
 
         {/* ---- preview + SEO (own scroll) ---- */}
@@ -320,6 +377,7 @@ export default function ServicePageEditor({
             <div className="overflow-auto rounded-2xl border border-ink/10 bg-base p-3">
               <div className="mx-auto bg-surface shadow-soft transition-all" style={{ width: DEVICE_W[device], maxWidth: "100%" }}>
                 <div className="p-5">
+                  <PageContainersView containers={cb.containers} zone="top" />
                   {form.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -342,22 +400,77 @@ export default function ServicePageEditor({
                       dangerouslySetInnerHTML={{ __html: form.hero_description }}
                     />
                   )}
-                  {form.features.length > 0 && (
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      {form.features.filter((f) => f.title).map((f, i) => (
-                        <div key={i} className="rounded-xl border border-ink/10 p-3">
-                          <div
-                            className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
-                            dangerouslySetInnerHTML={{ __html: f.title }}
-                          />
-                          <div
-                            className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-                            dangerouslySetInnerHTML={{ __html: f.desc }}
-                          />
+                  <PageContainersView containers={cb.containers} zone="after-hero" />
+                  {/* What's Included — chrome + cards */}
+                  {form.whats_included.enabled && (
+                    <div
+                      className={`mt-5 ${
+                        form.whats_included.align === "center"
+                          ? "text-center"
+                          : form.whats_included.align === "right"
+                            ? "text-right"
+                            : ""
+                      }`}
+                    >
+                      {form.whats_included.badge && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{form.whats_included.badge}</span>
+                      )}
+                      <p className={`font-display text-lg font-bold ${form.whats_included.badge ? "mt-1" : ""}`}>
+                        {form.whats_included.heading}{" "}
+                        {form.whats_included.highlight && <span className="grad-text">{form.whats_included.highlight}</span>}
+                      </p>
+                      {form.whats_included.description && (
+                        <p className="mt-1 text-xs text-muted">{form.whats_included.description}</p>
+                      )}
+                      {form.features.length > 0 && (
+                        <div
+                          className={`mt-3 grid gap-3 text-left ${
+                            form.whats_included.columns === 1
+                              ? ""
+                              : form.whats_included.columns === 3
+                                ? "sm:grid-cols-3"
+                                : "sm:grid-cols-2"
+                          }`}
+                        >
+                          {form.features.filter((f) => f.title || f.image).map((f, i) => (
+                            <div key={f.id ?? i} className="rounded-xl border border-ink/10 p-3">
+                              <div className="flex items-start gap-2">
+                                {f.image ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={f.image} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                                ) : (
+                                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 text-xs font-bold text-primary">
+                                    {f.icon ? f.icon : `0${i + 1}`}
+                                  </span>
+                                )}
+                                <div className="min-w-0">
+                                  <div
+                                    className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
+                                    dangerouslySetInnerHTML={{ __html: f.title }}
+                                  />
+                                  <div
+                                    className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                                    dangerouslySetInnerHTML={{ __html: f.desc }}
+                                  />
+                                  {f.link && (
+                                    <span className="mt-1 inline-block text-xs font-medium text-primary underline">
+                                      {f.linkText || "Learn more"} →
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                      {form.whats_included.button.label && form.whats_included.button.href && (
+                        <div className="mt-3">
+                          <span className="btn btn-primary !py-2 !text-xs">{form.whats_included.button.label}</span>
+                        </div>
+                      )}
                     </div>
                   )}
+                  <PageContainersView containers={cb.containers} zone="after-features" />
                   {(form.cta.heading || form.cta.button_label) && (
                     <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
                       <p className="font-display text-lg font-bold">{form.cta.heading}</p>
@@ -375,6 +488,7 @@ export default function ServicePageEditor({
                       ))}
                     </div>
                   )}
+                  <PageContainersView containers={cb.containers} zone="after-faq" />
                   {/* Why Choose Us — one card per enabled container */}
                   {form.why_choose.filter((c) => c.enabled).map((c) => (
                     <div key={c.id} className="mt-5 rounded-2xl border border-ink/10 bg-base p-4">
@@ -405,6 +519,8 @@ export default function ServicePageEditor({
                       </div>
                     </div>
                   ))}
+                  <PageContainersView containers={cb.containers} zone="after-whychoose" />
+                  <PageContainersView containers={cb.containers} zone="bottom" />
                 </div>
               </div>
             </div>

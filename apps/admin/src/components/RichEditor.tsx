@@ -123,6 +123,18 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-sync the DOM when `value` changes programmatically (AI "Apply to form",
+  // switching records, restoring a version). Skipped while this editor is
+  // focused so it never jumps the caret mid-typing — live typing flows out via
+  // `sync()`/onChange instead. Without this the editor is write-once and silently
+  // ignores any external update to `value`.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.innerHTML !== value) {
+      el.innerHTML = value;
+    }
+  }, [value]);
+
   const sync = () => {
     if (ref.current) onChange(ref.current.innerHTML);
   };
@@ -555,7 +567,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
         contentEditable
         suppressContentEditableWarning
         onInput={sync}
-        className="prose-jhb min-h-[260px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        className="prose-jhb min-h-[200px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
       />
 
       {/* Link dialog */}
