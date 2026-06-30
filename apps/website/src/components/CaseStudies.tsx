@@ -6,7 +6,7 @@ import SectionHeading from "./SectionHeading";
 
 export default function CaseStudies() {
   return (
-    <section id="cases" className="relative py-16 sm:py-24">
+    <section id="cases" className="relative py-12 sm:py-16">
       <div className="container-x">
         <SectionHeading
           eyebrow="Case Studies" 

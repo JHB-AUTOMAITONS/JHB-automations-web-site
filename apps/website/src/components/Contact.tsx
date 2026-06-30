@@ -17,14 +17,36 @@ const empty: Fields = { name: "", company: "", email: "", phone: "", details: ""
 
 export default function Contact({
   settings = SETTINGS_DEFAULT,
+  eyebrow = "Let's Talk",
+  headingLead = "Get in",
+  headingHighlight = "Touch",
+  description = "Tell us about your goals and we'll map the fastest path to automated, predictable growth — no obligation.",
 }: {
   settings?: SiteSettings;
+  eyebrow?: string;
+  headingLead?: string;
+  headingHighlight?: string;
+  description?: string;
 }) {
   const [fields, setFields] = useState<Fields>(empty);
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>(
     {}
   );
   const [sent, setSent] = useState(false);
+
+  // Derive all micro-copy from settings with inline defaults as safety net.
+  const formName    = settings.contactFormName    || "Full Name";
+  const formCompany = settings.contactFormCompany || "Company Name";
+  const formEmail   = settings.contactFormEmail   || "Email Address";
+  const formPhone   = settings.contactFormPhone   || "Phone Number";
+  const formMessage = settings.contactFormMessage || "Project Details";
+  const formSubmit  = settings.contactFormSubmit  || "Send Message →";
+  const formCallCta = settings.contactFormCallCta || "Contact Team";
+  const successHeading = settings.contactSuccessHeading || "Message Sent!";
+  const successText    = settings.contactSuccessText    || "Our team will reach out within 24 hours.";
+  const callLabel  = settings.contactInfoCallLabel  || "Call us";
+  const emailLabel = settings.contactInfoEmailLabel || "Email us";
+  const visitLabel = settings.contactInfoVisitLabel || "Visit us";
 
   const update =
     (key: keyof Fields) =>
@@ -69,23 +91,21 @@ export default function Contact({
   };
 
   return (
-    <section id="contact" className="relative py-16 sm:py-24">
+    <section id="contact" className="relative py-12 sm:py-16">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl">
           <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-secondary/15 blur-3xl" />
 
-          <div className="relative grid gap-10 p-8 sm:p-12 lg:grid-cols-2">
+          <div className="relative grid gap-8 p-8 sm:p-12 lg:grid-cols-2">
             {/* left */}
             <div>
-              <span className="eyebrow">Let&apos;s Talk</span>
+              {eyebrow && <span className="eyebrow">{eyebrow}</span>}
               <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-                Get in <span className="grad-text">Touch</span>
+                {headingLead}{headingLead && headingHighlight ? " " : ""}
+                {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
               </h2>
-              <p className="mt-4 text-muted">
-                Tell us about your goals and we&apos;ll map the fastest path to
-                automated, predictable growth — no obligation.
-              </p>
+              {description && <p className="mt-4 text-muted">{description}</p>}
 
               <ul className="mt-8 space-y-4 text-sm">
                 <li className="flex items-center gap-3">
@@ -93,7 +113,7 @@ export default function Contact({
                     📞
                   </span>
                   <div>
-                    <p className="text-muted">Call us</p>
+                    <p className="text-muted">{callLabel}</p>
                     <p className="font-medium">{settings.phone}</p>
                   </div>
                 </li>
@@ -102,7 +122,7 @@ export default function Contact({
                     ✉️
                   </span>
                   <div>
-                    <p className="text-muted">Email us</p>
+                    <p className="text-muted">{emailLabel}</p>
                     <p className="font-medium">{settings.email}</p>
                   </div>
                 </li>
@@ -111,7 +131,7 @@ export default function Contact({
                     📍
                   </span>
                   <div>
-                    <p className="text-muted">Visit us</p>
+                    <p className="text-muted">{visitLabel}</p>
                     <p className="font-medium">{settings.address}</p>
                   </div>
                 </li>
@@ -138,10 +158,10 @@ export default function Contact({
                         ✓
                       </motion.div>
                       <h3 className="mt-4 font-display text-xl font-bold">
-                        Message Sent!
+                        {successHeading}
                       </h3>
                       <p className="mt-1 text-sm text-muted">
-                        Our team will reach out within 24 hours.
+                        {successText}
                       </p>
                     </div>
                   </motion.div>
@@ -152,14 +172,14 @@ export default function Contact({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
                     id="name"
-                    label="Full Name"
+                    label={formName}
                     value={fields.name}
                     onChange={update("name")}
                     error={errors.name}
                   />
                   <Field
                     id="company"
-                    label="Company Name"
+                    label={formCompany}
                     value={fields.company}
                     onChange={update("company")}
                   />
@@ -167,7 +187,7 @@ export default function Contact({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
                     id="email"
-                    label="Email Address"
+                    label={formEmail}
                     type="email"
                     value={fields.email}
                     onChange={update("email")}
@@ -175,7 +195,7 @@ export default function Contact({
                   />
                   <Field
                     id="phone"
-                    label="Phone Number"
+                    label={formPhone}
                     type="tel"
                     value={fields.phone}
                     onChange={update("phone")}
@@ -183,7 +203,7 @@ export default function Contact({
                 </div>
                 <Field
                   id="details"
-                  label="Project Details"
+                  label={formMessage}
                   textarea
                   value={fields.details}
                   onChange={update("details")}
@@ -192,13 +212,13 @@ export default function Contact({
 
                 <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                   <button type="submit" className="btn btn-primary flex-1">
-                    Send Message →
+                    {formSubmit}
                   </button>
                   <a
                     href={`tel:${settings.phone.replace(/\s+/g, "")}`}
                     className="btn btn-ghost flex-1"
                   >
-                    Contact Team
+                    {formCallCta}
                   </a>
                 </div>
               </form>

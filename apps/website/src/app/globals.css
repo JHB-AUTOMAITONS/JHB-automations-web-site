@@ -216,6 +216,39 @@ label[for] {
   margin-top: 0.35rem;
 }
 
+/* Checklist lists created in the Rich Text Editor (☐ / ☑ markers). */
+.prose-jhb .rt-checklist {
+  list-style: none;
+  padding-left: 1.6rem;
+}
+.prose-jhb .rt-checklist li {
+  position: relative;
+}
+.prose-jhb .rt-checklist li::before {
+  content: "\2610"; /* ☐ */
+  position: absolute;
+  left: -1.5rem;
+}
+.prose-jhb .rt-checklist li.checked::before {
+  content: "\2611"; /* ☑ */
+  color: var(--primary);
+}
+.prose-jhb .rt-checklist li.checked {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+/* Like button heart "pop" on click */
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.like-pop {
+  animation: like-pop 0.45s ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

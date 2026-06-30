@@ -14,6 +14,7 @@ import { getStats, getSettings, buildMetadata, getSeo } from "@jhb/shared/conten
 import { getServices } from "@jhb/shared/services-server";
 import { getPublishedHome } from "@jhb/shared/home-server";
 import { composeHeroHeading } from "@jhb/shared/home";
+import PageContainers from "@/components/PageContainers";
 import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
 import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
@@ -53,8 +54,8 @@ export default async function Home() {
     subtitle: home.hero.subtitle,
     ctaPrimaryLabel: home.hero.buttonText,
     ctaPrimaryHref: home.hero.buttonHref,
-    ctaSecondaryLabel: "Explore Services",
-    ctaSecondaryHref: "#services",
+    ctaSecondaryLabel: home.hero.buttonSecondaryText,
+    ctaSecondaryHref: home.hero.buttonSecondaryHref,
   };
 
   // Apply per-card content overrides from the Home manager
@@ -77,36 +78,93 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: seo.structured_data }}
         />
       )}
+      <PageContainers containers={home.containers} zone="top" />
       <Hero
         content={heroContent}
         heroImage={home.hero.image}
         heroImageAlt={altFor(home.hero.image, altMap, "JHB Automations")}
         heroImageTitle={home.hero.imageTitle || undefined}
         marquee={partners.items.map((p) => p.name)}
+        marqueeLabel={home.hero.marqueeLabel}
       />
+      <PageContainers containers={home.containers} zone="after-hero" />
       {partners.enabled && <Partners heading={partners.heading} items={partners.items} />}
+      <PageContainers containers={home.containers} zone="after-partners" />
       <AboutSection about={home.about} imageAlt={altFor(home.about.image, altMap, home.about.title)} />
+      <PageContainers containers={home.containers} zone="after-about" />
       <Services
         items={serviceCards}
+        eyebrow={home.servicesSection.eyebrow}
         heading={home.servicesSection.title}
         subheading={home.servicesSection.subtitle}
+        viewAllText={home.servicesSection.viewAllText}
+        learnMoreText={home.servicesSection.learnMoreText}
       />
-      <Stats items={stats.items} />
-      <Testimonials items={testimonialItems} />
+      <PageContainers containers={home.containers} zone="after-services" />
+      <Stats
+        items={stats.items}
+        eyebrow={home.statsHeader.eyebrow}
+        headingLead={home.statsHeader.headingLead}
+        headingHighlight={home.statsHeader.headingHighlight}
+      />
+      <PageContainers containers={home.containers} zone="after-stats" />
+      <Testimonials
+        items={testimonialItems}
+        eyebrow={home.testimonialsHeader.eyebrow}
+        headingLead={home.testimonialsHeader.headingLead}
+        headingHighlight={home.testimonialsHeader.headingHighlight}
+        description={home.testimonialsHeader.description}
+        ratingValue={home.testimonialsHeader.ratingValue}
+        ratingText={home.testimonialsHeader.ratingText}
+      />
+      <PageContainers containers={home.containers} zone="after-testimonials" />
       <FounderPerspective founder={home.founder} />
-      <ClientLogos items={clientLogos} />
-      <Faq items={homeFaqs} />
-      <BlogPreview />
+      <PageContainers containers={home.containers} zone="after-founder" />
+      <ClientLogos
+        items={clientLogos}
+        eyebrow={home.clientLogosHeader.eyebrow}
+        headingLead={home.clientLogosHeader.headingLead}
+        headingHighlight={home.clientLogosHeader.headingHighlight}
+        description={home.clientLogosHeader.description}
+      />
+      <PageContainers containers={home.containers} zone="after-clients" />
+      <Faq
+        items={homeFaqs}
+        eyebrow={home.faqHeader.eyebrow}
+        headingLead={home.faqHeader.headingLead}
+        headingHighlight={home.faqHeader.headingHighlight}
+        description={home.faqHeader.description}
+        linkText={home.faqHeader.linkText}
+        linkHref={home.faqHeader.linkHref}
+        showNumbers={settings.faqShowNumbers}
+      />
+      <PageContainers containers={home.containers} zone="after-faq" />
+      <BlogPreview
+        eyebrow={home.blogHeader.eyebrow}
+        headingLead={home.blogHeader.headingLead}
+        headingHighlight={home.blogHeader.headingHighlight}
+        description={home.blogHeader.description}
+        viewAllText={home.blogHeader.viewAllText}
+      />
+      <PageContainers containers={home.containers} zone="after-blog" />
       <CtaSection cta={home.cta} />
+      <PageContainers containers={home.containers} zone="after-cta" />
       {seo?.seo_content && (
-        <section className="container-x py-12">
+        <section className="container-x py-10">
           <div
             className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: seo.seo_content }}
           />
         </section>
       )}
-      <Contact settings={settings} />
+      <Contact
+        settings={settings}
+        eyebrow={home.contactHeader.eyebrow}
+        headingLead={home.contactHeader.headingLead}
+        headingHighlight={home.contactHeader.headingHighlight}
+        description={home.contactHeader.description}
+      />
+      <PageContainers containers={home.containers} zone="bottom" />
     </main>
   );
 }

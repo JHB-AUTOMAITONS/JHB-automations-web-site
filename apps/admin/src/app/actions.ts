@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@jhb/shared/supabase/server";
+import { getAuthorPublisherDraftDoc } from "@jhb/shared/content-server";
+import type { AuthorPublisherDoc } from "@jhb/shared/content";
 import { testimonials as fallbackTestimonials } from "@jhb/shared/data";
-import { extractHrefs, type ServicePagePayload } from "@jhb/shared/service-pages";
+import { extractHrefs, seedWhatsIncluded, type ServicePagePayload } from "@jhb/shared/service-pages";
 import { HOME_FAQ_DEFAULTS } from "@jhb/shared/home-faqs";
+import type { PageContainer } from "@jhb/shared/containers";
 
 async function getStaff() {
   const supabase = await createClient();
@@ -120,6 +123,44 @@ export async function saveProducts(data: Record<string, unknown>) {
   return { ok: true };
 }
 
+// Products draft — saves to "products_draft"; public pages are unaffected until
+// publishProducts() is called.
+export async function saveProductsDraft(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "products_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("products.draft", "Saved products draft");
+  return { ok: true };
+}
+
+// Publish Products — copies current data to "products" and revalidates public pages.
+export async function publishProducts(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const now = new Date().toISOString();
+  await supabase.from("jhb_content").upsert(
+    { key: "products_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "products", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("products.publish", "Published JHB Products");
+  await snapshot("products", "JHB Products", data, "Published JHB Products");
+  revalidatePath("/", "layout");
+  revalidatePath("/vasool-app");
+  revalidatePath("/about-vasool");
+  return { ok: true };
+}
+
 // About page — one editable document in jhb_content ("about").
 export async function saveAbout(data: Record<string, unknown>) {
   const ctx = await requireAdmin();
@@ -132,6 +173,44 @@ export async function saveAbout(data: Record<string, unknown>) {
   if (error) return { ok: false, error: error.message };
   await log("about.update", "Updated About page");
   await snapshot("about", "About Page", data, "Updated About page");
+  revalidatePath("/about");
+  return { ok: true };
+}
+
+// About page draft — saves to "about_draft" key; does NOT revalidate the public
+// /about route so changes stay invisible to visitors until publishAbout() is called.
+export async function saveAboutDraft(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "about_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("about.draft", "Saved about page draft");
+  return { ok: true };
+}
+
+// Publish About page — saves data to both draft and published keys then
+// revalidates the public /about route.
+export async function publishAbout(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const now = new Date().toISOString();
+  // Keep draft in sync
+  await supabase.from("jhb_content").upsert(
+    { key: "about_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "about", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("about.publish", "Published about page");
+  await snapshot("about", "About Page", data, "Published about page");
   revalidatePath("/about");
   return { ok: true };
 }
@@ -239,6 +318,45 @@ export async function uploadMedia(formData: FormData) {
   return { ok: true, url: publicUrl };
 }
 
+// Rename an image's DISPLAY name only (image_filename). The storage path and
+// public URL are never touched, so every existing reference keeps working.
+export async function renameMedia(id: string, name: string) {
+  const { supabase } = await getStaff();
+  const n = name.trim();
+  if (!n) return { ok: false, error: "Name can't be empty" };
+  const { error } = await supabase
+    .from("jhb_media")
+    .update({ image_filename: n, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await log("media.rename", `Renamed media to "${n}"`);
+  revalidatePath("/media");
+  return { ok: true };
+}
+
+// Replace an image's file IN PLACE — overwrites the same storage path (upsert),
+// so the public URL is unchanged and every page using this image updates at once.
+export async function replaceMedia(id: string, path: string, formData: FormData) {
+  const { supabase } = await getStaff();
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) return { ok: false, error: "No file selected" };
+  const { error: upErr } = await supabase.storage
+    .from("jhb-media")
+    // Shorter cache than a fresh upload so the new image shows soon; the URL
+    // (a permanent reference) is intentionally kept the same.
+    .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "3600" });
+  if (upErr) return { ok: false, error: upErr.message };
+  const { error: dbErr } = await supabase
+    .from("jhb_media")
+    .update({ size: file.size, mime: file.type, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (dbErr) return { ok: false, error: dbErr.message };
+  await log("media.replace", `Replaced image at "${path}"`);
+  revalidatePath("/media");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 // ---- Image Alt Text (SEO / accessibility) ----
 
 // Fetch the current alt text for an image by its public URL (used by ImagePicker).
@@ -251,6 +369,21 @@ export async function getMediaAlt(url: string) {
     .eq("url", url)
     .maybeSingle();
   return { ok: true, alt: (data?.alt_text as string | null) ?? "" };
+}
+
+// List all image media (id/name/url/alt/title) for the in-editor image picker —
+// so "Insert Image" can browse and reuse existing uploads, not just upload new.
+export async function listMedia() {
+  const { supabase } = await getStaff();
+  const { data } = await supabase
+    .from("jhb_media")
+    .select("id, name, url, alt_text, image_title")
+    .like("mime", "image/%")
+    .order("created_at", { ascending: false });
+  return {
+    ok: true as const,
+    items: (data ?? []) as { id: string; name: string; url: string; alt_text: string | null; image_title: string | null }[],
+  };
 }
 
 // Save alt text for an image identified by its URL (used by ImagePicker on blur).
@@ -842,11 +975,14 @@ const featureUrlOk = (u: string) => {
   }
 };
 
-export async function saveServicePage(key: string, payload: ServicePagePayload) {
-  const ctx = await requireAdmin();
-  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
-  const { supabase, user } = ctx;
-
+// Validate + normalise a service-page payload into the clean CONTENT object that
+// is stored (as the draft) and later promoted (into the live content columns).
+// Returns the content with column-matching keys, or a user-facing error. Status
+// and timestamps are NOT part of content — the caller sets those.
+function buildServiceContent(
+  key: string,
+  payload: ServicePagePayload
+): { ok: true; content: Record<string, unknown> } | { ok: false; error: string } {
   // Normalise the slug (lowercase, spaces/invalid -> hyphen, collapse repeats,
   // trim) rather than rejecting messy-but-fixable input. Fall back to the page
   // key (the original slug) so a blank slug never blocks a content save.
@@ -859,11 +995,16 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
     };
 
   // Normalise + validate feature list (incl. the per-feature "Word Link").
+  // These are the "What's Included" cards, so we also carry the richer optional
+  // fields (id / icon / image) added for that editable section.
   const features = (payload.features ?? []).map((f) => ({
     title: (f.title || "").trim(),
     desc: (f.desc || "").trim(),
     link: (f.link || "").trim(),
     linkText: (f.linkText || "").trim(),
+    id: (f.id || "").trim(),
+    icon: (f.icon || "").trim(),
+    image: typeof f.image === "string" ? f.image.trim() : f.image ?? null,
   }));
   const badLink = features.find((f) => !featureUrlOk(f.link));
   if (badLink)
@@ -871,12 +1012,15 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
       ok: false,
       error: `Invalid Word Link for "${badLink.title || "a container"}": ${badLink.link} — use https://…, /path, #anchor, mailto:/tel:, or leave it empty.`,
     };
-  // Persist a clean shape (omit empty link/linkText so the JSON stays tidy).
+  // Persist a clean shape (omit empty optional fields so the JSON stays tidy).
   const cleanFeatures = features.map((f) => ({
     title: f.title,
     desc: f.desc,
     ...(f.link ? { link: f.link } : {}),
     ...(f.linkText ? { linkText: f.linkText } : {}),
+    ...(f.id ? { id: f.id } : {}),
+    ...(f.icon ? { icon: f.icon } : {}),
+    ...(f.image ? { image: f.image } : {}),
   }));
 
   // Hero "Word Link" — same validation as feature links (empty or valid URL).
@@ -887,41 +1031,104 @@ export async function saveServicePage(key: string, payload: ServicePagePayload) 
       error: `Invalid Hero Word Link: ${heroLink} — use https://…, /path, #anchor, mailto:/tel:, or leave it empty.`,
     };
 
+  return {
+    ok: true,
+    content: {
+      slug,
+      meta_title: payload.meta_title?.trim() || null,
+      meta_description: payload.meta_description?.trim() || null,
+      meta_keywords: payload.meta_keywords?.trim() || null,
+      hero_heading: payload.hero_heading?.trim() || null,
+      hero_highlight: payload.hero_highlight?.trim() || null,
+      hero_tail: payload.hero_tail?.trim() || null,
+      hero_description: payload.hero_description?.trim() || null,
+      hero_link: heroLink || null,
+      features: cleanFeatures,
+      whats_included: payload.whats_included ?? seedWhatsIncluded(key),
+      faq: payload.faq ?? [],
+      why_choose: payload.why_choose ?? [],
+      cta: payload.cta ?? null,
+      image_url: payload.image_url || null,
+      image_alt: payload.image_alt || null,
+      image_title: payload.image_title || null,
+      containers: payload.containers ?? [],
+      chrome: payload.chrome ?? null,
+    },
+  };
+}
+
+// Save Draft — mirrors saveHomeDraft: writes ONLY the working draft. The live
+// content columns + status are untouched, so the public page never changes until
+// Publish is clicked.
+export async function saveServicePage(key: string, payload: ServicePagePayload) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+
+  const built = buildServiceContent(key, payload);
+  if (!built.ok) return built;
+
+  const now = new Date().toISOString();
+  // Ensure a row exists so the draft has somewhere to live (slug is NOT NULL).
+  // DO NOTHING on conflict so an existing page's live slug/content is preserved.
+  await supabase
+    .from("jhb_services")
+    .upsert({ key, slug: slugify(key) }, { onConflict: "key", ignoreDuplicates: true });
+  const { error } = await supabase
+    .from("jhb_services")
+    .update({ draft: built.content, draft_updated_at: now, updated_at: now, updated_by: user.id })
+    .eq("key", key);
+  if (error) {
+    console.error(`[service-page] DRAFT SAVE FAILED key="${key}":`, error.message);
+    return { ok: false, error: error.message };
+  }
+  await log("service.page.draft", `Saved draft for service page "${key}"`);
+  await snapshot(`service_page:${key}`, `Service Page — ${key}`, built.content, `Saved draft for "${key}"`);
+  revalidatePath("/service-pages");
+  revalidatePath(`/service-pages/${key}`);
+  return { ok: true, savedAt: now };
+}
+
+// Publish — mirrors publishHome: promotes the saved draft into the live content
+// columns and flips status to "published". draft_updated_at is set equal to
+// content_updated_at so there are no remaining "unpublished changes".
+export async function publishServicePage(key: string) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+
+  const { data } = await supabase
+    .from("jhb_services")
+    .select("draft")
+    .eq("key", key)
+    .maybeSingle();
+  const draft = (data?.draft ?? null) as ServicePagePayload | null;
+  if (!draft) return { ok: false, error: "Nothing to publish yet — save a draft first." };
+
+  const built = buildServiceContent(key, draft);
+  if (!built.ok) return built;
+
   const now = new Date().toISOString();
   const row = {
     key,
-    slug,
-    meta_title: payload.meta_title?.trim() || null,
-    meta_description: payload.meta_description?.trim() || null,
-    meta_keywords: payload.meta_keywords?.trim() || null,
-    status: payload.status === "published" ? "published" : "draft",
-    hero_heading: payload.hero_heading?.trim() || null,
-    hero_description: payload.hero_description?.trim() || null,
-    hero_link: heroLink || null,
-    features: cleanFeatures,
-    faq: payload.faq ?? [],
-    why_choose: payload.why_choose ?? [],
-    cta: payload.cta ?? null,
-    image_url: payload.image_url || null,
-    image_alt: payload.image_alt || null,
-    image_title: payload.image_title || null,
+    ...built.content,
+    status: "published",
     content_updated_at: now,
+    draft_updated_at: now,
     updated_at: now,
     updated_by: user.id,
   };
   const { error } = await supabase.from("jhb_services").upsert(row, { onConflict: "key" });
   if (error) {
-    console.error(`[service-page] SAVE FAILED key="${key}":`, error.message);
+    console.error(`[service-page] PUBLISH FAILED key="${key}":`, error.message);
     return { ok: false, error: error.message };
   }
-  console.log(
-    `[service-page] saved key="${key}" status=${payload.status} slug="${slug}" at ${now}`
-  );
-  await log("service.page.save", `Saved service page "${key}"`);
-  await snapshot(`service_page:${key}`, `Service Page — ${key}`, row, `Saved service page "${key}"`);
+  console.log(`[service-page] published key="${key}" slug="${built.content.slug}" at ${now}`);
+  await log("service.page.publish", `Published service page "${key}"`);
+  await snapshot(`service_page:${key}`, `Service Page — ${key}`, row, `Published service page "${key}"`);
   revalidatePath("/service-pages");
   revalidatePath(`/service-pages/${key}`);
-  return { ok: true, savedAt: now };
+  return { ok: true, publishedAt: now };
 }
 
 export async function setServicePageStatus(key: string, status: "draft" | "published") {
@@ -946,7 +1153,7 @@ export async function duplicateServicePage(fromKey: string, toKey: string) {
 
   const { data: src } = await supabase
     .from("jhb_services")
-    .select("hero_heading, hero_description, hero_link, features, faq, cta, image_url, image_alt")
+    .select("hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, faq, cta, image_url, image_alt")
     .eq("key", fromKey)
     .maybeSingle();
   if (!src) return { ok: false, error: "Source has no saved content to copy." };
@@ -956,9 +1163,12 @@ export async function duplicateServicePage(fromKey: string, toKey: string) {
     .from("jhb_services")
     .update({
       hero_heading: src.hero_heading,
+      hero_highlight: src.hero_highlight,
+      hero_tail: src.hero_tail,
       hero_description: src.hero_description,
       hero_link: src.hero_link,
       features: src.features ?? [],
+      whats_included: src.whats_included ?? {},
       faq: src.faq ?? [],
       cta: src.cta ?? null,
       image_url: src.image_url,
@@ -984,9 +1194,12 @@ export async function resetServicePage(key: string) {
     .from("jhb_services")
     .update({
       hero_heading: null,
+      hero_highlight: null,
+      hero_tail: null,
       hero_description: null,
       hero_link: null,
       features: [],
+      whats_included: {},
       faq: [],
       cta: null,
       image_url: null,
@@ -1267,6 +1480,8 @@ export async function publishHome() {
 
 // ---- Blog posts ----
 
+type BlogFaqInput = { id: string; question: string; answer: string; visible: boolean };
+
 type PostInput = {
   id?: string;
   slug: string;
@@ -1280,6 +1495,9 @@ type PostInput = {
   meta_title: string;
   meta_description: string;
   status: "draft" | "published";
+  containers?: PageContainer[];
+  faqs?: BlogFaqInput[];
+  faqs_enabled?: boolean;
 };
 
 function slugify(s: string) {
@@ -1324,32 +1542,48 @@ export async function savePost(input: PostInput) {
     meta_title: input.meta_title || null,
     meta_description: input.meta_description || null,
     status: input.status,
+    containers: input.containers ?? [],
     updated_at: now,
     updated_by: user.id,
   };
 
-  let result;
-  if (input.id) {
+  // FAQ columns ship in a later migration. Keep them in a separate object so a
+  // database that hasn't run jhb_posts_faqs.sql yet can still save posts — we
+  // detect the missing-column error and retry without these fields.
+  const faqFields = {
+    faqs: (input.faqs ?? []).map((f) => ({
+      id: f.id,
+      question: (f.question || "").trim(),
+      answer: f.answer || "",
+      visible: f.visible !== false,
+    })),
+    faqs_enabled: input.faqs_enabled !== false,
+  };
+  const missingFaqColumn = (e: { code?: string; message?: string } | null) =>
+    !!e && (e.code === "PGRST204" || /faqs(_enabled)?/i.test(e.message || ""));
+
+  const published_at_for = async () => {
+    if (!input.id) return input.status === "published" ? now : null;
     const { data: existing } = await supabase
       .from("jhb_posts")
       .select("published_at")
       .eq("id", input.id)
       .maybeSingle();
-    const published_at =
-      existing?.published_at ?? (input.status === "published" ? now : null);
-    result = await supabase
-      .from("jhb_posts")
-      .update({ ...base, published_at })
-      .eq("id", input.id)
-      .select("id")
-      .maybeSingle();
-  } else {
-    const published_at = input.status === "published" ? now : null;
-    result = await supabase
-      .from("jhb_posts")
-      .insert({ ...base, published_at })
-      .select("id")
-      .maybeSingle();
+    return existing?.published_at ?? (input.status === "published" ? now : null);
+  };
+  const published_at = await published_at_for();
+
+  const run = (includeFaqs: boolean) => {
+    const row = includeFaqs ? { ...base, ...faqFields, published_at } : { ...base, published_at };
+    return input.id
+      ? supabase.from("jhb_posts").update(row).eq("id", input.id).select("id").maybeSingle()
+      : supabase.from("jhb_posts").insert(row).select("id").maybeSingle();
+  };
+
+  let result = await run(true);
+  if (result.error && missingFaqColumn(result.error)) {
+    console.warn("[post] faqs columns missing — saved without FAQs. Run supabase/migrations/jhb_posts_faqs.sql.");
+    result = await run(false);
   }
 
   if (result.error) {
@@ -1375,6 +1609,172 @@ export async function deletePost(id: string) {
   await log("post.delete", `Deleted post ${id}`);
   revalidatePath("/posts");
   revalidatePath("/blog");
+  return { ok: true };
+}
+
+export async function resetPostLikes(id: string) {
+  const { supabase } = await getStaff();
+  const { error } = await supabase.from("jhb_posts").update({ likes: 0 }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await log("post.likes.reset", `Reset likes for post ${id}`);
+  revalidatePath("/posts");
+  revalidatePath(`/blog`);
+  return { ok: true };
+}
+
+// ---- Author & Publisher (SEO) ----
+// One jhb_content document ("author_publisher" + draft) holds global defaults +
+// per-page overrides. The editor panel loads the draft-preferred doc, edits its
+// slice, and saves the whole doc. SEO-only — never rendered as a visible section.
+
+export async function loadAuthorPublisher(): Promise<
+  { ok: true; doc: AuthorPublisherDoc } | { ok: false; error: string }
+> {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can edit Author & Publisher SEO." };
+  return { ok: true, doc: await getAuthorPublisherDraftDoc() };
+}
+
+export async function saveAuthorPublisherDraft(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "author_publisher_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("author_publisher.draft", "Saved Author & Publisher SEO draft");
+  return { ok: true };
+}
+
+export async function publishAuthorPublisher(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+  const now = new Date().toISOString();
+  await supabase.from("jhb_content").upsert(
+    { key: "author_publisher_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "author_publisher", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("author_publisher.publish", "Published Author & Publisher SEO");
+  await snapshot("author_publisher", "Author & Publisher SEO", data, "Published Author & Publisher SEO");
+  // Author/publisher feeds structured data on every page → revalidate the layout.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// ---- Blog Hero (full-width banner on the /blog landing page) ----
+// One jhb_content document ("blog_hero" + "blog_hero_draft"). Save Draft never
+// touches the published key; publishBlogHero() copies it across and revalidates.
+
+export async function saveBlogHeroDraft(data: Record<string, unknown>) {
+  const { supabase, user } = await getStaff();
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "blog_hero_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("blog_hero.draft", "Saved blog hero draft");
+  return { ok: true };
+}
+
+export async function publishBlogHero(data: Record<string, unknown>) {
+  const { supabase, user } = await getStaff();
+  const now = new Date().toISOString();
+  await supabase.from("jhb_content").upsert(
+    { key: "blog_hero_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "blog_hero", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("blog_hero.publish", "Published blog hero");
+  await snapshot("blog_hero", "Blog Hero", data, "Published blog hero");
+  revalidatePath("/blog");
+  return { ok: true };
+}
+
+// ---- Blog Article Hero (full-width banner on each /blog/[slug] article) ----
+// Global appearance config in jhb_content ("blog_article_hero" + draft). Save
+// Draft never touches the published key; publishBlogArticleHero() copies it
+// across and revalidates the article pages. Per-post content (title/breadcrumb/
+// author/date/reading time) is dynamic and not stored here.
+
+export async function saveBlogArticleHeroDraft(data: Record<string, unknown>) {
+  const { supabase, user } = await getStaff();
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "blog_article_hero_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("blog_article_hero.draft", "Saved blog article hero draft");
+  return { ok: true };
+}
+
+export async function publishBlogArticleHero(data: Record<string, unknown>) {
+  const { supabase, user } = await getStaff();
+  const now = new Date().toISOString();
+  await supabase.from("jhb_content").upsert(
+    { key: "blog_article_hero_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "blog_article_hero", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("blog_article_hero.publish", "Published blog article hero");
+  await snapshot("blog_article_hero", "Blog Article Hero", data, "Published blog article hero");
+  // Affects every article page header.
+  revalidatePath("/blog/[slug]", "page");
+  return { ok: true };
+}
+
+// ---- Legal pages (Privacy Policy + Terms & Conditions) ----
+// One jhb_content document ("legal" + "legal_draft"). Save Draft never touches
+// the published key, so the live pages are unaffected until publishLegal()
+// copies it across and revalidates the routes + layout (footer links).
+
+export async function saveLegalDraft(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can edit legal pages." };
+  const { supabase, user } = ctx;
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "legal_draft", data, updated_at: new Date().toISOString(), updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("legal.draft", "Saved legal pages draft");
+  return { ok: true };
+}
+
+export async function publishLegal(data: Record<string, unknown>) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can publish legal pages." };
+  const { supabase, user } = ctx;
+  const now = new Date().toISOString();
+  await supabase.from("jhb_content").upsert(
+    { key: "legal_draft", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  const { error } = await supabase.from("jhb_content").upsert(
+    { key: "legal", data, updated_at: now, updated_by: user.id },
+    { onConflict: "key" }
+  );
+  if (error) return { ok: false, error: error.message };
+  await log("legal.publish", "Published legal pages");
+  await snapshot("legal", "Legal Pages", data, "Published legal pages");
+  revalidatePath("/privacy-policy");
+  revalidatePath("/terms-and-conditions");
+  revalidatePath("/", "layout"); // footer links
   return { ok: true };
 }
 
@@ -1457,6 +1857,42 @@ export async function restoreVersion(id: string) {
       .upsert({ key: "draft", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
     writeError = error?.message ?? null;
     paths.push("/home");
+  } else if (module === "blog_hero") {
+    const { error } = await supabase
+      .from("jhb_content")
+      .upsert({ key: "blog_hero", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    await supabase
+      .from("jhb_content")
+      .upsert({ key: "blog_hero_draft", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    writeError = error?.message ?? null;
+    paths.push("/blog");
+  } else if (module === "blog_article_hero") {
+    const { error } = await supabase
+      .from("jhb_content")
+      .upsert({ key: "blog_article_hero", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    await supabase
+      .from("jhb_content")
+      .upsert({ key: "blog_article_hero_draft", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    writeError = error?.message ?? null;
+    paths.push("/blog");
+  } else if (module === "author_publisher") {
+    const { error } = await supabase
+      .from("jhb_content")
+      .upsert({ key: "author_publisher", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    await supabase
+      .from("jhb_content")
+      .upsert({ key: "author_publisher_draft", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    writeError = error?.message ?? null;
+    paths.push("/");
+  } else if (module === "legal") {
+    const { error } = await supabase
+      .from("jhb_content")
+      .upsert({ key: "legal", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    await supabase
+      .from("jhb_content")
+      .upsert({ key: "legal_draft", data, updated_at: now, updated_by: user.id }, { onConflict: "key" });
+    writeError = error?.message ?? null;
+    paths.push("/privacy-policy", "/terms-and-conditions");
   } else if (module.startsWith("seo:")) {
     const path = module.slice(4);
     const d = data as { title?: string; description?: string; keywords?: string; og_image?: string };

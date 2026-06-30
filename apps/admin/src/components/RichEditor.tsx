@@ -4,11 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import ColorEditor from "./ColorEditor";
 import FontSizeControl, { wrapSelectionFontSize } from "./FontSizeControl";
+import { EDITOR_FONTS, matchFont } from "./editorFonts";
+import ImageInsertDialog from "./ImageInsertDialog";
 
 type Props = {
   value: string;
   onChange: (html: string) => void;
   internalPages?: InternalPage[];
+  // Minimum height of the editing surface in px (default 200).
+  minHeight?: number;
 };
 
 type LinkDraft = {
@@ -29,17 +33,20 @@ const EMPTY_DRAFT: LinkDraft = {
   ugc: false,
 };
 
-const TOOLS: { cmd: string; arg?: string; label: string; title: string }[] = [
-  { cmd: "bold", label: "B", title: "Bold" },
-  { cmd: "italic", label: "I", title: "Italic" },
-  { cmd: "underline", label: "U", title: "Underline" },
-  { cmd: "strikeThrough", label: "S", title: "Strikethrough" },
-  { cmd: "formatBlock", arg: "BLOCKQUOTE", label: "❝", title: "Quote" },
-  { cmd: "insertUnorderedList", label: "• List", title: "Bullet list" },
-  { cmd: "insertOrderedList", label: "1. List", title: "Numbered list" },
+// Inline character formatting (semantic tags, toggled like Word).
+const INLINE: { cmd: string; label: string; title: string; cls?: string }[] = [
+  { cmd: "bold", label: "B", title: "Bold (Ctrl+B)", cls: "font-bold" },
+  { cmd: "italic", label: "I", title: "Italic (Ctrl+I)", cls: "italic" },
+  { cmd: "underline", label: "U", title: "Underline (Ctrl+U)", cls: "underline" },
+  { cmd: "strikeThrough", label: "S", title: "Strikethrough", cls: "line-through" },
+];
+
+// Alignment — applied as inline `text-align` so it survives into published HTML.
+const ALIGN: { cmd: string; label: string; title: string }[] = [
   { cmd: "justifyLeft", label: "⫷", title: "Align left" },
   { cmd: "justifyCenter", label: "≡", title: "Align center" },
   { cmd: "justifyRight", label: "⫸", title: "Align right" },
+  { cmd: "justifyFull", label: "☰", title: "Justify" },
 ];
 
 // Paragraph + headings + quote/code for the block-format dropdown.
@@ -90,7 +97,27 @@ function buildRel(d: LinkDraft): string {
   return rel.join(" ");
 }
 
-export default function RichEditor({ value, onChange, internalPages = [] }: Props) {
+// Strip scripts/dangerous attributes from pasted HTML while KEEPING inline
+// formatting (font, size, colour, bold…) so "paste with formatting" is faithful.
+function sanitizePastedHtml(html: string): string {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  tpl.content
+    .querySelectorAll("script,style,meta,link,title,head,noscript,iframe,object,embed")
+    .forEach((n) => n.remove());
+  tpl.content.querySelectorAll<HTMLElement>("*").forEach((el) => {
+    Array.from(el.attributes).forEach((a) => {
+      const n = a.name.toLowerCase();
+      if (n.startsWith("on")) el.removeAttribute(a.name);
+      if ((n === "href" || n === "src") && /^\s*javascript:/i.test(a.value)) {
+        el.removeAttribute(a.name);
+      }
+    });
+  });
+  return tpl.innerHTML;
+}
+
+export default function RichEditor({ value, onChange, internalPages = [], minHeight = 200 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
   const editingAnchor = useRef<HTMLAnchorElement | null>(null);
@@ -104,11 +131,24 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
   // Font size / colour state
   const styleRange = useRef<Range | null>(null);
   const [colorOpen, setColorOpen] = useState(false);
+  // Whether the colour editor is targeting text colour or text-background highlight.
+  const colorMode = useRef<"text" | "highlight">("text");
   const [recent, setRecent] = useState<string[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   const [fontSizePx, setFontSizePx] = useState(14);
+  // The font family at the caret, so the Font dropdown shows the active face.
+  const [fontFamily, setFontFamily] = useState("");
   // The block style at the caret, so the Style dropdown shows the active style.
   const [blockTag, setBlockTag] = useState("P");
+  // Set by Ctrl+Shift+V so the next paste drops all formatting.
+  const plainPaste = useRef(false);
+
+  // ----- Insert / edit image -----
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [imgDialog, setImgDialog] = useState<null | "insert" | "replace">(null);
+  const [imgSel, setImgSel] = useState<{ figure: HTMLElement; img: HTMLImageElement } | null>(null);
+  const [imgPos, setImgPos] = useState<{ top: number; left: number } | null>(null);
+  const [imgFields, setImgFields] = useState({ alt: "", title: "", caption: "", width: "auto", custom: false, align: "center" });
 
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) ref.current.innerHTML = value;
@@ -166,16 +206,32 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     sync();
   };
 
-  // Reflect the size at the caret in the toolbar control, like Word.
-  const readCaretSize = () => {
+  // Apply a font family to the saved selection as an inline `font-family` style
+  // so the published page renders the same face (web fonts are loaded globally).
+  const applyFont = (name: string) => {
+    const font = EDITOR_FONTS.find((f) => f.name === name);
+    if (!font || !ref.current) return;
+    ref.current.focus();
+    restoreSel();
+    document.execCommand("styleWithCSS", false, "true");
+    document.execCommand("fontName", false, font.stack);
+    document.execCommand("styleWithCSS", false, "false");
+    setFontFamily(name);
+    sync();
+  };
+
+  // Reflect the size + font at the caret in the toolbar controls, like Word.
+  const readCaretStyle = () => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || !ref.current) return;
     const node = sel.anchorNode;
     if (!node || !ref.current.contains(node)) return;
     const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
     if (!el) return;
-    const px = parseFloat(getComputedStyle(el).fontSize);
+    const cs = getComputedStyle(el);
+    const px = parseFloat(cs.fontSize);
     if (!Number.isNaN(px)) setFontSizePx(Math.round(px));
+    setFontFamily(matchFont(cs.fontFamily));
   };
 
   // Reflect the block style (paragraph / heading / quote / code) at the caret,
@@ -200,7 +256,7 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
 
   useEffect(() => {
     const handler = () => {
-      readCaretSize();
+      readCaretStyle();
       readCaretBlock();
     };
     document.addEventListener("selectionchange", handler);
@@ -220,17 +276,25 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     });
   };
 
-  // Apply any CSS colour (HEX / rgb() / hsl() / name) to the selection inline.
+  // Apply any CSS colour (HEX / rgb() / hsl() / name) to the selection inline —
+  // either the text colour or the text-background highlight, per `colorMode`.
   const applyColor = (raw: string) => {
     const c = raw.trim();
     if (!isValidColor(c)) return;
     ref.current?.focus();
     restoreSel();
     document.execCommand("styleWithCSS", false, "true");
-    document.execCommand("foreColor", false, c);
+    document.execCommand(colorMode.current === "highlight" ? "hiliteColor" : "foreColor", false, c);
+    document.execCommand("styleWithCSS", false, "false");
     pushRecent(c);
     setColorOpen(false);
     sync();
+  };
+
+  const openColor = (mode: "text" | "highlight") => {
+    colorMode.current = mode;
+    saveSel();
+    setColorOpen(true);
   };
 
   const saveCustom = (c: string) => {
@@ -245,9 +309,94 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     });
   };
 
+  // Run a command that toggles a semantic tag / native behaviour (bold, lists,
+  // super/subscript, undo/redo…). Selection is preserved by the button's
+  // onMouseDown preventDefault, so the live caret is used.
   const exec = (cmd: string, arg?: string) => {
     ref.current?.focus();
     document.execCommand(cmd, false, arg);
+    sync();
+  };
+
+  // Run a command whose result should be an inline CSS style (alignment) so it
+  // survives into the published HTML and the `.prose-jhb` renderer.
+  const execCss = (cmd: string, arg?: string) => {
+    ref.current?.focus();
+    document.execCommand("styleWithCSS", false, "true");
+    document.execCommand(cmd, false, arg);
+    document.execCommand("styleWithCSS", false, "false");
+    sync();
+  };
+
+  // Walk up from a node to the nearest ancestor with the given tag, inside the editor.
+  const closestTag = (node: Node | null, tag: string): HTMLElement | null => {
+    let n: Node | null = node;
+    while (n && n !== ref.current) {
+      if (n.nodeType === Node.ELEMENT_NODE && (n as HTMLElement).tagName === tag) {
+        return n as HTMLElement;
+      }
+      n = n.parentNode;
+    }
+    return null;
+  };
+
+  // Checklist — toggle the list at the caret into / out of a checkbox list.
+  // (No execCommand exists for this, so we tag a normal <ul> with a class and
+  // toggle item state on click; CSS in globals renders the ☐ / ☑ markers.)
+  const toggleChecklist = () => {
+    ref.current?.focus();
+    const sel = window.getSelection();
+    let ul = closestTag(sel?.anchorNode ?? null, "UL");
+    if (ul) {
+      ul.classList.toggle("rt-checklist");
+    } else {
+      document.execCommand("insertUnorderedList");
+      ul = closestTag(window.getSelection()?.anchorNode ?? null, "UL");
+      ul?.classList.add("rt-checklist");
+    }
+    sync();
+  };
+
+  // Click the ☐ / ☑ marker (the gutter left of the text) to tick / untick an
+  // item. Restricted to the gutter so clicking the text just places the caret.
+  const onEditorClick = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement;
+    // Click an image → open its edit toolbar; click anything else → close it.
+    if (t.tagName === "IMG" && ref.current?.contains(t)) {
+      selectImage(t as HTMLImageElement);
+      return;
+    }
+    if (imgSel) closeImgPanel();
+    const li = t.closest?.("li");
+    if (li && li.parentElement?.classList.contains("rt-checklist")) {
+      const dx = e.clientX - li.getBoundingClientRect().left;
+      if (dx < -2 && dx > -32) {
+        li.classList.toggle("checked");
+        sync();
+      }
+    }
+  };
+
+  // Ctrl+Shift+V → next paste arrives as plain text.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "v" || e.key === "V")) {
+      plainPaste.current = true;
+    }
+  };
+
+  // Paste: keep formatting (sanitised) by default, or strip it after Ctrl+Shift+V.
+  const onPaste = (e: React.ClipboardEvent) => {
+    const cd = e.clipboardData;
+    if (!cd) return;
+    const wantPlain = plainPaste.current;
+    plainPaste.current = false;
+    const html = cd.getData("text/html");
+    e.preventDefault();
+    if (!wantPlain && html) {
+      document.execCommand("insertHTML", false, sanitizePastedHtml(html));
+    } else {
+      document.execCommand("insertText", false, cd.getData("text/plain"));
+    }
     sync();
   };
 
@@ -315,6 +464,107 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     const row = `<tr>${cell}${cell}${cell}</tr>`;
     const table = `<table style="border-collapse:collapse;width:100%;margin:8px 0">${row}${row}</table><p><br/></p>`;
     document.execCommand("insertHTML", false, table);
+    sync();
+  };
+
+  // ----- Image insertion + click-to-edit -----
+  const escAttr = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // Inline styles keep the figure self-contained — renders identically in the
+  // editor and on the published page (no extra global CSS needed).
+  const IMG_STYLE = "width:auto;height:auto;max-width:100%;display:inline-block;border-radius:0.75rem";
+
+  // Insert the image at the saved cursor position (between two paragraphs, etc.).
+  const insertImage = (url: string, alt: string) => {
+    ref.current?.focus();
+    restoreSel();
+    const html = `<figure class="rt-img" style="text-align:center;margin:1.25rem 0"><img src="${escAttr(url)}" alt="${escAttr(alt)}" style="${IMG_STYLE}" /></figure><p><br/></p>`;
+    document.execCommand("insertHTML", false, html);
+    sync();
+  };
+
+  const replaceImage = (url: string, alt: string) => {
+    if (!imgSel) return;
+    imgSel.img.setAttribute("src", url);
+    if (alt) {
+      imgSel.img.setAttribute("alt", alt);
+      setImgFields((f) => ({ ...f, alt }));
+    }
+    sync();
+  };
+
+  // Position the floating image toolbar just below the figure (offsets are
+  // relative to the position:relative wrapper, so it scrolls with the content).
+  const repositionImg = (figure: HTMLElement) =>
+    setImgPos({ top: figure.offsetTop + figure.offsetHeight + 6, left: Math.max(8, figure.offsetLeft) });
+
+  // Click an image → wrap it in a <figure> (if needed), read its current settings
+  // into the panel, and show the floating image toolbar.
+  const selectImage = (img: HTMLImageElement) => {
+    if (!ref.current) return;
+    let figure = img.closest("figure.rt-img") as HTMLElement | null;
+    if (!figure) {
+      figure = document.createElement("figure");
+      figure.className = "rt-img";
+      figure.setAttribute("style", "text-align:center;margin:1.25rem 0");
+      img.parentNode?.insertBefore(figure, img);
+      figure.appendChild(img);
+      if (!img.getAttribute("style")) img.setAttribute("style", IMG_STYLE);
+      sync();
+    }
+    const cap = figure.querySelector("figcaption");
+    const w = img.style.width || "auto";
+    setImgSel({ figure, img });
+    setImgFields({
+      alt: img.getAttribute("alt") || "",
+      title: img.getAttribute("title") || "",
+      caption: cap?.textContent || "",
+      width: w,
+      custom: !["auto", "25%", "50%", "75%", "100%"].includes(w),
+      align: figure.style.textAlign || "center",
+    });
+    repositionImg(figure);
+  };
+
+  const closeImgPanel = () => {
+    setImgSel(null);
+    setImgPos(null);
+  };
+
+  // Apply a change to the selected image's DOM, then keep panel state + position in step.
+  const applyImg = (
+    patch: Partial<typeof imgFields>,
+    dom: (s: { figure: HTMLElement; img: HTMLImageElement }) => void,
+  ) => {
+    setImgFields((f) => ({ ...f, ...patch }));
+    if (!imgSel) return;
+    dom(imgSel);
+    sync();
+    repositionImg(imgSel.figure);
+  };
+  const setImgAlt = (v: string) => applyImg({ alt: v }, ({ img }) => img.setAttribute("alt", v));
+  const setImgTitle = (v: string) =>
+    applyImg({ title: v }, ({ img }) => (v ? img.setAttribute("title", v) : img.removeAttribute("title")));
+  const setImgWidth = (v: string) => applyImg({ width: v }, ({ img }) => (img.style.width = v === "auto" ? "auto" : v));
+  const setImgAlign = (v: string) => applyImg({ align: v }, ({ figure }) => (figure.style.textAlign = v));
+  const setImgCaption = (v: string) =>
+    applyImg({ caption: v }, ({ figure }) => {
+      let cap = figure.querySelector("figcaption");
+      if (v) {
+        if (!cap) {
+          cap = document.createElement("figcaption");
+          cap.setAttribute("style", "margin-top:0.5rem;font-size:0.85rem;opacity:0.75");
+          figure.appendChild(cap);
+        }
+        cap.textContent = v;
+      } else if (cap) {
+        cap.remove();
+      }
+    });
+  const removeImg = () => {
+    if (!imgSel) return;
+    imgSel.figure.remove();
+    closeImgPanel();
     sync();
   };
 
@@ -438,25 +688,36 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
     setUrlError("");
   };
 
+  const tbtn =
+    "rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink";
+  const divider = <span className="mx-0.5 h-5 w-px bg-ink/10" />;
+
   return (
     <div className="rounded-xl border border-ink/10 bg-base">
       <div className="flex flex-wrap items-center gap-1 border-b border-ink/10 p-1.5">
-        {TOOLS.map((t) => (
-          <button
-            key={t.label}
-            type="button"
-            title={t.title}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => exec(t.cmd, t.arg)}
-            className={`rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink ${
-              t.cmd === "strikeThrough" ? "line-through" : ""
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        {/* Font family */}
+        <select
+          title="Font family"
+          value={fontFamily}
+          onMouseDown={saveSel}
+          onChange={(e) => applyFont(e.target.value)}
+          className="max-w-[8.5rem] rounded-md border border-ink/10 bg-surface px-1.5 py-1 text-xs font-semibold text-ink focus:outline-none"
+          style={fontFamily ? { fontFamily: EDITOR_FONTS.find((f) => f.name === fontFamily)?.stack } : undefined}
+        >
+          <option value="">Font</option>
+          {EDITOR_FONTS.map((f) => (
+            <option key={f.name} value={f.name} style={{ fontFamily: f.stack }}>
+              {f.name}
+            </option>
+          ))}
+        </select>
 
-        {/* Headings / paragraph block format (H1–H6) */}
+        {/* Font size — Word-style numeric box + presets + steppers */}
+        <FontSizeControl value={fontSizePx} onApply={applyFontSize} onBeforeChange={saveSel} />
+
+        {divider}
+
+        {/* Paragraph / heading block style */}
         <select
           title="Paragraph / heading style"
           value={blockTag}
@@ -471,54 +732,154 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
           ))}
         </select>
 
-        {/* Inline gradient highlight — toggles on the selection like Bold */}
+        {divider}
+
+        {/* Bold / Italic / Underline / Strikethrough */}
+        {INLINE.map((t) => (
+          <button
+            key={t.cmd}
+            type="button"
+            title={t.title}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec(t.cmd)}
+            className={`${tbtn} ${t.cls ?? ""}`}
+          >
+            {t.label}
+          </button>
+        ))}
         <button
           type="button"
-          title="Highlight selected words (gradient) — click again to remove"
+          title="Superscript"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("superscript")}
+          className={tbtn}
+        >
+          x²
+        </button>
+        <button
+          type="button"
+          title="Subscript"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("subscript")}
+          className={tbtn}
+        >
+          x₂
+        </button>
+
+        {divider}
+
+        {/* Text colour */}
+        <button
+          type="button"
+          title="Text colour"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            openColor("text");
+          }}
+          className={tbtn}
+        >
+          🎨 Colour
+        </button>
+        {/* Background highlight colour */}
+        <button
+          type="button"
+          title="Highlight colour (text background)"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            openColor("highlight");
+          }}
+          className={tbtn}
+        >
+          🖍 Highlight
+        </button>
+        {/* Brand gradient highlight — toggles on the selection like Bold */}
+        <button
+          type="button"
+          title="Gradient brand highlight — click again to remove"
           onMouseDown={(e) => e.preventDefault()}
           onClick={applyHighlight}
           className="rounded-md px-2 py-1 text-xs font-bold transition-colors hover:bg-ink/[0.06]"
         >
-          <span className="grad-text">Highlight</span>
+          <span className="grad-text">Gradient</span>
         </button>
 
-        {/* Horizontal divider */}
+        {divider}
+
+        {/* Alignment */}
+        {ALIGN.map((a) => (
+          <button
+            key={a.cmd}
+            type="button"
+            title={a.title}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => execCss(a.cmd)}
+            className={tbtn}
+          >
+            {a.label}
+          </button>
+        ))}
+
+        {divider}
+
+        {/* Lists */}
+        <button
+          type="button"
+          title="Bullet list"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("insertUnorderedList")}
+          className={tbtn}
+        >
+          • List
+        </button>
+        <button
+          type="button"
+          title="Numbered list"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("insertOrderedList")}
+          className={tbtn}
+        >
+          1. List
+        </button>
+        <button
+          type="button"
+          title="Checklist"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={toggleChecklist}
+          className={tbtn}
+        >
+          ☑ List
+        </button>
+
+        {divider}
+
+        {/* Horizontal divider + table */}
         <button
           type="button"
           title="Horizontal divider"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec("insertHorizontalRule")}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+          className={tbtn}
         >
           ―
         </button>
-
-        {/* Font size — Word-style numeric box + presets + steppers */}
-        <span className="mx-1 h-4 w-px bg-ink/10" />
-        <FontSizeControl value={fontSizePx} onApply={applyFontSize} onBeforeChange={saveSel} />
-        <span className="mx-1 h-4 w-px bg-ink/10" />
-
-        {/* Text colour — opens the advanced colour editor */}
         <button
           type="button"
-          title="Text colour — open the advanced colour editor"
+          title="Insert image at the cursor"
           onMouseDown={(e) => {
             e.preventDefault();
             saveSel();
           }}
-          onClick={() => setColorOpen(true)}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-ink/[0.06] hover:text-ink"
+          onClick={() => setImgDialog("insert")}
+          className={tbtn}
         >
-          🎨 Colour
+          🖼 Image
         </button>
-
-        <span className="mx-1 h-4 w-px bg-ink/10" />
         <button
           type="button"
           title="Insert table"
           onMouseDown={(e) => e.preventDefault()}
           onClick={insertTable}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-ink/[0.06] hover:text-ink"
+          className={tbtn}
         >
           ▦ Table
         </button>
@@ -531,30 +892,36 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
         >
           🔗 Link
         </button>
+
+        {divider}
+
+        {/* Undo / Redo */}
         <button
           type="button"
-          title="Undo"
+          title="Undo (Ctrl+Z)"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec("undo")}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-ink/[0.06] hover:text-ink"
+          className={tbtn}
         >
           ↶
         </button>
         <button
           type="button"
-          title="Redo"
+          title="Redo (Ctrl+Y)"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec("redo")}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-ink/[0.06] hover:text-ink"
+          className={tbtn}
         >
           ↷
         </button>
+
+        {/* Clear formatting */}
         <button
           type="button"
           title="Clear formatting"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec("removeFormat")}
-          className="ml-auto rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-ink/[0.06] hover:text-ink"
+          className={`${tbtn} ml-auto`}
         >
           Clear
         </button>
@@ -562,13 +929,131 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
 
       {hint && <p className="border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">{hint}</p>}
 
-      <div
-        ref={ref}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={sync}
-        className="prose-jhb min-h-[200px] px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-      />
+      <div ref={wrapRef} className="relative">
+        <div
+          ref={ref}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={sync}
+          onClick={onEditorClick}
+          onKeyDown={onKeyDown}
+          onPaste={onPaste}
+          style={{ minHeight }}
+          className="prose-jhb px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_.rt-checklist]:list-none [&_.rt-checklist]:pl-6 [&_figure]:my-4 [&_img]:max-w-full [&_img]:h-auto [&_figcaption]:text-center [&_figcaption]:text-muted"
+        />
+
+        {/* Floating image edit toolbar — appears when an image is clicked. */}
+        {imgSel && imgPos && (
+          <div
+            style={{ position: "absolute", top: imgPos.top, left: imgPos.left, zIndex: 30 }}
+            className="w-[19.5rem] max-w-[calc(100%-1rem)] rounded-xl border border-ink/10 bg-surface p-2.5 shadow-soft-lg"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Image</span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={closeImgPanel}
+                className="grid h-5 w-5 place-items-center rounded text-muted hover:bg-ink/[0.06]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Alignment + width */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {([["left", "⫷"], ["center", "≡"], ["right", "⫸"]] as const).map(([a, ic]) => (
+                <button
+                  key={a}
+                  type="button"
+                  title={`Align ${a}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setImgAlign(a)}
+                  className={`rounded-md border px-2 py-1 text-xs ${
+                    imgFields.align === a ? "border-primary text-primary" : "border-ink/10 text-muted hover:text-ink"
+                  }`}
+                >
+                  {ic}
+                </button>
+              ))}
+              <span className="mx-0.5 h-4 w-px bg-ink/10" />
+              <select
+                value={imgFields.custom ? "custom" : imgFields.width}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "custom") setImgFields((f) => ({ ...f, custom: true }));
+                  else {
+                    setImgFields((f) => ({ ...f, custom: false }));
+                    setImgWidth(v);
+                  }
+                }}
+                title="Image width"
+                className="rounded-md border border-ink/10 bg-base px-1.5 py-1 text-xs text-muted outline-none focus:border-primary"
+              >
+                <option value="auto">Auto</option>
+                <option value="25%">25%</option>
+                <option value="50%">50%</option>
+                <option value="75%">75%</option>
+                <option value="100%">100%</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            {imgFields.custom && (
+              <input
+                value={imgFields.width === "auto" ? "" : imgFields.width}
+                onChange={(e) => setImgWidth(e.target.value || "auto")}
+                placeholder="e.g. 320px or 60%"
+                className="mt-1.5 w-full rounded-md border border-ink/10 bg-base px-2 py-1 text-xs outline-none focus:border-primary"
+              />
+            )}
+
+            {/* Alt / Caption / Title */}
+            <label className="mt-2 block text-[10px] font-medium text-muted">
+              Alt text (SEO)
+              <input
+                value={imgFields.alt}
+                onChange={(e) => setImgAlt(e.target.value)}
+                className="mt-0.5 w-full rounded-md border border-ink/10 bg-base px-2 py-1 text-xs outline-none focus:border-primary"
+              />
+            </label>
+            <label className="mt-1.5 block text-[10px] font-medium text-muted">
+              Caption
+              <input
+                value={imgFields.caption}
+                onChange={(e) => setImgCaption(e.target.value)}
+                className="mt-0.5 w-full rounded-md border border-ink/10 bg-base px-2 py-1 text-xs outline-none focus:border-primary"
+              />
+            </label>
+            <label className="mt-1.5 block text-[10px] font-medium text-muted">
+              Title
+              <input
+                value={imgFields.title}
+                onChange={(e) => setImgTitle(e.target.value)}
+                className="mt-0.5 w-full rounded-md border border-ink/10 bg-base px-2 py-1 text-xs outline-none focus:border-primary"
+              />
+            </label>
+
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setImgDialog("replace")}
+                className="flex-1 rounded-md border border-ink/10 px-2 py-1 text-xs font-medium text-muted hover:border-primary hover:text-primary"
+              >
+                Replace
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={removeImg}
+                className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Link dialog */}
       {linkOpen && (
@@ -689,6 +1174,13 @@ export default function RichEditor({ value, onChange, internalPages = [] }: Prop
         onApply={applyColor}
         onSaveCustom={saveCustom}
         onClose={() => setColorOpen(false)}
+      />
+
+      <ImageInsertDialog
+        open={imgDialog !== null}
+        title={imgDialog === "replace" ? "Replace image" : "Insert image"}
+        onClose={() => setImgDialog(null)}
+        onPick={(url, alt) => (imgDialog === "replace" ? replaceImage(url, alt) : insertImage(url, alt))}
       />
     </div>
   );

@@ -5,11 +5,30 @@ import { AnimatePresence, motion } from "framer-motion";
 import { HOME_FAQ_DEFAULTS, type HomeFaqItem } from "@jhb/shared/home-faqs";
 import { faqPlainText } from "@jhb/shared/faqs";
 import Reveal from "./Reveal";
+import SmartLink from "./SmartLink";
 
 const FAQ_ANSWER_CLASS =
   "px-5 pb-5 text-sm leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_p+p]:mt-2 [&_strong]:font-semibold [&_s]:line-through [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_h1]:font-display [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_hr]:my-3 [&_hr]:border-ink/15";
 
-export default function Faq({ items }: { items?: HomeFaqItem[] }) {
+export default function Faq({
+  items,
+  eyebrow = "FAQ",
+  headingLead = "Frequently Asked",
+  headingHighlight = "Questions",
+  description = "Everything you need to know about working with us. Can't find an answer?",
+  linkText = "Talk to our team",
+  linkHref = "/#contact",
+  showNumbers = true,
+}: {
+  items?: HomeFaqItem[];
+  eyebrow?: string;
+  headingLead?: string;
+  headingHighlight?: string;
+  description?: string;
+  linkText?: string;
+  linkHref?: string;
+  showNumbers?: boolean;
+}) {
   const [open, setOpen] = useState<number | null>(0);
 
   // DB-driven FAQs (fallback to built-in defaults when none are published)
@@ -27,7 +46,7 @@ export default function Faq({ items }: { items?: HomeFaqItem[] }) {
   };
 
   return (
-    <section id="faq" className="relative py-16 sm:py-24">
+    <section id="faq" className="relative py-12 sm:py-16">
       {/* FAQ schema for SEO (rendered in SSR output) */}
       <script
         type="application/ld+json"
@@ -35,7 +54,7 @@ export default function Faq({ items }: { items?: HomeFaqItem[] }) {
       />
 
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Left: illustration */}
           <Reveal className="order-2 lg:order-1">
             <FaqIllustration />
@@ -44,23 +63,30 @@ export default function Faq({ items }: { items?: HomeFaqItem[] }) {
           {/* Right: heading + accordion */}
           <div className="order-1 lg:order-2">
             <Reveal>
-              <span className="eyebrow">FAQ</span>
+              {eyebrow && <span className="eyebrow">{eyebrow}</span>}
             </Reveal>
             <Reveal delay={0.08}>
               <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                Frequently Asked <span className="grad-text">Questions</span>
+                {headingLead}{headingLead && headingHighlight ? " " : ""}
+                {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
               </h2>
             </Reveal>
-            <Reveal delay={0.16}>
-              <p className="mt-3 text-muted">
-                Everything you need to know about working with us. Can&apos;t find
-                an answer?{" "}
-                <a href="/#contact" className="text-primary hover:underline">
-                  Talk to our team
-                </a>
-                .
-              </p>
-            </Reveal>
+            {(description || linkText) && (
+              <Reveal delay={0.16}>
+                <p className="mt-3 text-muted">
+                  {description}
+                  {linkText && (
+                    <>
+                      {description ? " " : ""}
+                      <SmartLink href={linkHref} className="text-primary hover:underline">
+                        {linkText}
+                      </SmartLink>
+                      .
+                    </>
+                  )}
+                </p>
+              </Reveal>
+            )}
 
             <div className="mt-8 space-y-3">
               {faqs.map((f, i) => {
@@ -81,6 +107,7 @@ export default function Faq({ items }: { items?: HomeFaqItem[] }) {
                           className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-ink/[0.02]"
                         >
                           <span className="font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
+                            {showNumbers && <span className="mr-2 tabular-nums">{String(i + 1).padStart(2, "0")}.</span>}
                             {f.q}
                           </span>
                           <span

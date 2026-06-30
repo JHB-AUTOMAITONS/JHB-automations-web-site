@@ -5,6 +5,7 @@ import { getServiceFaqs } from "@jhb/shared/faqs-server";
 import { faqPlainText } from "@jhb/shared/faqs";
 import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
+import { getSettings } from "@jhb/shared/content-server";
 import ServiceDetailView from "@/components/ServiceDetail";
 
 // Pre-render every known service at its effective (DB) slug for fast first loads.
@@ -51,11 +52,12 @@ export default async function ServicePage({
   const data = await getServiceBySlug(slug);
   if (!data) notFound();
 
-  const [services, faqRows, linkRows, dbContent] = await Promise.all([
+  const [services, faqRows, linkRows, dbContent, settings] = await Promise.all([
     getServices(),
     getServiceFaqs(data.key),
     getServiceAnchorLinks(data.key),
     getPublishedServiceContent(data.key),
+    getSettings(),
   ]);
 
   // Published editor content overrides the code defaults (per-field fallback).
@@ -63,11 +65,17 @@ export default async function ServicePage({
     dbContent && dbContent.status === "published"
       ? {
           heroHeading: dbContent.hero_heading || "",
+          heroHighlight: dbContent.hero_highlight || "",
+          heroTail: dbContent.hero_tail || "",
           heroDescriptionHtml: dbContent.hero_description || "",
           heroLink: dbContent.hero_link || "",
           features:
             dbContent.features && dbContent.features.length > 0 ? dbContent.features : [],
+          whatsIncluded: dbContent.whats_included ?? null,
           whyChoose: dbContent.why_choose ?? [],
+          cta: dbContent.cta ?? null,
+          chrome: dbContent.chrome ?? null,
+          containers: dbContent.containers ?? [],
           image: dbContent.image_url,
           imageAlt: dbContent.image_alt,
           imageTitle: dbContent.image_title,
@@ -77,6 +85,8 @@ export default async function ServicePage({
     .filter((s) => s.key !== data.key)
     .slice(0, 4)
     .map((s) => ({ title: s.title, slug: s.slug, icon: s.icon }));
+  // key → public URL, so the editable Related Services cards resolve their target.
+  const relatedUrlByKey = Object.fromEntries(services.map((s) => [s.key, `/${s.slug}`]));
   const faqs = faqRows.map((f) => ({ question: f.question, answer: f.answer }));
   const links = linkRows.map((l) => ({
     anchor_text: l.anchor_text,
@@ -145,7 +155,7 @@ export default async function ServicePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
-      <ServiceDetailView data={data} related={related} faqs={faqs} links={links} db={db} />
+      <ServiceDetailView data={data} related={related} relatedUrlByKey={relatedUrlByKey} faqs={faqs} links={links} db={db} faqShowNumbers={settings.faqShowNumbers} />
     </>
   );
 }

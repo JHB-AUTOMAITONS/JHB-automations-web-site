@@ -21,6 +21,11 @@ const OFFICE_DEFAULT = {
   region: "Tamil Nadu",
   postalCode: "636004",
   country: "IN",
+  schemaDesc:
+    "Digital Marketing Company in Salem offering IT Services and AI Automation. JHB Automations helps businesses generate leads, automate workflows and scale faster.",
+  schemaKeywords:
+    "Digital Marketing Company in Salem, IT Services in Salem, AI Automation Company in Salem",
+  schemaHours: "Mo-Sa 09:30-18:00",
 };
 
 export default function OfficeLocation({ settings }: { settings: SiteSettings }) {
@@ -40,12 +45,17 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
   const viewHref = `https://www.google.com/maps/search/?api=1&query=${q}`;
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
 
+  const eyebrow = settings.officeEyebrow || "Visit Us";
+  const headingLead = settings.officeHeadingLead || "Our Office in";
+  const headingHighlight = settings.officeHeadingHighlight || "Salem";
+  const desc = settings.officeDesc || "Digital Marketing, IT Services & AI Automation Company in Salem.";
+  const directionsLabel = settings.officeDirectionsLabel || "Get Directions";
+
   const schema = {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ProfessionalService"],
     name,
-    description:
-      "Digital Marketing Company in Salem offering IT Services and AI Automation. JHB Automations helps businesses generate leads, automate workflows and scale faster.",
+    description: settings.officeSchemaDesc || OFFICE_DEFAULT.schemaDesc,
     image: `${process.env.NEXT_PUBLIC_SITE_URL || ""}/founder.jpg`,
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://jhbautomations.com",
     telephone: phone,
@@ -60,15 +70,14 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
     },
     areaServed: "Salem, Tamil Nadu, India",
     hasMap: viewHref,
-    openingHours: "Mo-Sa 09:30-18:00",
-    keywords:
-      "Digital Marketing Company in Salem, IT Services in Salem, AI Automation Company in Salem",
+    openingHours: settings.officeSchemaHours || OFFICE_DEFAULT.schemaHours,
+    keywords: settings.officeSchemaKeywords || OFFICE_DEFAULT.schemaKeywords,
   };
 
   return (
     <section
       id="office-location"
-      className="relative py-16 sm:py-20"
+      className="relative py-12 sm:py-14"
       aria-labelledby="office-heading"
     >
       <script
@@ -87,17 +96,14 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
               transition={{ duration: 0.6 }}
               className="p-8 sm:p-10"
             >
-              <span className="eyebrow">Visit Us</span>
+              <span className="eyebrow">{eyebrow}</span>
               <h2
                 id="office-heading"
                 className="mt-4 font-display text-2xl font-bold tracking-tight sm:text-3xl"
               >
-                Our Office in <span className="grad-text">Salem</span>
+                {headingLead}{" "}<span className="grad-text">{headingHighlight}</span>
               </h2>
-              <p className="mt-2 text-sm text-muted">
-                Digital Marketing, IT Services &amp; AI Automation Company in
-                Salem.
-              </p>
+              <p className="mt-2 text-sm text-muted">{desc}</p>
 
               <ul className="mt-7 space-y-5 text-sm">
                 <li className="flex gap-3">
@@ -145,7 +151,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
                 rel="noopener noreferrer"
                 className="btn btn-primary mt-8"
               >
-                Get Directions <span aria-hidden>→</span>
+                {directionsLabel} <span aria-hidden>→</span>
               </a>
             </motion.div>
 
