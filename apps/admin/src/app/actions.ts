@@ -452,7 +452,6 @@ export async function updateMediaMeta(id: string, fields: MediaSeoFields) {
     console.error(`[media-seo] save FAILED id=${id}:`, error.message);
     return { ok: false, error: error.message };
   }
-  console.log(`[media-seo] saved id=${id} at ${now}`);
   await log("media.meta", `Updated image SEO for media ${id}`);
   revalidatePath("/media");
   revalidatePath("/", "layout"); // refresh public pages that embed this image
@@ -1123,7 +1122,6 @@ export async function publishServicePage(key: string) {
     console.error(`[service-page] PUBLISH FAILED key="${key}":`, error.message);
     return { ok: false, error: error.message };
   }
-  console.log(`[service-page] published key="${key}" slug="${built.content.slug}" at ${now}`);
   await log("service.page.publish", `Published service page "${key}"`);
   await snapshot(`service_page:${key}`, `Service Page — ${key}`, row, `Published service page "${key}"`);
   revalidatePath("/service-pages");

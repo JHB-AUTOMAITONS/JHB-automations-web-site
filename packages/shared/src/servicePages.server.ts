@@ -167,12 +167,7 @@ export async function getPublishedServiceContent(
       .select("status, hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, why_choose, cta, image_url, image_alt, image_title, containers, chrome")
       .eq("key", key)
       .maybeSingle();
-    const row = (data as PublishedServiceContent) ?? null;
-    console.log(
-      `[service-page] fetch key="${key}" status=${row?.status ?? "none"} ` +
-        `hasHero=${!!row?.hero_description} hasImage=${!!row?.image_url}`
-    );
-    return row;
+    return (data as PublishedServiceContent) ?? null;
   } catch (e) {
     console.error(`[service-page] fetch FAILED key="${key}"`, e);
     return null;
