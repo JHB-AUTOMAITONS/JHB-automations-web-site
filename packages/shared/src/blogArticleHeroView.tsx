@@ -88,14 +88,9 @@ export default function BlogArticleHeroBanner({
           </h1>
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-white/85">
-            <span className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[10px] font-bold text-white">
-                JH
-              </span>
-              {author}
-            </span>
-            {dateLabel ? (<><span aria-hidden>·</span><span>{dateLabel}</span></>) : null}
-            {readingLabel ? (<><span aria-hidden>·</span><span>{readingLabel}</span></>) : null}
+            {dateLabel ? <span>{dateLabel}</span> : null}
+            {dateLabel && readingLabel ? <span aria-hidden>·</span> : null}
+            {readingLabel ? <span>{readingLabel}</span> : null}
           </div>
         </div>
       </div>
