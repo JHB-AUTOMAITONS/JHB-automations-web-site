@@ -4,7 +4,7 @@ import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { getServices } from "@jhb/shared/services-server";
-import { buildMetadata } from "@jhb/shared/content-server";
+import { buildMetadata, getSettings } from "@jhb/shared/content-server";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/services", {
@@ -15,9 +15,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ServicesIndex() {
-  const services = await getServices();
+  const [services, settings] = await Promise.all([getServices(), getSettings()]);
   return (
-    <main className="relative pt-28">
+    <main className="relative pt-24">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
@@ -31,22 +31,22 @@ export default async function ServicesIndex() {
 
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <span className="eyebrow">What We Do</span>
+            <span className="eyebrow">{settings.pageHeroes.services.eyebrow}</span>
           </Reveal>
           <Reveal delay={0.08}>
             <h1 className="mt-5 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Our <span className="grad-text">Services</span>
+              {settings.pageHeroes.services.headingLead}{" "}
+              <span className="grad-text">{settings.pageHeroes.services.headingHighlight}</span>
             </h1>
           </Reveal>
           <Reveal delay={0.16}>
             <p className="mt-4 text-lg text-muted">
-              Click any service to explore how we deliver measurable growth for
-              your business.
+              {settings.pageHeroes.services.description}
             </p>
           </Reveal>
         </div>
 
-        <div className="mt-14 grid gap-5 pb-28 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-5 pb-20 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
             <Reveal key={s.slug} delay={(i % 3) * 0.06}>
               <Link

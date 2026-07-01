@@ -23,9 +23,13 @@ const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, "
 export default function HomeFaqManager({
   initial,
   internalPages = [],
+  onPreview,
 }: {
   initial: HomeFaq[];
   internalPages?: InternalPage[];
+  // Emits the current (possibly unsaved) rows so the page's live preview updates
+  // instantly as questions/answers are edited.
+  onPreview?: (rows: Row[]) => void;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active })));
@@ -39,6 +43,11 @@ export default function HomeFaqManager({
   useEffect(() => {
     if (!orderDirty) setRows(initial.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active })));
   }, [initial, orderDirty]);
+
+  // Keep the page's live preview in sync with in-progress edits.
+  useEffect(() => {
+    onPreview?.(rows);
+  }, [rows, onPreview]);
 
   const flash = (t: Toast) => {
     setToast(t);

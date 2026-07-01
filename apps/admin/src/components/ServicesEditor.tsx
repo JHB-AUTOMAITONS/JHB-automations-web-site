@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveService } from "@/app/actions";
+import EditorHeader from "./EditorHeader";
 
 // Accept a bare slug or a pasted full URL; keep only the slug portion, lowercase,
 // spaces/invalid -> hyphen, collapse repeats (trailing hyphen kept while typing).
@@ -27,7 +28,11 @@ export type ServiceEntry = {
 
 export default function ServicesEditor({ entries }: { entries: ServiceEntry[] }) {
   return (
-    <div className="mt-8 space-y-6">
+    <div className="space-y-6">
+      <EditorHeader
+        title="Services SEO & Slugs"
+        subtitle="Edit each service's URL slug, page title, meta description and keywords. Changing a slug changes the page's URL across the whole site (menu, footer, links)."
+      />
       {entries.map((e) => (
         <ServiceCard key={e.key} entry={e} />
       ))}

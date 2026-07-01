@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { faqPlainText, type FaqItem } from "@jhb/shared/faqs";
+import SmartLink from "./SmartLink";
 
 // Shared rich-text styling for FAQ answers (lists, headings, links, etc.).
 const FAQ_ANSWER_CLASS =
@@ -11,9 +12,11 @@ const FAQ_ANSWER_CLASS =
 export default function FaqAccordion({
   items,
   heading = "Frequently Asked Questions",
+  showNumbers = true,
 }: {
   items: FaqItem[];
   heading?: string;
+  showNumbers?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(0);
   const [query, setQuery] = useState("");
@@ -85,6 +88,7 @@ export default function FaqAccordion({
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-ink/[0.02]"
                   >
                     <span className="min-w-0 break-words font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
+                      {showNumbers && <span className="mr-2 tabular-nums">{String(i + 1).padStart(2, "0")}.</span>}
                       {f.question}
                     </span>
                     <span
@@ -132,9 +136,9 @@ export default function FaqAccordion({
           <p className="mt-1 text-sm text-muted">
             Our team is happy to help you find the right solution.
           </p>
-          <a href="/#contact" className="btn btn-primary mt-4 !px-6 !py-2.5 !text-sm">
+          <SmartLink href="/#contact" className="btn btn-primary mt-4 !px-6 !py-2.5 !text-sm">
             Contact our team today
-          </a>
+          </SmartLink>
         </div>
       </div>
     </section>

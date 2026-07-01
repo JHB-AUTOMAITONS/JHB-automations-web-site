@@ -7,11 +7,16 @@ import type {
   HeroBlock,
   AboutBlock,
   ServicesSectionBlock,
+  SectionHeader,
+  TestimonialsHeader,
+  FaqHeader,
+  BlogHeader,
   CtaBlock,
   FounderBlock,
 } from "@jhb/shared/home";
 import { composeHeroHeading } from "@jhb/shared/home";
 import { saveHomeDraft, publishHome } from "@/app/actions";
+import EditorHeader from "./EditorHeader";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
 import type { StatsContent } from "@jhb/shared/content";
@@ -22,6 +27,32 @@ import ImagePicker from "./ImagePicker";
 import HomeFaqManager from "./HomeFaqManager";
 import StatsManager from "./StatsManager";
 import PartnersManager from "./PartnersManager";
+import { AddContainerModal, ContainerCard } from "./ContainerParts";
+import { cloneContainer, createContainer, type ContainerType, type PageContainer } from "@jhb/shared/containers";
+import { TEMPLATE_BY_ID } from "@jhb/shared/container-templates";
+import { PageContainersView } from "@jhb/shared/container-view";
+import FaqAccordionView from "@jhb/shared/faq-accordion-view";
+
+// Minimal shape the FAQ manager reports up for the live preview (mirrors its Row).
+type FaqPreviewRow = { id: string; question: string; answer: string; active: boolean };
+
+// The home page's native sections in live-render order, each paired with the
+// zone that sits AFTER it (matches the <PageContainers zone> points in the
+// public home page). The top zone is "top".
+const HOME_SECTIONS = [
+  { label: "Hero", zone: "after-hero" },
+  { label: "Partners", zone: "after-partners" },
+  { label: "About", zone: "after-about" },
+  { label: "Services", zone: "after-services" },
+  { label: "Stats", zone: "after-stats" },
+  { label: "Testimonials", zone: "after-testimonials" },
+  { label: "Founder", zone: "after-founder" },
+  { label: "Client Logos", zone: "after-clients" },
+  { label: "FAQ", zone: "after-faq" },
+  { label: "Blog Preview", zone: "after-blog" },
+  { label: "Call to Action", zone: "after-cta" },
+  { label: "Contact", zone: "bottom" },
+];
 
 type ServiceLite = { slug: string; title: string; short: string };
 type Toast = { type: "success" | "error"; msg: string } | null;
@@ -60,13 +91,32 @@ export default function HomeManager({
   const [servicesSection, setServicesSection] = useState<ServicesSectionBlock>(
     draft.servicesSection
   );
+  const [statsHeader, setStatsHeader] = useState<SectionHeader>(draft.statsHeader);
+  const [testimonialsHeader, setTestimonialsHeader] = useState<TestimonialsHeader>(
+    draft.testimonialsHeader
+  );
+  const [clientLogosHeader, setClientLogosHeader] = useState<SectionHeader>(
+    draft.clientLogosHeader
+  );
+  const [faqHeader, setFaqHeader] = useState<FaqHeader>(draft.faqHeader);
+  const [blogHeader, setBlogHeader] = useState<BlogHeader>(draft.blogHeader);
+  const [contactHeader, setContactHeader] = useState<SectionHeader>(draft.contactHeader);
   const [cards, setCards] = useState(initialCards);
   const [cta, setCta] = useState<CtaBlock>(draft.cta);
   const [founder, setFounder] = useState<FounderBlock>(draft.founder);
+  const [containers, setContainers] = useState<PageContainer[]>(draft.containers);
+  // Live FAQ rows mirrored from the FAQ manager so the preview reflects edits
+  // instantly (before they're saved). Seeded from the server-loaded FAQs.
+  const [faqPreview, setFaqPreview] = useState<FaqPreviewRow[]>(
+    faqs.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active }))
+  );
+  const [addZone, setAddZone] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
   const setF = <K extends keyof FounderBlock>(k: K, v: FounderBlock[K]) =>
     setFounder((p) => ({ ...p, [k]: v }));
 
   const [busy, setBusy] = useState<"" | "save" | "publish">("");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
   const [toast, setToast] = useState<Toast>(null);
   const [showPreview, setShowPreview] = useState(true);
   const [faqOpen, setFaqOpen] = useState(true);
@@ -83,8 +133,15 @@ export default function HomeManager({
     about,
     servicesSection,
     serviceCards: cards,
+    statsHeader,
+    testimonialsHeader,
+    clientLogosHeader,
+    faqHeader,
+    blogHeader,
+    contactHeader,
     cta,
     founder,
+    containers,
   });
 
   const save = async () => {
@@ -92,6 +149,7 @@ export default function HomeManager({
     const res = await saveHomeDraft(assemble() as unknown as Record<string, unknown>);
     setBusy("");
     if (res.ok) {
+      setStatus("draft");
       flash({ type: "success", msg: "Draft saved." });
       router.refresh();
     } else flash({ type: "error", msg: res.error || "Save failed." });
@@ -109,10 +167,90 @@ export default function HomeManager({
     const res = await publishHome();
     setBusy("");
     if (res.ok) {
+      setStatus("published");
       flash({ type: "success", msg: "Published! Live on the website." });
       router.refresh();
     } else flash({ type: "error", msg: res.error || "Publish failed." });
   };
+
+  // ----- inserted-container helpers (page-builder; save-gated, publish to go live) -----
+  const zoneItems = (zone: string) => containers.filter((c) => c.zone === zone);
+  const addContainer = (zone: string, type: ContainerType) => {
+    setContainers((cs) => [...cs, createContainer(type, zone)]);
+    setAddZone(null);
+  };
+  const addTemplate = (zone: string, templateId: string) => {
+    const t = TEMPLATE_BY_ID[templateId];
+    if (!t) return;
+    setContainers((cs) => [...cs, t.create(zone)]);
+    setAddZone(null);
+  };
+  const updateContainer = (id: string, c: PageContainer) =>
+    setContainers((cs) => cs.map((x) => (x.id === id ? c : x)));
+  const removeContainer = (id: string) => setContainers((cs) => cs.filter((x) => x.id !== id));
+  const duplicateContainer = (id: string) =>
+    setContainers((cs) => {
+      const i = cs.findIndex((x) => x.id === id);
+      if (i === -1) return cs;
+      return [...cs.slice(0, i + 1), cloneContainer(cs[i]), ...cs.slice(i + 1)];
+    });
+  const moveInZone = (id: string, dir: -1 | 1) =>
+    setContainers((cs) => {
+      const c = cs.find((x) => x.id === id);
+      if (!c) return cs;
+      const sib = cs.filter((x) => x.zone === c.zone);
+      const pos = sib.findIndex((x) => x.id === id);
+      const t = pos + dir;
+      if (t < 0 || t >= sib.length) return cs;
+      const a = cs.findIndex((x) => x.id === id);
+      const b = cs.findIndex((x) => x.id === sib[t].id);
+      const n = [...cs];
+      [n[a], n[b]] = [n[b], n[a]];
+      return n;
+    });
+  const moveToZone = (id: string, zone: string) =>
+    setContainers((cs) => cs.map((x) => (x.id === id ? { ...x, zone } : x)));
+  const reorderWithinZone = (targetId: string) =>
+    setContainers((cs) => {
+      if (!dragId || dragId === targetId) return cs;
+      const drag = cs.find((x) => x.id === dragId);
+      const target = cs.find((x) => x.id === targetId);
+      if (!drag || !target || drag.zone !== target.zone) return cs;
+      const without = cs.filter((x) => x.id !== dragId);
+      const ti = without.findIndex((x) => x.id === targetId);
+      return [...without.slice(0, ti), drag, ...without.slice(ti)];
+    });
+
+  // A "＋ Add Container" insertion line + any containers already inserted at this
+  // position, rendered inline between the native section editors.
+  const renderSlot = (zone: string) => (
+    <>
+      <button
+        type="button"
+        onClick={() => setAddZone(zone)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink/15 py-2 text-xs font-medium text-muted transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+      >
+        <span aria-hidden>＋</span> Add Container
+      </button>
+      {zoneItems(zone).map((c) => (
+        <ContainerCard
+          key={c.id}
+          container={c}
+          sections={HOME_SECTIONS}
+          topZone="top"
+          onChange={(nc) => updateContainer(c.id, nc)}
+          onMoveUp={() => moveInZone(c.id, -1)}
+          onMoveDown={() => moveInZone(c.id, 1)}
+          onDuplicate={() => duplicateContainer(c.id)}
+          onDelete={() => removeContainer(c.id)}
+          onMoveToZone={(z) => moveToZone(c.id, z)}
+          dragId={dragId}
+          setDragId={setDragId}
+          onReorderDrop={(targetId) => reorderWithinZone(targetId)}
+        />
+      ))}
+    </>
+  );
 
   const setHeroField = (k: keyof HeroBlock, v: string | null) =>
     setHero((p) => ({ ...p, [k]: v }));
@@ -123,53 +261,17 @@ export default function HomeManager({
 
   return (
     <div>
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed right-6 top-6 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          {toast.msg}
-        </div>
-      )}
-
-      {/* Header + actions */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">
-            Home Page Content
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Edit every section of the public home page. <b>Save</b> keeps a draft;{" "}
-            <b>Publish</b> makes it live.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowPreview((s) => !s)}
-            className="rounded-lg border border-ink/10 px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
-          >
-            {showPreview ? "Hide preview" : "Show preview"}
-          </button>
-          <button
-            onClick={save}
-            disabled={busy !== ""}
-            className="btn btn-ghost !px-5 !py-2.5 !text-sm disabled:opacity-60"
-          >
-            {busy === "save" ? "Saving…" : "Save draft"}
-          </button>
-          <button
-            onClick={publish}
-            disabled={busy !== ""}
-            className="btn btn-primary !px-5 !py-2.5 !text-sm disabled:opacity-60"
-          >
-            {busy === "publish" ? "Publishing…" : "Publish"}
-          </button>
-        </div>
-      </div>
+      <EditorHeader
+        title="Home Page"
+        subtitle="Edit every section of the public home page. Save draft keeps changes private; Publish makes them live."
+        status={status}
+        busy={busy}
+        toast={toast}
+        onSave={save}
+        onPublish={publish}
+        showPreview={showPreview}
+        onTogglePreview={() => setShowPreview((s) => !s)}
+      />
 
       <div
         className={`mt-8 grid gap-6 ${
@@ -178,6 +280,8 @@ export default function HomeManager({
       >
         {/* ---- Editor ---- */}
         <div className="space-y-6">
+          {renderSlot("top")}
+
           {/* Hero */}
           <Card title="Hero Section">
             <Field label="Badge" value={hero.badge} onChange={(v) => setHeroField("badge", v)} />
@@ -203,12 +307,19 @@ export default function HomeManager({
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Button text" value={hero.buttonText} onChange={(v) => setHeroField("buttonText", v)} />
-              <Field label="Button link" value={hero.buttonHref} onChange={(v) => setHeroField("buttonHref", v)} />
+              <Field label="Primary button text" value={hero.buttonText} onChange={(v) => setHeroField("buttonText", v)} />
+              <Field label="Primary button link" value={hero.buttonHref} onChange={(v) => setHeroField("buttonHref", v)} />
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Secondary button text (blank hides it)" value={hero.buttonSecondaryText} onChange={(v) => setHeroField("buttonSecondaryText", v)} />
+              <Field label="Secondary button link" value={hero.buttonSecondaryHref} onChange={(v) => setHeroField("buttonSecondaryHref", v)} />
+            </div>
+            <Field label="Tools marquee label (above the partner logos)" value={hero.marqueeLabel} onChange={(v) => setHeroField("marqueeLabel", v)} />
             <ImagePicker label="Hero image (optional)" value={hero.image} onChange={(u) => setHeroField("image", u)} />
             <Field label="Image title (optional, SEO)" value={hero.imageTitle} onChange={(v) => setHeroField("imageTitle", v)} />
           </Card>
+
+          {renderSlot("after-hero")}
 
           {/* Partners — managed inline (instant save via its own button, independent
               of the page Save/Publish). Moved here from the standalone Partners page. */}
@@ -237,6 +348,8 @@ export default function HomeManager({
             )}
           </section>
 
+          {renderSlot("after-partners")}
+
           {/* About */}
           <Card title="About Section">
             <Toggle
@@ -256,8 +369,11 @@ export default function HomeManager({
             <ImagePicker label="About image" value={about.image} onChange={(u) => setAboutField("image", u)} />
           </Card>
 
+          {renderSlot("after-about")}
+
           {/* Services section */}
           <Card title="Services Section">
+            <Field label="Eyebrow / badge" value={servicesSection.eyebrow} onChange={(v) => setServicesSection((p) => ({ ...p, eyebrow: v }))} />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Heading (rich text — font size, colour, word links)</span>
               <RichEditor value={servicesSection.title} onChange={(html) => setServicesSection((p) => ({ ...p, title: html }))} internalPages={internalPages} />
@@ -265,6 +381,10 @@ export default function HomeManager({
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Subheading (rich text)</span>
               <RichEditor value={servicesSection.subtitle} onChange={(html) => setServicesSection((p) => ({ ...p, subtitle: html }))} internalPages={internalPages} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="“View all” button text" value={servicesSection.viewAllText} onChange={(v) => setServicesSection((p) => ({ ...p, viewAllText: v }))} />
+              <Field label="Per-card “learn more” text" value={servicesSection.learnMoreText} onChange={(v) => setServicesSection((p) => ({ ...p, learnMoreText: v }))} />
             </div>
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -300,6 +420,17 @@ export default function HomeManager({
             </div>
           </Card>
 
+          {renderSlot("after-services")}
+
+          {/* Stats section header (the numbers band's eyebrow + heading) */}
+          <HeaderCard
+            title="Stats Section — Heading"
+            hint="The eyebrow and heading above the animated numbers band. The numbers themselves are edited below."
+            value={statsHeader}
+            onChange={(patch) => setStatsHeader((p) => ({ ...p, ...patch }))}
+            showDescription={false}
+          />
+
           {/* Why Choose Us — Statistics (merged from the old Content page; live save) */}
           <section className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
             <button
@@ -321,19 +452,20 @@ export default function HomeManager({
             )}
           </section>
 
-          {/* CTA */}
-          <Card title="Call-to-Action Section">
-            <Toggle label="Show this section" checked={cta.enabled} onChange={(v) => setCtaField("enabled", v)} />
-            <Field label="Title" value={cta.title} onChange={(v) => setCtaField("title", v)} />
-            <div>
-              <span className="mb-1 block text-xs font-medium text-muted">Text</span>
-              <RichText value={cta.textHtml} onChange={(html) => setCtaField("textHtml", html)} />
-            </div>
+          {renderSlot("after-stats")}
+
+          {/* Testimonials section header (cards are edited on the Testimonials page) */}
+          <HeaderCard
+            title="Testimonials Section — Heading"
+            hint="The eyebrow, heading and intro above the testimonial cards. The cards are edited on the Testimonials page."
+            value={testimonialsHeader}
+            onChange={(patch) => setTestimonialsHeader((p) => ({ ...p, ...patch }))}
+          >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Button text" value={cta.buttonText} onChange={(v) => setCtaField("buttonText", v)} />
-              <Field label="Button link" value={cta.buttonHref} onChange={(v) => setCtaField("buttonHref", v)} />
+              <Field label="Rating value (e.g. 4.9/5)" value={testimonialsHeader.ratingValue} onChange={(v) => setTestimonialsHeader((p) => ({ ...p, ratingValue: v }))} />
+              <Field label="Rating text (e.g. from 200+ happy clients)" value={testimonialsHeader.ratingText} onChange={(v) => setTestimonialsHeader((p) => ({ ...p, ratingText: v }))} />
             </div>
-          </Card>
+          </HeaderCard>
 
           {/* Founder Section (part of draft/publish content) */}
           <Card title="Founder Section">
@@ -382,6 +514,29 @@ export default function HomeManager({
             </div>
           </Card>
 
+          {renderSlot("after-founder")}
+
+          {/* Client Logos section header (logos are edited on the Client Logos page) */}
+          <HeaderCard
+            title="Client Logos Section — Heading"
+            hint="The eyebrow, heading and intro above the client-logo grid. The logos are uploaded on the Client Logos page."
+            value={clientLogosHeader}
+            onChange={(patch) => setClientLogosHeader((p) => ({ ...p, ...patch }))}
+          />
+
+          {/* FAQ section header (questions are edited in the FAQ manager below) */}
+          <HeaderCard
+            title="FAQ Section — Heading"
+            hint="The eyebrow, heading and intro above the FAQ accordion. The questions are edited below."
+            value={faqHeader}
+            onChange={(patch) => setFaqHeader((p) => ({ ...p, ...patch }))}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Help link text (e.g. Talk to our team)" value={faqHeader.linkText} onChange={(v) => setFaqHeader((p) => ({ ...p, linkText: v }))} />
+              <Field label="Help link URL" value={faqHeader.linkHref} onChange={(v) => setFaqHeader((p) => ({ ...p, linkHref: v }))} />
+            </div>
+          </HeaderCard>
+
           {/* FAQ Section — managed inline (live CRUD, independent of Save/Publish) */}
           <section className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
             <button
@@ -402,13 +557,51 @@ export default function HomeManager({
               changes save and go live <b>instantly</b> — independent of the Save/Publish
               buttons above.
             </p>
-            {faqOpen && <HomeFaqManager initial={faqs} internalPages={internalPages} />}
+            {faqOpen && <HomeFaqManager initial={faqs} internalPages={internalPages} onPreview={setFaqPreview} />}
           </section>
+
+          {renderSlot("after-faq")}
+
+          {/* Blog Preview section header (posts are edited on the Blog page) */}
+          <HeaderCard
+            title="Blog Preview Section — Heading"
+            hint="The eyebrow, heading and intro above the latest-posts grid. The posts are managed on the Blog page."
+            value={blogHeader}
+            onChange={(patch) => setBlogHeader((p) => ({ ...p, ...patch }))}
+          >
+            <Field label="“View all” button text" value={blogHeader.viewAllText} onChange={(v) => setBlogHeader((p) => ({ ...p, viewAllText: v }))} />
+          </HeaderCard>
+
+          {/* CTA (placed near the end to mirror the live page order) */}
+          <Card title="Call-to-Action Section">
+            <Toggle label="Show this section" checked={cta.enabled} onChange={(v) => setCtaField("enabled", v)} />
+            <Field label="Title" value={cta.title} onChange={(v) => setCtaField("title", v)} />
+            <div>
+              <span className="mb-1 block text-xs font-medium text-muted">Text</span>
+              <RichText value={cta.textHtml} onChange={(html) => setCtaField("textHtml", html)} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Button text" value={cta.buttonText} onChange={(v) => setCtaField("buttonText", v)} />
+              <Field label="Button link" value={cta.buttonHref} onChange={(v) => setCtaField("buttonHref", v)} />
+            </div>
+          </Card>
+
+          {renderSlot("after-cta")}
+
+          {/* Contact section header (phone/email/address come from Settings) */}
+          <HeaderCard
+            title="Contact Section — Heading"
+            hint="The eyebrow, heading and intro of the contact section. Phone, email and address come from Settings."
+            value={contactHeader}
+            onChange={(patch) => setContactHeader((p) => ({ ...p, ...patch }))}
+          />
 
           <p className="text-xs text-muted">
             Footer content (company, contact, socials) is managed under{" "}
             <a href="/settings" className="text-primary underline">Settings</a>.
           </p>
+
+          {renderSlot("bottom")}
         </div>
 
         {/* ---- Live preview ---- */}
@@ -425,9 +618,10 @@ export default function HomeManager({
               serviceCards={cards}
               stats={stats}
               partners={partners}
-              faqs={faqs}
+              faqs={faqPreview}
               founder={founder}
               cta={cta}
+              containers={containers}
             />
             <p className="mt-3 text-[11px] text-muted">
               Published {published.hero.title === hero.title ? "matches" : "differs from"} this draft.
@@ -435,6 +629,18 @@ export default function HomeManager({
           </div>
         )}
       </div>
+
+      {addZone !== null && (
+        <AddContainerModal
+          onClose={() => setAddZone(null)}
+          onPick={(t) => {
+            if (addZone !== null) addContainer(addZone, t);
+          }}
+          onPickTemplate={(id) => {
+            if (addZone !== null) addTemplate(addZone, id);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -482,6 +688,40 @@ function Field({
   );
 }
 
+// Editor for a section's "header chrome" — eyebrow + split heading + sub-text.
+// Used for the sections whose body content lives on its own page (Stats,
+// Testimonials, Client Logos, FAQ, Blog, Contact) so their headings are editable.
+function HeaderCard({
+  title,
+  hint,
+  value,
+  onChange,
+  showDescription = true,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  value: SectionHeader;
+  onChange: (patch: Partial<SectionHeader>) => void;
+  showDescription?: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Card title={title}>
+      {hint && <p className="-mt-1 text-xs text-muted">{hint}</p>}
+      <Field label="Eyebrow / badge" value={value.eyebrow} onChange={(v) => onChange({ eyebrow: v })} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Heading" value={value.headingLead} onChange={(v) => onChange({ headingLead: v })} />
+        <Field label="Highlighted word(s)" value={value.headingHighlight} onChange={(v) => onChange({ headingHighlight: v })} />
+      </div>
+      {showDescription && (
+        <Field label="Description" value={value.description} onChange={(v) => onChange({ description: v })} textarea />
+      )}
+      {children}
+    </Card>
+  );
+}
+
 function Toggle({
   label,
   checked,
@@ -521,6 +761,7 @@ function Preview({
   faqs,
   founder,
   cta,
+  containers,
 }: {
   hero: HeroBlock;
   about: AboutBlock;
@@ -528,14 +769,18 @@ function Preview({
   serviceCards: { slug: string; title: string; short: string }[];
   stats: StatsContent;
   partners: PartnersDoc;
-  faqs: HomeFaq[];
+  faqs: FaqPreviewRow[];
   founder: FounderBlock;
   cta: CtaBlock;
+  containers: PageContainer[];
 }) {
+  // Only the active questions appear on the live site, so the preview matches.
+  const activeFaqs = faqs.filter((f) => f.active && f.question.trim());
   return (
     // Fixed-height viewport that scrolls internally (Hero -> Footer), so the
     // preview stays put while the editor on the left scrolls independently.
     <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
+      <PageContainersView containers={containers} zone="top" />
       {/* hero */}
       <div className="bg-surface p-5">
         <span className="eyebrow !text-[10px]">{hero.badge}</span>
@@ -553,6 +798,7 @@ function Preview({
           <img src={hero.image} alt="" className="mt-3 aspect-[4/3] w-full rounded-lg object-cover" />
         )}
       </div>
+      <PageContainersView containers={containers} zone="after-hero" />
       {/* partners */}
       {partners.enabled && partners.items.length > 0 && (
         <div className="border-t border-ink/10 p-5">
@@ -567,6 +813,7 @@ function Preview({
           </div>
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-partners" />
       {/* about */}
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
@@ -579,6 +826,7 @@ function Preview({
           )}
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
       <div className="border-t border-ink/10 p-5 text-center">
         <div className="font-display text-base font-bold grad-text [&_p]:m-0 [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
@@ -594,6 +842,7 @@ function Preview({
           </div>
         )}
       </div>
+      <PageContainersView containers={containers} zone="after-services" />
       {/* why choose us (stats) */}
       {stats.items.length > 0 && (
         <div className="border-t border-ink/10 p-5">
@@ -608,11 +857,13 @@ function Preview({
           </div>
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-stats" />
       {/* testimonials (managed elsewhere) */}
       <div className="border-t border-ink/10 p-5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">What our clients say</p>
         <p className="mt-1 text-[11px] text-muted">Testimonials section · edit on the Testimonials page</p>
       </div>
+      <PageContainersView containers={containers} zone="after-testimonials" />
       {/* founder */}
       {founder.enabled && (
         <div className="border-t border-ink/10 p-5">
@@ -628,24 +879,25 @@ function Preview({
           )}
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-founder" />
+      <PageContainersView containers={containers} zone="after-clients" />
       {/* blog (managed elsewhere) */}
       <div className="border-t border-ink/10 p-5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">From the blog</p>
         <p className="mt-1 text-[11px] text-muted">Latest posts · edit on the Blog page</p>
       </div>
-      {/* faq */}
-      {faqs.length > 0 && (
+      <PageContainersView containers={containers} zone="after-blog" />
+      {/* faq — same accordion component as the live site (question + toggle +
+          rich-text answer), updates instantly as the FAQ manager is edited. */}
+      {activeFaqs.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">FAQ</p>
-          <div className="mt-3 space-y-1.5">
-            {faqs.slice(0, 6).map((f, i) => (
-              <div key={i} className="rounded-lg border border-ink/10 bg-surface px-3 py-2 text-xs font-medium">
-                {f.question}
-              </div>
-            ))}
+          <div className="mt-3">
+            <FaqAccordionView items={activeFaqs} />
           </div>
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-faq" />
       {/* cta */}
       {cta.enabled && (
         <div className="border-t border-ink/10 bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
@@ -654,11 +906,13 @@ function Preview({
           <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{cta.buttonText}</span>
         </div>
       )}
+      <PageContainersView containers={containers} zone="after-cta" />
       {/* contact (managed elsewhere) */}
       <div className="border-t border-ink/10 p-5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Contact</p>
         <p className="mt-1 text-[11px] text-muted">Contact form &amp; details · edit on the Settings page</p>
       </div>
+      <PageContainersView containers={containers} zone="bottom" />
       {/* footer */}
       <div className="border-t border-ink/10 bg-surface p-5 text-center">
         <p className="font-display text-sm font-bold">JHB Automations</p>

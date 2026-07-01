@@ -5,6 +5,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
 import { PARTNERS_DEFAULT } from "@jhb/shared/partners";
+import SmartLink from "./SmartLink";
 
 const MARQUEE_DEFAULT = PARTNERS_DEFAULT.items.map((p) => p.name);
 
@@ -14,12 +15,14 @@ export default function Hero({
   heroImageAlt = "JHB Automations",
   heroImageTitle,
   marquee = MARQUEE_DEFAULT,
+  marqueeLabel = "We work with industry-leading tools",
 }: {
   content?: HeroContent;
   heroImage?: string | null;
   heroImageAlt?: string;
   heroImageTitle?: string;
   marquee?: string[];
+  marqueeLabel?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
@@ -48,14 +51,14 @@ export default function Hero({
   return (
     <section
       id="home"
-      className="relative flex min-h-screen items-center overflow-hidden pt-24"
+      className="relative flex min-h-screen items-center overflow-hidden pt-20"
     >
       {/* ambient blobs */}
       <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 -z-10 h-[420px] w-[420px] rounded-full bg-secondary/20 blur-[130px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
 
-      <div className="container-x grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="container-x grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left copy */}
         <div className="min-w-0">
           <motion.span
@@ -93,14 +96,14 @@ export default function Hero({
             transition={{ duration: 0.7, delay: 0.3 }}
             className="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"
           >
-            <a
+            <SmartLink
               href={content.ctaPrimaryHref}
               className="btn btn-primary w-full sm:w-auto"
             >
               {content.ctaPrimaryLabel}
               <span aria-hidden>→</span>
-            </a>
-            <a
+            </SmartLink>
+            <SmartLink
               href={content.ctaSecondaryHref}
               className="btn btn-ghost w-full sm:w-auto"
             >
@@ -108,18 +111,20 @@ export default function Hero({
                 ▶
               </span>
               {content.ctaSecondaryLabel}
-            </a>
+            </SmartLink>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-12 max-w-md"
+            className="mt-10 max-w-md"
           >
-            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted/70">
-              We work with industry-leading tools
-            </p>
+            {marqueeLabel && (
+              <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted/70">
+                {marqueeLabel}
+              </p>
+            )}
             <div className="relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_15%,black_85%,transparent)]">
               <div className="flex w-max animate-marquee gap-8">
                 {[...marquee, ...marquee].map((m, i) => (

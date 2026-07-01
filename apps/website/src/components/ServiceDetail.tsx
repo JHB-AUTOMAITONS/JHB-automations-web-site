@@ -5,14 +5,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ServiceDetail as ServiceDetailType } from "@jhb/shared/data";
-import type { WhyChooseContainer } from "@jhb/shared/service-pages";
+import type {
+  ServiceChrome,
+  ServiceCta,
+  ServiceFeature,
+  WhatsIncludedContent,
+  WhyChooseContainer,
+} from "@jhb/shared/service-pages";
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
+import type { ContainerBg, PageContainer } from "@jhb/shared/containers";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
+import PageContainers from "./PageContainers";
+import { RelatedServicesView } from "@jhb/shared/related-services-view";
 
 type RelatedLink = { title: string; slug: string; icon: string };
+
+// "What's Included" styling maps — mirror the page-builder container styles so
+// the section matches the rest of the site when its background/spacing changes.
+const WI_PAD = { none: "py-0", sm: "py-10", md: "py-14", lg: "py-20" } as const;
+const WI_COLS = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3" } as const;
+function wiBgClass(bg: ContainerBg): string {
+  return bg === "subtle"
+    ? "bg-base"
+    : bg === "gradient"
+      ? "bg-gradient-to-br from-primary/10 via-surface to-secondary/10"
+      : bg === "dark"
+        ? "bg-ink text-white"
+        : "";
+}
+// New tab / safe rel only for absolute URLs; internal paths open in place.
+const extAttrs = (href: string) =>
+  /^https?:\/\//i.test(href) ? { target: "_blank" as const, rel: "noopener noreferrer" } : {};
 
 // Auto-link the first occurrence of each anchor phrase within a block of text.
 // `used` is shared across the page so each anchor links at most once.
@@ -56,10 +82,16 @@ function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNod
 
 type DbContent = {
   heroHeading: string;
+  heroHighlight?: string;
+  heroTail?: string;
   heroDescriptionHtml: string;
   heroLink?: string;
-  features: { title: string; desc: string; link?: string; linkText?: string }[];
+  features: ServiceFeature[];
+  whatsIncluded?: WhatsIncludedContent | null;
   whyChoose?: WhyChooseContainer[];
+  cta?: ServiceCta | null;
+  chrome?: ServiceChrome | null;
+  containers?: PageContainer[];
   image: string | null;
   imageAlt: string | null;
   imageTitle: string | null;
@@ -68,29 +100,87 @@ type DbContent = {
 export default function ServiceDetail({
   data,
   related = [],
+  relatedUrlByKey = {},
   faqs = [],
   links = [],
   db = null,
+  faqShowNumbers = true,
 }: {
   data: ServiceDetailType;
   related?: RelatedLink[];
+  relatedUrlByKey?: Record<string, string>;
   faqs?: FaqItem[];
   links?: AnchorLink[];
   db?: DbContent;
+  faqShowNumbers?: boolean;
 }) {
   const used = new Set<string>();
   // Published editor content overrides code defaults, field by field.
-  const heading = db?.heroHeading || data.title;
-  const features: { title: string; desc: string; link?: string; linkText?: string }[] =
+  // Split hero heading: lead (plain) + highlight (brand gradient) + optional tail.
+  // `heroHeading` is the lead — legacy single-field pages keep their value here.
+  const heroLead = db?.heroHeading || "";
+  const heroHighlight = db?.heroHighlight || "";
+  const heroTail = db?.heroTail || "";
+  // Plain-text full heading (breadcrumb, image alt, "What's Included" copy).
+  const heading =
+    [heroLead, heroHighlight, heroTail].map((s) => s.trim()).filter(Boolean).join(" ") ||
+    data.title;
+  // When a highlight is set, render the split (lead + gradient + tail). Otherwise
+  // keep the whole heading in the gradient, exactly as before (legacy/unsplit).
+  const heroHeadingNode = heroHighlight ? (
+    <>
+      {heroLead && <span>{heroLead} </span>}
+      <span className="grad-text">{heroHighlight}</span>
+      {heroTail && <span> {heroTail}</span>}
+    </>
+  ) : (
+    <span className="grad-text">{heroLead || data.title}</span>
+  );
+
+  // Hero CTA button chrome — CMS values fall back to the original hardcoded defaults.
+  const heroPrimaryText = db?.chrome?.heroPrimaryText || "Contact Us";
+  const heroPrimaryHref = db?.chrome?.heroPrimaryHref || "/#contact";
+  const heroSecondaryText = db?.chrome?.heroSecondaryText || "All Services";
+  const heroSecondaryHref = db?.chrome?.heroSecondaryHref || "/services";
+
+  // Related services section heading.
+  const relatedHeadingLead = db?.chrome?.relatedHeadingLead || "Explore Related";
+  const relatedHeadingHighlight = db?.chrome?.relatedHeadingHighlight || "Services";
+
+  // Bottom CTA section — admin CTA fields when set, else the original hardcoded copy.
+  const ctaHeading = db?.cta?.heading || `Ready to get started with ${data.title}?`;
+  const ctaText = db?.cta?.text || "Get in touch and we’ll show you exactly how this can drive growth for your business.";
+  const ctaButtonLabel = db?.cta?.button_label || "Contact Us";
+  const ctaButtonHref = db?.cta?.button_href || "/#contact";
+  const features: ServiceFeature[] =
     db?.features && db.features.length > 0 ? db.features : data.features;
+  // "What's Included" section chrome (badge/heading/description/styling). When
+  // no saved content exists (older rows / unpublished pages) fall back to the
+  // original hardcoded defaults so the section looks identical.
+  const wi = db?.whatsIncluded ?? null;
+  const wiEnabled = wi ? wi.enabled : true;
+  const wiBadge = wi ? wi.badge : "";
+  const wiHeading = wi ? wi.heading : "What's";
+  const wiHighlight = wi ? wi.highlight : "Included";
+  const wiDescription = wi
+    ? wi.description
+    : `Everything you get when you partner with us on ${heading}.`;
+  const wiColumns = wi ? wi.columns : 2;
+  const wiButton = wi ? wi.button : { label: "", href: "" };
+  const wiBg: ContainerBg = wi ? wi.bg : "none";
+  const wiPad = wi ? wi.padding : "md";
+  const wiAlignCenter = wi ? wi.align === "center" : false;
+  const wiAlignRight = wi ? wi.align === "right" : false;
   // Enabled "Why Choose Us" containers (admin-managed). Falls back to the
   // original static section below when none are configured.
   const whyChoose = (db?.whyChoose ?? []).filter((c) => c.enabled);
   return (
-    <main className="relative pt-28">
+    <main className="relative pt-24">
       {/* ambient glows */}
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
+
+      <PageContainers containers={db?.containers ?? []} zone="top" />
 
       {/* Hero */}
       <section className="container-x">
@@ -107,7 +197,7 @@ export default function ServiceDetail({
           <span className="min-w-0 break-words text-primary">{heading}</span>
         </nav>
 
-        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="min-w-0">
             <motion.span
               initial={{ opacity: 0, y: 16 }}
@@ -129,12 +219,12 @@ export default function ServiceDetail({
                   {...(/^https?:\/\//i.test(db.heroLink)
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
-                  className="grad-text transition-opacity hover:opacity-80"
+                  className="transition-opacity hover:opacity-80"
                 >
-                  {heading}
+                  {heroHeadingNode}
                 </a>
               ) : (
-                <span className="grad-text">{heading}</span>
+                heroHeadingNode
               )}
             </motion.h1>
             {db?.heroDescriptionHtml ? (
@@ -161,11 +251,11 @@ export default function ServiceDetail({
               transition={{ duration: 0.6, delay: 0.3 }}
               className="mt-8 flex flex-wrap gap-4"
             >
-              <Link href="/#contact" className="btn btn-primary">
-                Contact Us →
+              <Link href={heroPrimaryHref} className="btn btn-primary">
+                {heroPrimaryText} →
               </Link>
-              <Link href="/services" className="btn btn-ghost">
-                All Services
+              <Link href={heroSecondaryHref} className="btn btn-ghost">
+                {heroSecondaryText}
               </Link>
             </motion.div>
           </div>
@@ -211,55 +301,121 @@ export default function ServiceDetail({
         </div>
       </section>
 
-      {/* Features */}
-      <section className="container-x py-16">
-        <Reveal>
-          <h2 className="font-display text-3xl font-bold sm:text-4xl">
-            What&apos;s <span className="grad-text">Included</span>
-          </h2>
-          <p className="mt-3 max-w-xl text-muted">
-            Everything you get when you partner with us on {heading}.
-          </p>
-        </Reveal>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.5, delay: (i % 2) * 0.08 }}
-              className="glass glow-border group rounded-2xl p-6"
-            >
-              <div className="flex items-start gap-4">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 font-display text-sm font-bold text-primary ring-1 ring-ink/10">
-                  0{i + 1}
-                </span>
-                <div className="min-w-0">
-                  <div
-                    role="heading"
-                    aria-level={3}
-                    className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
-                    dangerouslySetInnerHTML={{ __html: f.title }}
-                  />
-                  <div
-                    className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: f.desc }}
-                  />
-                </div>
+      <PageContainers containers={db?.containers ?? []} zone="after-hero" />
+
+      {/* What's Included — fully editable section chrome + cards */}
+      {wiEnabled && (
+        <section className={`${wiBgClass(wiBg)} ${WI_PAD[wiPad]}`.trim()}>
+          <div className="container-x">
+            <Reveal>
+              <div className={wiAlignCenter ? "text-center" : wiAlignRight ? "text-right" : ""}>
+                {wiBadge && <span className="eyebrow">{wiBadge}</span>}
+                <h2
+                  className={`font-display text-3xl font-bold sm:text-4xl ${wiBadge ? "mt-5" : ""}`}
+                >
+                  {wiHeading}
+                  {wiHighlight ? (
+                    <>
+                      {" "}
+                      <span className="grad-text">{wiHighlight}</span>
+                    </>
+                  ) : null}
+                </h2>
+                {wiDescription && (
+                  <p className={`mt-3 max-w-xl text-muted ${wiAlignCenter ? "mx-auto" : ""}`}>
+                    {linkify(wiDescription, links, used)}
+                  </p>
+                )}
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+            </Reveal>
+            <div className={`mt-10 grid gap-5 ${WI_COLS[wiColumns]}`.trim()}>
+              {features.map((f, i) => (
+                <motion.div
+                  key={f.id ?? i}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.5, delay: (i % 2) * 0.08 }}
+                  className="glass glow-border group relative rounded-2xl p-6"
+                >
+                  {/* When the card has a link, a stretched link makes the whole
+                      card clickable. It sits beneath the content (a sibling, not
+                      an ancestor, of the inline links) so the HTML stays valid;
+                      the content disables pointer events and word-links re-enable
+                      them so they remain individually clickable. */}
+                  {f.link && (
+                    <Link
+                      href={f.link}
+                      {...extAttrs(f.link)}
+                      aria-label={f.linkText || "Learn more"}
+                      className="absolute inset-0 z-0"
+                    />
+                  )}
+                  <div className={`flex items-start gap-4 ${f.link ? "pointer-events-none" : ""}`}>
+                    {f.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={f.image}
+                        alt=""
+                        className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-ink/10"
+                      />
+                    ) : (
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 font-display text-sm font-bold text-primary ring-1 ring-ink/10">
+                        {f.icon ? (
+                          <span className="text-xl leading-none">{f.icon}</span>
+                        ) : (
+                          `0${i + 1}`
+                        )}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <div
+                        role="heading"
+                        aria-level={3}
+                        className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
+                        dangerouslySetInnerHTML={{ __html: f.title }}
+                      />
+                      <div
+                        className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                        dangerouslySetInnerHTML={{ __html: f.desc }}
+                      />
+                      {f.link && (
+                        <Link
+                          href={f.link}
+                          {...extAttrs(f.link)}
+                          tabIndex={-1}
+                          className="pointer-events-auto relative z-20 mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary"
+                        >
+                          {f.linkText || "Learn more"} →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {wiButton.label && wiButton.href && (
+              <div
+                className={`mt-10 ${wiAlignCenter ? "text-center" : wiAlignRight ? "text-right" : ""}`}
+              >
+                <Link href={wiButton.href} {...extAttrs(wiButton.href)} className="btn btn-primary">
+                  {wiButton.label}
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      <PageContainers containers={db?.containers ?? []} zone="after-features" />
 
       {/* Benefits — admin-managed "Why Choose Us" containers, else the static one */}
       {whyChoose.length > 0
         ? whyChoose.map((c) => (
-            <section key={c.id} className="container-x pb-16">
+            <section key={c.id} className="container-x pb-12">
               <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
                 <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
-                <div className="relative grid gap-10 lg:grid-cols-2">
+                <div className="relative grid gap-8 lg:grid-cols-2">
                   <div>
                     {c.badge && <span className="eyebrow">{c.badge}</span>}
                     <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
@@ -305,10 +461,10 @@ export default function ServiceDetail({
             </section>
           ))
         : (
-          <section className="container-x pb-16">
+          <section className="container-x pb-12">
             <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
               <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
-              <div className="relative grid gap-10 lg:grid-cols-2">
+              <div className="relative grid gap-8 lg:grid-cols-2">
                 <div>
                   <span className="eyebrow">Why Choose Us</span>
                   <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
@@ -344,54 +500,64 @@ export default function ServiceDetail({
           </section>
         )}
 
-      {/* Related services */}
-      <section className="container-x pb-16">
-        <Reveal>
-          <h2 className="mb-8 font-display text-2xl font-bold sm:text-3xl">
-            Explore Related <span className="grad-text">Services</span>
-          </h2>
-        </Reveal>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {related.map((s) => (
-            <Link
-              key={s.slug}
-              href={`/${s.slug}`}
-              className="group glass glow-border flex items-center gap-3 rounded-2xl p-4 transition-transform hover:-translate-y-1"
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover:from-primary group-hover:to-secondary group-hover:text-white">
-                <Icon name={s.icon} className="h-5 w-5" />
-              </span>
-              <span className="min-w-0 break-words text-sm font-medium text-muted transition-colors group-hover:text-ink">
-                {s.title}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <PageContainers containers={db?.containers ?? []} zone="after-whychoose" />
+
+      {/* Related services — fully editable section (admin-managed). Once a page is
+          migrated/published the editable section wins (and respects its own
+          enable/disable + per-card toggles, hiding itself when empty). Pages not
+          yet migrated keep the original auto-generated cards. */}
+      {db?.chrome?.related ? (
+        <RelatedServicesView content={db.chrome.related} serviceUrlByKey={relatedUrlByKey} Reveal={Reveal} />
+      ) : (
+        <section className="container-x pb-12">
+          <Reveal>
+            <h2 className="mb-8 font-display text-2xl font-bold sm:text-3xl">
+              {relatedHeadingLead}{relatedHeadingLead && relatedHeadingHighlight ? " " : ""}
+              {relatedHeadingHighlight && <span className="grad-text">{relatedHeadingHighlight}</span>}
+            </h2>
+          </Reveal>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {related.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/${s.slug}`}
+                className="group glass glow-border flex items-center gap-3 rounded-2xl p-4 transition-transform hover:-translate-y-1"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all group-hover:from-primary group-hover:to-secondary group-hover:text-white">
+                  <Icon name={s.icon} className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 break-words text-sm font-medium text-muted transition-colors group-hover:text-ink">
+                  {s.title}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FAQ — near the bottom, just above the CTA */}
       {faqs.length > 0 && (
-        <div className="pb-12">
-          <FaqAccordion items={faqs} />
+        <div className="pb-10">
+          <FaqAccordion items={faqs} showNumbers={faqShowNumbers} />
         </div>
       )}
 
+      <PageContainers containers={db?.containers ?? []} zone="after-faq" />
+
       {/* CTA */}
-      <section className="container-x pb-20">
+      <section className="container-x pb-14">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
           <h2 className="break-words font-display text-3xl font-bold sm:text-4xl">
-            Ready to get started with{" "}
-            <span className="grad-text">{data.title}</span>?
+            <span className="grad-text">{ctaHeading}</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-muted">
-            Get in touch and we&apos;ll show you exactly how this can drive
-            growth for your business.
-          </p>
-          <Link href="/#contact" className="btn btn-primary mt-8">
-            Contact Us →
+          <p className="mx-auto mt-4 max-w-xl text-muted">{ctaText}</p>
+          <Link href={ctaButtonHref} className="btn btn-primary mt-8">
+            {ctaButtonLabel} →
           </Link>
         </div>
       </section>
+
+      <PageContainers containers={db?.containers ?? []} zone="bottom" />
     </main>
   );
 }

@@ -1,6 +1,8 @@
 import { createClient } from "@jhb/shared/supabase/server";
-import { getAbout } from "@jhb/shared/about-server";
+import { withAboutDefaults, ABOUT_DEFAULT } from "@jhb/shared/about";
+import { getLegalDraft } from "@jhb/shared/content-server";
 import AboutManager from "@/components/AboutManager";
+import LegalPagesEditor from "@/components/LegalPagesEditor";
 
 export default async function AdminAbout() {
   const supabase = await createClient();
@@ -25,15 +27,29 @@ export default async function AdminAbout() {
     );
   }
 
-  const about = await getAbout();
+  // Load draft first; fall back to published, then built-in defaults.
+  const [draftRow, publishedRow] = await Promise.all([
+    supabase.from("jhb_content").select("data").eq("key", "about_draft").maybeSingle(),
+    supabase.from("jhb_content").select("data").eq("key", "about").maybeSingle(),
+  ]);
+
+  const draftData = draftRow.data?.data as Record<string, unknown> | null | undefined;
+  const publishedData = publishedRow.data?.data as Record<string, unknown> | null | undefined;
+
+  const hasDraft = !!draftData;
+  const about = hasDraft
+    ? withAboutDefaults(draftData)
+    : publishedData
+    ? withAboutDefaults(publishedData)
+    : ABOUT_DEFAULT;
+
+  const initialStatus: "draft" | "published" = hasDraft ? "draft" : "published";
+  const legal = await getLegalDraft();
+
   return (
-    <div>
-      <h1 className="font-display text-2xl font-bold sm:text-3xl">About Page</h1>
-      <p className="mt-1 text-sm text-muted">
-        All copy on the public <code>/about</code> page — hero, mission, vision,
-        values and the call-to-action.
-      </p>
-      <AboutManager initial={about} />
-    </div>
+    <>
+      <AboutManager initial={about} initialStatus={initialStatus} />
+      <LegalPagesEditor initial={legal} />
+    </>
   );
 }

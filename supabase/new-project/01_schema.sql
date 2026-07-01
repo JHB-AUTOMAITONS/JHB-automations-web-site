@@ -111,6 +111,7 @@ create table if not exists public.jhb_services (
   hero_heading       text,
   hero_description   text,
   features           jsonb not null default '[]'::jsonb,
+  whats_included     jsonb not null default '{}'::jsonb,
   faq                jsonb not null default '[]'::jsonb,
   cta                jsonb,
   image_url          text,

@@ -7,8 +7,8 @@ import {
   STATS_DEFAULT,
   SETTINGS_DEFAULT,
   LOGO_DEFAULT,
-  BLOG_BANNER_DEFAULT,
   BLOG_HERO_DEFAULT,
+  BLOG_ARTICLE_HERO_DEFAULT,
   withLegalDefaults,
   withAuthorPublisherDoc,
   effectiveAuthorPublisher,
@@ -20,8 +20,8 @@ import {
   type SiteSettings,
   type LogoSettings,
   type PageHeroes,
-  type BlogBanner,
   type BlogHero,
+  type BlogArticleHero,
   type LegalPages,
   type AuthorPublisher,
   type AuthorPublisherDoc,
@@ -91,23 +91,6 @@ export const getSettings = cache(async (): Promise<SiteSettings> => {
   };
 });
 
-// Published blog banner — what the public /blog page renders. Falls back to the
-// hidden default until an admin publishes, so the live page is never affected
-// by an in-progress draft.
-export async function getBlogBanner(): Promise<BlogBanner> {
-  return { ...BLOG_BANNER_DEFAULT, ...(await fetchBlock("jhb_content", "blog_banner")) };
-}
-
-// Admin editor seed — prefer the draft, then the published version, then the
-// hidden default, so reopening the editor resumes the latest unsaved work.
-export async function getBlogBannerDraft(): Promise<BlogBanner> {
-  const [published, draft] = await Promise.all([
-    fetchBlock("jhb_content", "blog_banner"),
-    fetchBlock("jhb_content", "blog_banner_draft"),
-  ]);
-  return { ...BLOG_BANNER_DEFAULT, ...(published ?? {}), ...(draft ?? {}) };
-}
-
 // Published blog hero — the full-width banner on the public /blog page.
 export async function getBlogHero(): Promise<BlogHero> {
   return { ...BLOG_HERO_DEFAULT, ...(await fetchBlock("jhb_content", "blog_hero")) };
@@ -120,6 +103,21 @@ export async function getBlogHeroDraft(): Promise<BlogHero> {
     fetchBlock("jhb_content", "blog_hero_draft"),
   ]);
   return { ...BLOG_HERO_DEFAULT, ...(published ?? {}), ...(draft ?? {}) };
+}
+
+// Published blog ARTICLE hero — the full-width banner header rendered on every
+// /blog/[slug] page (its dynamic title/breadcrumb/meta come from the post).
+export async function getBlogArticleHero(): Promise<BlogArticleHero> {
+  return { ...BLOG_ARTICLE_HERO_DEFAULT, ...(await fetchBlock("jhb_content", "blog_article_hero")) };
+}
+
+// Admin editor seed — prefer the draft, then published, then defaults.
+export async function getBlogArticleHeroDraft(): Promise<BlogArticleHero> {
+  const [published, draft] = await Promise.all([
+    fetchBlock("jhb_content", "blog_article_hero"),
+    fetchBlock("jhb_content", "blog_article_hero_draft"),
+  ]);
+  return { ...BLOG_ARTICLE_HERO_DEFAULT, ...(published ?? {}), ...(draft ?? {}) };
 }
 
 // Author & Publisher (SEO) — global defaults + per-page overrides.

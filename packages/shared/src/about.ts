@@ -2,6 +2,8 @@
 // Headings are split into a normal "lead" part and a gradient "highlight" part so
 // the admin can edit the copy while keeping the site's visual style.
 
+import type { PageContainer } from "./containers";
+
 export type AboutValue = { icon: string; title: string; desc: string };
 
 export type AboutDoc = {
@@ -33,6 +35,9 @@ export type AboutDoc = {
   ctaBody: string;
   ctaButtonLabel: string;
   ctaButtonHref: string;
+  // Page-builder containers inserted between the native sections. Empty by
+  // default, so an unedited About page looks exactly as it always has.
+  containers: PageContainer[];
 };
 
 export const ABOUT_DEFAULT: AboutDoc = {
@@ -86,6 +91,7 @@ export const ABOUT_DEFAULT: AboutDoc = {
     "Ready to automate and scale? Get in touch and we'll map your fastest path to growth.",
   ctaButtonLabel: "Contact Us →",
   ctaButtonHref: "/#contact",
+  containers: [],
 };
 
 // Merge a saved doc over the defaults so older/partial documents still render
@@ -98,5 +104,6 @@ export function withAboutDefaults(doc: Partial<AboutDoc> | null): AboutDoc {
     ...ABOUT_DEFAULT,
     ...(doc ?? {}),
     values: values.length > 0 ? values : ABOUT_DEFAULT.values,
+    containers: Array.isArray(doc?.containers) ? (doc!.containers as PageContainer[]) : [],
   };
 }

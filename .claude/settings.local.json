@@ -50,7 +50,9 @@
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT: $?\")",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep 2; \"node procs: $\\(\\(Get-Process node -ErrorAction SilentlyContinue | Measure-Object\\).Count\\)\")",
-      "Bash(git commit -m 'Add CMS editors, rich-text/FAQ enhancements, Partners-in-Home, hydration fix' -m '- About page + Partners now CMS-managed \\(jhb_content\\); Partners moved into Home Page editor *)"
+      "Bash(git commit -m 'Add CMS editors, rich-text/FAQ enhancements, Partners-in-Home, hydration fix' -m '- About page + Partners now CMS-managed \\(jhb_content\\); Partners moved into Home Page editor *)",
+      "Skill(claude-api)",
+      "Bash(npm run *)"
     ]
   }
 }

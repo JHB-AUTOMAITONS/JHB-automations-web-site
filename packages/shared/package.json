@@ -35,6 +35,18 @@
     "./partners-server": "./src/partners.server.ts",
     "./about": "./src/about.ts",
     "./about-server": "./src/about.server.ts",
+    "./containers": "./src/containers.ts",
+    "./container-templates": "./src/containerTemplates.ts",
+    "./container-view": "./src/containerView.tsx",
+    "./about-view": "./src/aboutView.tsx",
+    "./heading": "./src/heading.tsx",
+    "./icon": "./src/icon.tsx",
+    "./related-services-view": "./src/relatedServicesView.tsx",
+    "./blog-hero-view": "./src/blogHeroView.tsx",
+    "./blog-article-hero-view": "./src/blogArticleHeroView.tsx",
+    "./faq-accordion-view": "./src/faqAccordionView.tsx",
+    "./seo-schema": "./src/seoSchema.ts",
+    "./container-contact-form": "./src/containerContactForm.tsx",
     "./types": "./src/types.ts"
   },
   "dependencies": {

@@ -4,6 +4,9 @@ import { useState } from "react";
 import { saveHomeSeo } from "@/app/actions";
 import ImagePicker from "./ImagePicker";
 import RichText from "./RichText";
+import EditorHeader from "./EditorHeader";
+import AiSeoPanel from "./ai/AiSeoPanel";
+import AuthorPublisherEditor from "./AuthorPublisherEditor";
 
 export type HomeSeo = {
   path: string;
@@ -124,37 +127,47 @@ export default function HomeSeoEditor({
 
   return (
     <section className="mt-8 rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
-      {toast && (
-        <div
-          className={`fixed right-6 top-6 z-[60] rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
-            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
-          }`}
-        >
-          {toast.msg}
-        </div>
-      )}
+      <EditorHeader
+        title="🏠 Home Page SEO"
+        busy={busy}
+        toast={toast}
+        onSave={() => save("save")}
+        onPublish={() => save("publish")}
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">
-          🏠 Home Page SEO{" "}
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">/</span>
-        </h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => save("save")}
-            disabled={busy !== ""}
-            className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary disabled:opacity-60"
-          >
-            {busy === "save" ? "Saving…" : "Save"}
-          </button>
-          <button
-            onClick={() => save("publish")}
-            disabled={busy !== ""}
-            className="btn btn-primary !px-5 !py-2 !text-sm disabled:opacity-60"
-          >
-            {busy === "publish" ? "Publishing…" : "Publish"}
-          </button>
-        </div>
+      <div className="mt-5">
+        <AiSeoPanel
+          route="/"
+          getContext={() => ({
+            title: metaTitle || title,
+            contentHtml: seoContent,
+            focusKeyword: keywords.split(",")[0]?.trim(),
+            metaTitle,
+            metaDescription: description,
+            keywords,
+          })}
+          onApply={(r) => {
+            if (r.seoTitle) {
+              setMetaTitle(r.seoTitle);
+              if (!title.trim()) setTitle(r.seoTitle);
+            }
+            if (r.metaDescription) setDescription(r.metaDescription);
+            if (r.metaKeywords) setKeywords(r.metaKeywords);
+            else if (r.secondaryKeywords?.length) setKeywords(r.secondaryKeywords.join(", "));
+            if (r.canonical) setCanonical(r.canonical);
+            if (r.ogTitle) setOgTitle(r.ogTitle);
+            if (r.ogDescription) setOgDescription(r.ogDescription);
+            if (r.contentHtml) setSeoContent(r.contentHtml);
+            if (r.schemaJsonLd) {
+              try {
+                JSON.parse(r.schemaJsonLd);
+                setStructuredData(r.schemaJsonLd);
+              } catch {
+                /* keep existing structured data */
+              }
+            }
+          }}
+        />
       </div>
 
       {loadError && (
@@ -296,6 +309,11 @@ export default function HomeSeoEditor({
             Optional SEO-focused content block rendered near the bottom of the homepage.
           </p>
         </div>
+      </div>
+
+      {/* Author & Publisher (SEO) — below the existing SEO fields */}
+      <div className="mt-6">
+        <AuthorPublisherEditor path="/" />
       </div>
     </section>
   );

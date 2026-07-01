@@ -39,7 +39,7 @@ export default async function ContactPage() {
   ];
 
   return (
-    <main className="relative pt-28">
+    <main className="relative pt-24">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-secondary/15 blur-[140px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
@@ -54,24 +54,23 @@ export default async function ContactPage() {
 
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <span className="eyebrow">Get in Touch</span>
+            <span className="eyebrow">{settings.pageHeroes.contact.eyebrow}</span>
           </Reveal>
           <Reveal delay={0.08}>
             <h1 className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-              Let&apos;s Start Your <span className="grad-text">Growth Story</span>
+              {settings.pageHeroes.contact.headingLead}{" "}
+              <span className="grad-text">{settings.pageHeroes.contact.headingHighlight}</span>
             </h1>
           </Reveal>
           <Reveal delay={0.16}>
             <p className="mt-6 text-lg leading-relaxed text-muted">
-              Whether you&apos;re ready to automate, scale or just exploring —
-              we&apos;d love to hear from you. Reach out and our team will
-              respond within 24 hours.
+              {settings.pageHeroes.contact.description}
             </p>
           </Reveal>
         </div>
 
         {/* quick channels */}
-        <div className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-3">
+        <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
           {channels.map((c, i) => (
             <Reveal key={c.label} delay={i * 0.06}>
               <a
@@ -97,7 +96,7 @@ export default async function ContactPage() {
       <Contact settings={settings} />
 
       {/* Hours strip */}
-      <section className="container-x pb-28">
+      <section className="container-x pb-20">
         <div className="glass flex flex-col items-center justify-between gap-3 rounded-2xl p-6 text-center sm:flex-row sm:text-left">
           <p className="flex items-center gap-3 text-sm text-muted">
             <span className="text-xl">🕘</span>

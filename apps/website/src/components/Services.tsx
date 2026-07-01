@@ -11,31 +11,37 @@ type ServiceCardData = { title: string; desc: string; icon: string; slug: string
 
 export default function Services({
   items = defaultServices,
+  eyebrow = "What We Do",
   heading = "Premium AI & Growth Services",
   subheading = "Everything you need to automate operations, generate leads and scale — engineered under one roof.",
+  viewAllText = "View All Services",
+  learnMoreText = "Learn more",
 }: {
   items?: ServiceCardData[];
+  eyebrow?: string;
   heading?: string;
   subheading?: string;
+  viewAllText?: string;
+  learnMoreText?: string;
 }) {
   return (
-    <section id="services" className="relative py-16 sm:py-24">
+    <section id="services" className="relative py-12 sm:py-16">
       <div className="container-x">
         <SectionHeading
-          eyebrow="What We Do"
+          eyebrow={eyebrow}
           title={<span className="grad-text [&_p]:m-0 [&_p]:inline [&_a]:underline" dangerouslySetInnerHTML={{ __html: heading }} />}
           descHtml={subheading}
         />
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {items.map((s, i) => (
-            <ServiceCard key={s.slug} index={i} {...s} />
+            <ServiceCard key={s.slug} index={i} learnMoreText={learnMoreText} {...s} />
           ))}
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-10 text-center">
           <Link href="/services" className="btn btn-ghost">
-            View All Services →
+            {viewAllText} <span aria-hidden>→</span>
           </Link>
         </div>
       </div>
@@ -49,12 +55,14 @@ function ServiceCard({
   icon,
   slug,
   index,
+  learnMoreText,
 }: {
   title: string;
   desc: string;
   icon: string;
   slug: string;
   index: number;
+  learnMoreText: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -113,7 +121,11 @@ function ServiceCard({
               "radial-gradient(220px circle at var(--mx) var(--my), rgba(0,212,255,0.14), transparent 60%)",
           }}
         />
-        <div className="relative z-10">
+        {/* Content sits above the stretched link but stays click-transparent so
+            EVERY click (icon, text gaps, padding, empty space) falls through to
+            the card-wide link. Inline word-links re-enable pointer events (z-20)
+            so they remain individually clickable. */}
+        <div className="pointer-events-none relative z-10">
           <span className="pointer-events-none grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary ring-1 ring-ink/10 transition-all duration-300 group-hover:from-primary group-hover:to-secondary group-hover:text-white group-hover:shadow-glow">
             <Icon
               name={icon}
@@ -131,7 +143,7 @@ function ServiceCard({
             dangerouslySetInnerHTML={{ __html: desc }}
           />
           <span className="pointer-events-none mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
-            Learn more →
+            {learnMoreText} <span aria-hidden>→</span>
           </span>
         </div>
       </div>

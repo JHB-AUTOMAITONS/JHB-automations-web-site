@@ -11,7 +11,7 @@ import SmartLink from "./SmartLink";
 
 // Animated client-side link for the mobile menu — keeps the framer-motion
 // entrance while routing through Next's <Link> (no full reload).
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 type DropItem = { label: string; href: string; icon: string };
 
