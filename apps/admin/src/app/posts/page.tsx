@@ -1,16 +1,9 @@
 import Link from "next/link";
 import { getAllPostsAdmin } from "@jhb/shared/posts-server";
-import { getBlogHeroDraft, getBlogArticleHeroDraft } from "@jhb/shared/content-server";
 import PostsTable from "@/components/PostsTable";
-import BlogHeroEditor from "@/components/BlogHeroEditor";
-import BlogArticleHeroEditor from "@/components/BlogArticleHeroEditor";
 
 export default async function AdminPosts() {
-  const [posts, hero, articleHero] = await Promise.all([
-    getAllPostsAdmin(),
-    getBlogHeroDraft(),
-    getBlogArticleHeroDraft(),
-  ]);
+  const posts = await getAllPostsAdmin();
 
   return (
     <div>
@@ -34,13 +27,8 @@ export default async function AdminPosts() {
           category: p.category,
           status: p.status,
           updated_at: p.updated_at,
-          likes: p.likes ?? 0,
         }))}
       />
-
-      <BlogHeroEditor initial={hero} />
-
-      <BlogArticleHeroEditor initial={articleHero} />
     </div>
   );
 }

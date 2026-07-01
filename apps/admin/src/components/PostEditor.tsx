@@ -2,25 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDate, type Post, type BlogFaq } from "@jhb/shared/posts";
+import { formatDate, type Post } from "@jhb/shared/posts";
 import { savePost, deletePost } from "@/app/actions";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
-import BlogFaqEditor from "./BlogFaqEditor";
-import AiSeoPanel from "./ai/AiSeoPanel";
-import AuthorPublisherEditor from "./AuthorPublisherEditor";
-import { usePageContainers } from "@/lib/usePageContainers";
-import { PageContainersView } from "@jhb/shared/container-view";
-import FaqAccordionView from "@jhb/shared/faq-accordion-view";
-import type { PageContainer } from "@jhb/shared/containers";
-import EditorHeader from "./EditorHeader";
-
-const faqUid = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `faq-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-
-const BLOG_SECTIONS = [{ label: "Post", zone: "bottom" }];
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 
@@ -46,7 +31,6 @@ export default function PostEditor({
 }) {
   const router = useRouter();
   const editing = Boolean(post);
-  const cb = usePageContainers(post?.containers ?? [], BLOG_SECTIONS);
 
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
@@ -59,10 +43,8 @@ export default function PostEditor({
   const [author, setAuthor] = useState(post?.author ?? "JHB Automations");
   const [metaTitle, setMetaTitle] = useState(post?.meta_title ?? "");
   const [metaDesc, setMetaDesc] = useState(post?.meta_description ?? "");
-  const [faqs, setFaqs] = useState<BlogFaq[]>(post?.faqs ?? []);
-  const [faqsEnabled, setFaqsEnabled] = useState(post?.faqs_enabled ?? true);
 
-  const [busy, setBusy] = useState<"" | "save" | "publish">("");
+  const [busy, setBusy] = useState<"" | "draft" | "publish">("");
   const [toast, setToast] = useState<Toast>(null);
   const [showPreview, setShowPreview] = useState(true);
 
@@ -81,7 +63,7 @@ export default function PostEditor({
   };
 
   const save = async (status: "draft" | "published") => {
-    setBusy(status === "draft" ? "save" : "publish");
+    setBusy(status === "draft" ? "draft" : "publish");
     const res = await savePost({
       id: post?.id,
       slug,
@@ -95,9 +77,6 @@ export default function PostEditor({
       meta_title: metaTitle,
       meta_description: metaDesc,
       status,
-      containers: cb.containers,
-      faqs,
-      faqs_enabled: faqsEnabled,
     });
     setBusy("");
     if (res.ok) {
@@ -125,36 +104,66 @@ export default function PostEditor({
 
   return (
     <div>
-      <EditorHeader
-        title={editing ? "Edit Post" : "New Post"}
-        backHref="/posts"
-        backLabel="← Back to posts"
-        status={post?.status ?? "draft"}
-        busy={busy}
-        toast={toast}
-        onSave={() => save("draft")}
-        onPublish={() => save("published")}
-        showPreview={showPreview}
-        onTogglePreview={() => setShowPreview((s) => !s)}
-        extra={
-          editing ? (
+      {toast && (
+        <div
+          className={`fixed right-6 top-6 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
+            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <button
+            onClick={() => router.push("/posts")}
+            className="text-sm text-muted transition-colors hover:text-ink"
+          >
+            ← Back to posts
+          </button>
+          <h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">
+            {editing ? "Edit Post" : "New Post"}
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((s) => !s)}
+            className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:text-ink"
+          >
+            {showPreview ? "Hide preview" : "Show preview"}
+          </button>
+          {editing && (
             <button
-              type="button"
               onClick={remove}
               className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:border-red-300 hover:text-red-500"
             >
               Delete
             </button>
-          ) : undefined
-        }
-      />
+          )}
+          <button
+            onClick={() => save("draft")}
+            disabled={busy !== ""}
+            className="btn btn-ghost !px-5 !py-2.5 !text-sm disabled:opacity-60"
+          >
+            {busy === "draft" ? "Saving…" : "Save draft"}
+          </button>
+          <button
+            onClick={() => save("published")}
+            disabled={busy !== ""}
+            className="btn btn-primary !px-5 !py-2.5 !text-sm disabled:opacity-60"
+          >
+            {busy === "publish" ? "Publishing…" : "Publish"}
+          </button>
+        </div>
+      </div>
 
       <div className={`mt-8 grid gap-6 ${showPreview ? "xl:grid-cols-[1fr_440px]" : ""}`}>
         {/* editor (left) */}
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* main */}
           <div className="space-y-6">
-          {cb.slot("top")}
           <Card>
             <Field label="Title" value={title} onChange={onTitle} />
             <Field
@@ -173,42 +182,10 @@ export default function PostEditor({
             </div>
           </Card>
 
-          <BlogFaqEditor
-            value={faqs}
-            onChange={setFaqs}
-            enabled={faqsEnabled}
-            onToggleEnabled={setFaqsEnabled}
-          />
-
           <Card title="SEO">
             <Field label="Meta title" value={metaTitle} onChange={setMetaTitle} />
             <Field label="Meta description" value={metaDesc} onChange={setMetaDesc} textarea />
           </Card>
-
-          <AiSeoPanel
-            route={slug ? `/blog/${slug}` : "/blog"}
-            getContext={() => ({
-              title: metaTitle || title,
-              contentHtml: content,
-              focusKeyword: category || undefined,
-              metaTitle,
-              metaDescription: metaDesc,
-            })}
-            onApply={(r) => {
-              if (r.seoTitle) setMetaTitle(r.seoTitle);
-              if (r.metaDescription) setMetaDesc(r.metaDescription);
-              if (r.metaDescription && !excerpt.trim()) setExcerpt(r.metaDescription);
-              if (r.contentHtml) setContent(r.contentHtml);
-              // Seed the post's FAQ section only when it's currently empty.
-              if (faqs.length === 0 && Array.isArray(r.faqs) && r.faqs.length > 0) {
-                setFaqs(r.faqs.map((f) => ({ id: faqUid(), question: f.question, answer: f.answer, visible: true })));
-                setFaqsEnabled(true);
-              }
-            }}
-          />
-
-          <AuthorPublisherEditor path={slug ? `/blog/${slug}` : "/blog"} />
-          {cb.slot("bottom")}
         </div>
 
         {/* sidebar */}
@@ -260,15 +237,10 @@ export default function PostEditor({
               date={post?.published_at ?? null}
               metaTitle={metaTitle}
               metaDesc={metaDesc}
-              containers={cb.containers}
-              faqs={faqs}
-              faqsEnabled={faqsEnabled}
             />
           </div>
         )}
       </div>
-
-      {cb.modal}
     </div>
   );
 }
@@ -341,9 +313,6 @@ function BlogPreview({
   date,
   metaTitle,
   metaDesc,
-  containers,
-  faqs,
-  faqsEnabled,
 }: {
   title: string;
   slug: string;
@@ -356,15 +325,10 @@ function BlogPreview({
   date: string | null;
   metaTitle: string;
   metaDesc: string;
-  containers: PageContainer[];
-  faqs: BlogFaq[];
-  faqsEnabled: boolean;
 }) {
   const heading = title.trim() || "Untitled post";
-  const visibleFaqs = faqs.filter((f) => f.visible && f.question.trim());
   return (
     <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
-      <PageContainersView containers={containers} zone="top" />
       <article className="p-5">
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-muted">
@@ -433,22 +397,7 @@ function BlogPreview({
             ))}
           </div>
         )}
-
-        {/* FAQ accordion — mirrors the live post (content → tags → FAQ) */}
-        {faqsEnabled && visibleFaqs.length > 0 && (
-          <div className="mt-6 border-t border-ink/10 pt-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">FAQ</p>
-            <h4 className="mt-1 font-display text-base font-bold">
-              Frequently Asked <span className="grad-text">Questions</span>
-            </h4>
-            <div className="mt-3">
-              <FaqAccordionView items={visibleFaqs} />
-            </div>
-          </div>
-        )}
       </article>
-
-      <PageContainersView containers={containers} zone="bottom" />
 
       {/* search / SEO snippet — reflects Slug, Meta title, Meta description live */}
       <div className="border-t border-ink/10 bg-surface p-5">

@@ -6,7 +6,7 @@ import SectionHeading from "./SectionHeading";
 
 export default function WorkflowShowcase() {
   return (
-    <section id="workflow" className="relative py-12 sm:py-16">
+    <section id="workflow" className="relative py-16 sm:py-24">
       <div className="container-x">
         <SectionHeading
           eyebrow="AI Automation in Action"

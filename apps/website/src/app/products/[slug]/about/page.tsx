@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import Reveal from "@/components/Reveal";
-import PageContainers from "@/components/PageContainers";
-import SmartLink from "@/components/SmartLink";
 
 // Pre-render the About page for each product that has a detail page.
 export async function generateStaticParams() {
@@ -71,7 +68,6 @@ export default async function AboutProductPage({
   const p = await getProductBySlug(slug);
   if (!p || p.status !== "published") notFound();
   const a = p.about;
-  const containers = a.containers ?? [];
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const aboutSchema = {
@@ -96,22 +92,20 @@ export default async function AboutProductPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
-      <main className="relative pt-24">
+      <main className="relative pt-28">
         <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
-
-        <PageContainers containers={containers} zone="top" />
 
         {/* Hero */}
         <section className="container-x">
           <nav className="flex items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
-            <Link href="/" className="hover:text-ink">Home</Link>
+            <a href="/" className="hover:text-ink">Home</a>
             <span>/</span>
-            <Link href={`/products/${p.slug}`} className="hover:text-ink">{p.title}</Link>
+            <a href={`/products/${p.slug}`} className="hover:text-ink">{p.title}</a>
             <span>/</span>
             <span className="text-ink">About</span>
           </nav>
 
-          <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
+          <div className="mt-8 grid items-center gap-10 lg:grid-cols-2">
             {/* Brand logo — prominent, contained, padded, never cropped */}
             {hasImage(a.image) && (
               <Reveal delay={0.05} className="lg:order-1">
@@ -148,19 +142,17 @@ export default async function AboutProductPage({
                 </Reveal>
               )}
               <Reveal delay={0.18}>
-                <Link href={`/products/${p.slug}`} className="btn btn-ghost mt-8 !px-6 !py-3 !text-sm">
+                <a href={`/products/${p.slug}`} className="btn btn-ghost mt-8 !px-6 !py-3 !text-sm">
                   ← Back to {p.title}
-                </Link>
+                </a>
               </Reveal>
             </div>
           </div>
         </section>
 
-        <PageContainers containers={containers} zone="after-hero" />
-
         {/* Overview */}
         {a.overview && (
-          <section className="container-x mt-16">
+          <section className="container-x mt-24">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal><span className="eyebrow">Our Story</span></Reveal>
               <Reveal delay={0.08}>
@@ -173,11 +165,9 @@ export default async function AboutProductPage({
           </section>
         )}
 
-        <PageContainers containers={containers} zone="after-overview" />
-
         {/* Stats */}
         {a.stats.length > 0 && (
-          <section className="container-x mt-16">
+          <section className="container-x mt-24">
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {a.stats.map((s, i) => (
                 <Reveal key={s.label} delay={(i % 4) * 0.06}>
@@ -191,30 +181,20 @@ export default async function AboutProductPage({
           </section>
         )}
 
-        <PageContainers containers={containers} zone="after-stats" />
-
         {/* Features */}
         {a.features.length > 0 && (
-          <section className="container-x mt-16">
+          <section className="container-x mt-24">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal><h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">What makes it <span className="grad-text">different</span></h2></Reveal>
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {a.features.map((f, i) => (
                 <Reveal key={f.title} delay={(i % 3) * 0.06}>
                   <div className="glass glow-border flex h-full items-start gap-4 rounded-2xl p-6">
                     <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">{i + 1}</span>
-                    <div className="min-w-0">
-                      <div
-                        role="heading"
-                        aria-level={3}
-                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
-                        dangerouslySetInnerHTML={{ __html: f.title }}
-                      />
-                      <div
-                        className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: f.desc }}
-                      />
+                    <div>
+                      <h3 className="font-display text-lg font-semibold">{f.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.desc}</p>
                     </div>
                   </div>
                 </Reveal>
@@ -223,28 +203,18 @@ export default async function AboutProductPage({
           </section>
         )}
 
-        <PageContainers containers={containers} zone="after-features" />
-
         {/* Benefits */}
         {a.benefits.length > 0 && (
-          <section className="container-x mt-16">
+          <section className="container-x mt-24">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal><h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">The <span className="grad-text">benefits</span></h2></Reveal>
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            <div className="mt-12 grid gap-5 sm:grid-cols-2">
               {a.benefits.map((b, i) => (
                 <Reveal key={b.title} delay={(i % 2) * 0.06}>
                   <div className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
-                    <div
-                      role="heading"
-                      aria-level={3}
-                      className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
-                      dangerouslySetInnerHTML={{ __html: b.title }}
-                    />
-                    <div
-                      className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                      dangerouslySetInnerHTML={{ __html: b.desc }}
-                    />
+                    <h3 className="font-display text-lg font-semibold">{b.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted">{b.desc}</p>
                   </div>
                 </Reveal>
               ))}
@@ -252,22 +222,18 @@ export default async function AboutProductPage({
           </section>
         )}
 
-        <PageContainers containers={containers} zone="after-benefits" />
-
         {/* CTA */}
-        <section className="container-x my-16">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-10 text-center shadow-soft sm:px-12">
+        <section className="container-x my-24">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-14 text-center shadow-soft sm:px-12">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]" />
             <h2 className="font-display text-3xl font-bold sm:text-4xl">{a.ctaHeading || `See ${p.title} in action`}</h2>
             {a.ctaText && <p className="mx-auto mt-4 max-w-xl text-muted">{a.ctaText}</p>}
-            <SmartLink href={a.ctaButtonHref || "/#contact"} className="btn btn-primary mt-8 !px-7 !py-3.5">
+            <a href={a.ctaButtonHref || "/#contact"} className="btn btn-primary mt-8 !px-7 !py-3.5">
               {a.ctaButtonLabel || "Book a Free Demo"}
               <span aria-hidden>→</span>
-            </SmartLink>
+            </a>
           </div>
         </section>
-
-        <PageContainers containers={containers} zone="bottom" />
       </main>
     </>
   );

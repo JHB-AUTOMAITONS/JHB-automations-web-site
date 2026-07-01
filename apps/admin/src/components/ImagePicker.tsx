@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { uploadMedia, getMediaAlt, updateMediaAltByUrl } from "@/app/actions";
 import { ALT_MIN, ALT_MAX, altStatus } from "@jhb/shared/media";
 import { optimizeImage, readImageDimensions, fmtBytes } from "@/lib/optimizeImage";
-import ImageInsertDialog from "./ImageInsertDialog";
 
 type Props = {
   value: string | null;
@@ -30,7 +29,6 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
   const [progress, setProgress] = useState(0);
   const [info, setInfo] = useState<Info | null>(null);
   const [error, setError] = useState("");
-  const [galleryOpen, setGalleryOpen] = useState(false);
 
   // alt-text state (kept in sync with the media row by URL)
   const [altText, setAltText] = useState("");
@@ -156,19 +154,11 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
           />
           <button
             type="button"
-            onClick={() => setGalleryOpen(true)}
-            disabled={busy}
-            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
-          >
-            Select from Gallery
-          </button>
-          <button
-            type="button"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
             className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
           >
-            {busy ? "Optimizing…" : value ? "Replace" : "Upload new"}
+            {busy ? "Optimizing…" : value ? "Replace" : "Upload"}
           </button>
           {value && !busy && (
             <button
@@ -252,13 +242,6 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
           </div>
         </div>
       )}
-
-      <ImageInsertDialog
-        open={galleryOpen}
-        title="Select from Gallery"
-        onClose={() => setGalleryOpen(false)}
-        onPick={(url) => onChange(url)}
-      />
     </div>
   );
 }

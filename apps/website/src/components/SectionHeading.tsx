@@ -10,7 +10,7 @@ type Props = {
 
 export default function SectionHeading({ eyebrow, title, desc, descHtml }: Props) {
   return (
-    <div className="mx-auto mb-10 max-w-2xl text-center">
+    <div className="mx-auto mb-14 max-w-2xl text-center">
       <Reveal>
         <span className="eyebrow">{eyebrow}</span>
       </Reveal>

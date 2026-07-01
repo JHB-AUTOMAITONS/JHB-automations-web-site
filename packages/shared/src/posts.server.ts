@@ -1,38 +1,20 @@
 import { createClient } from "./supabase/server";
-import type { BlogFaq, Post, PostCard } from "./posts";
+import type { Post, PostCard } from "./posts";
 
 const CARD_COLS =
   "id, slug, title, excerpt, cover_image, category, author, published_at";
 
-// Normalize a raw jhb_posts row into a fully-shaped Post. The faqs columns are
-// added by a later migration, so `select("*")` may not return them on older
-// databases — default them here so reads never break before the migration runs.
-function normalizePost(row: unknown): Post {
-  const r = row as Post & { likes?: number; faqs?: BlogFaq[]; faqs_enabled?: boolean };
-  return {
-    ...r,
-    likes: r.likes ?? 0,
-    faqs: Array.isArray(r.faqs) ? r.faqs : [],
-    faqs_enabled: r.faqs_enabled !== false,
-  };
-}
-
 export async function getPublishedPosts(limit?: number): Promise<PostCard[]> {
   try {
     const supabase = await createClient();
-    const build = (cols: string) => {
-      let q = supabase
-        .from("jhb_posts")
-        .select(cols)
-        .eq("status", "published")
-        .order("published_at", { ascending: false });
-      if (limit) q = q.limit(limit);
-      return q;
-    };
-    // Try with the likes column; fall back gracefully until the migration runs.
-    let { data, error } = await build(`${CARD_COLS}, likes`);
-    if (error) ({ data } = await build(CARD_COLS));
-    return ((data as unknown as PostCard[]) ?? []).map((p) => ({ ...p, likes: p.likes ?? 0 }));
+    let q = supabase
+      .from("jhb_posts")
+      .select(CARD_COLS)
+      .eq("status", "published")
+      .order("published_at", { ascending: false });
+    if (limit) q = q.limit(limit);
+    const { data } = await q;
+    return (data as PostCard[]) ?? [];
   } catch {
     return [];
   }
@@ -47,7 +29,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
       .eq("slug", slug)
       .eq("status", "published")
       .maybeSingle();
-    return data ? normalizePost(data) : null;
+    return (data as Post) ?? null;
   } catch {
     return null;
   }
@@ -61,20 +43,16 @@ export async function getRelatedPosts(
   try {
     const supabase = await createClient();
     const fetchPosts = async (cat: string | null) => {
-      const build = (cols: string) => {
-        let q = supabase
-          .from("jhb_posts")
-          .select(cols)
-          .eq("status", "published")
-          .neq("slug", slug)
-          .order("published_at", { ascending: false })
-          .limit(limit);
-        if (cat) q = q.eq("category", cat);
-        return q;
-      };
-      let { data, error } = await build(`${CARD_COLS}, likes`);
-      if (error) ({ data } = await build(CARD_COLS));
-      return ((data as unknown as PostCard[]) ?? []).map((p) => ({ ...p, likes: p.likes ?? 0 }));
+      let q = supabase
+        .from("jhb_posts")
+        .select(CARD_COLS)
+        .eq("status", "published")
+        .neq("slug", slug)
+        .order("published_at", { ascending: false })
+        .limit(limit);
+      if (cat) q = q.eq("category", cat);
+      const { data } = await q;
+      return (data as PostCard[]) ?? [];
     };
 
     // Prefer same-category posts; fall back to most recent if not enough.
@@ -114,7 +92,7 @@ export async function getAllPostsAdmin(): Promise<Post[]> {
     .from("jhb_posts")
     .select("*")
     .order("updated_at", { ascending: false });
-  return ((data as Post[]) ?? []).map(normalizePost);
+  return (data as Post[]) ?? [];
 }
 
 export async function getPostByIdAdmin(id: string): Promise<Post | null> {
@@ -124,5 +102,5 @@ export async function getPostByIdAdmin(id: string): Promise<Post | null> {
     .select("*")
     .eq("id", id)
     .maybeSingle();
-  return data ? normalizePost(data) : null;
+  return (data as Post) ?? null;
 }

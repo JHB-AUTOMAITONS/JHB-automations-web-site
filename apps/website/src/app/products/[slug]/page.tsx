@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
-import { getSettings } from "@jhb/shared/content-server";
 import { faqPlainText } from "@jhb/shared/faqs";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
-import PageContainers from "@/components/PageContainers";
-import SmartLink from "@/components/SmartLink";
 
 // Pre-render products that have a real detail page (no external href).
 export async function generateStaticParams() {
@@ -54,7 +50,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [p, settings] = await Promise.all([getProductBySlug(slug), getSettings()]);
+  const p = await getProductBySlug(slug);
   if (!p || p.status !== "published") notFound();
   // Products that link to an existing page/URL just redirect there.
   if (p.href && p.href.trim()) redirect(p.href.trim());
@@ -96,22 +92,20 @@ export default async function ProductPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
 
-      <main className="relative pt-24">
+      <main className="relative pt-28">
         <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
-
-        <PageContainers containers={p.containers ?? []} zone="top" />
 
         {/* ---- Hero ---- */}
         <section className="container-x">
           <nav className="flex items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
-            <Link href="/" className="hover:text-ink">Home</Link>
+            <a href="/" className="hover:text-ink">Home</a>
             <span>/</span>
             <span className="text-primary">JHB Products</span>
             <span>/</span>
             <span className="text-ink">{p.title}</span>
           </nav>
 
-          <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
+          <div className="mt-8 grid items-center gap-10 lg:grid-cols-2">
             <div>
               <Reveal>
                 <span className="eyebrow">JHB Product</span>
@@ -132,13 +126,13 @@ export default async function ProductPage({
               )}
               <Reveal delay={0.18}>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href="/#contact" className="btn btn-primary !px-7 !py-3.5">
+                  <a href="/#contact" className="btn btn-primary !px-7 !py-3.5">
                     Book a Free Demo
                     <span aria-hidden>→</span>
-                  </Link>
-                  <Link href={`/products/${p.slug}/about`} className="btn btn-ghost !px-7 !py-3.5">
+                  </a>
+                  <a href={`/products/${p.slug}/about`} className="btn btn-ghost !px-7 !py-3.5">
                     About {p.title}
-                  </Link>
+                  </a>
                 </div>
               </Reveal>
             </div>
@@ -153,11 +147,9 @@ export default async function ProductPage({
           </div>
         </section>
 
-        <PageContainers containers={p.containers ?? []} zone="after-hero" />
-
         {/* ---- Overview ---- */}
         {p.overview && (
-          <section className="container-x mt-16">
+          <section className="container-x mt-24">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal>
                 <span className="eyebrow">Overview</span>
@@ -177,11 +169,9 @@ export default async function ProductPage({
           </section>
         )}
 
-        <PageContainers containers={p.containers ?? []} zone="after-overview" />
-
         {/* ---- Feature sections (Features, Loan Types, Staff, GPS, Reports…) ---- */}
         {p.sections.map((sec) => (
-          <section key={sec.title} className="container-x mt-16">
+          <section key={sec.title} className="container-x mt-24">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal>
                 <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
@@ -194,24 +184,16 @@ export default async function ProductPage({
                 </Reveal>
               )}
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {sec.items.map((it, i) => (
                 <Reveal key={it.title} delay={(i % 3) * 0.06}>
                   <div className="glass glow-border flex h-full items-start gap-4 rounded-2xl p-6">
                     <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
                       {i + 1}
                     </span>
-                    <div className="min-w-0">
-                      <div
-                        role="heading"
-                        aria-level={3}
-                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
-                        dangerouslySetInnerHTML={{ __html: it.title }}
-                      />
-                      <div
-                        className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: it.desc }}
-                      />
+                    <div>
+                      <h3 className="font-display text-lg font-semibold">{it.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted">{it.desc}</p>
                     </div>
                   </div>
                 </Reveal>
@@ -220,11 +202,9 @@ export default async function ProductPage({
           </section>
         ))}
 
-        <PageContainers containers={p.containers ?? []} zone="after-sections" />
-
         {/* ---- Pricing ---- */}
         {p.pricing.length > 0 && (
-          <section id="pricing" className="container-x mt-16 scroll-mt-28">
+          <section id="pricing" className="container-x mt-24 scroll-mt-28">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal>
                 <span className="eyebrow">Pricing</span>
@@ -235,7 +215,7 @@ export default async function ProductPage({
                 </h2>
               </Reveal>
             </div>
-            <div className="mt-10 grid items-stretch gap-5 lg:grid-cols-3">
+            <div className="mt-12 grid items-stretch gap-5 lg:grid-cols-3">
               {p.pricing.map((plan, i) => (
                 <Reveal key={plan.name} delay={(i % 3) * 0.06}>
                   <div className={`flex h-full flex-col rounded-3xl border p-7 shadow-soft ${plan.highlighted ? "border-primary bg-gradient-to-br from-primary/10 to-secondary/10 shadow-glow" : "border-ink/10 bg-surface"}`}>
@@ -257,9 +237,9 @@ export default async function ProductPage({
                         </li>
                       ))}
                     </ul>
-                    <SmartLink href={plan.ctaHref || "/#contact"} className={`mt-6 ${plan.highlighted ? "btn btn-primary" : "btn btn-ghost"} w-full`}>
+                    <a href={plan.ctaHref || "/#contact"} className={`mt-6 ${plan.highlighted ? "btn btn-primary" : "btn btn-ghost"} w-full`}>
                       {plan.ctaLabel || "Get Started"}
-                    </SmartLink>
+                    </a>
                   </div>
                 </Reveal>
               ))}
@@ -267,20 +247,16 @@ export default async function ProductPage({
           </section>
         )}
 
-        <PageContainers containers={p.containers ?? []} zone="after-pricing" />
-
         {/* ---- FAQ ---- */}
         {p.faqs.length > 0 && (
-          <div className="mt-16">
-            <FaqAccordion items={p.faqs} showNumbers={settings.faqShowNumbers} />
+          <div className="mt-24">
+            <FaqAccordion items={p.faqs} />
           </div>
         )}
 
-        <PageContainers containers={p.containers ?? []} zone="after-faq" />
-
         {/* ---- CTA ---- */}
-        <section className="container-x my-16">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-10 text-center shadow-soft sm:px-12">
+        <section className="container-x my-24">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-14 text-center shadow-soft sm:px-12">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]" />
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
               Ready to try <span className="grad-text">{p.title}</span>?
@@ -288,14 +264,12 @@ export default async function ProductPage({
             <p className="mx-auto mt-4 max-w-xl text-muted">
               Book a free demo and we&apos;ll show you how {p.title} fits your business.
             </p>
-            <Link href="/#contact" className="btn btn-primary mt-8 !px-7 !py-3.5">
+            <a href="/#contact" className="btn btn-primary mt-8 !px-7 !py-3.5">
               Book a Free Demo
               <span aria-hidden>→</span>
-            </Link>
+            </a>
           </div>
         </section>
-
-        <PageContainers containers={p.containers ?? []} zone="bottom" />
       </main>
     </>
   );

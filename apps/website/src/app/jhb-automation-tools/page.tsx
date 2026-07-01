@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getToolsHub } from "@jhb/shared/tools-hub-server";
 import { getMediaAltMap } from "@jhb/shared/media-server";
-import { getSettings } from "@jhb/shared/content-server";
 import { altFor } from "@jhb/shared/media";
 import ToolsHubView from "@/components/ToolsHubView";
 
@@ -23,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function JhbAutomationToolsPage() {
-  const [hub, altMap, settings] = await Promise.all([getToolsHub(), getMediaAltMap(), getSettings()]);
+  const [hub, altMap] = await Promise.all([getToolsHub(), getMediaAltMap()]);
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const heroImageAlt = altFor(hub.hero.image, altMap, hub.hero.heading);
 
@@ -52,7 +51,7 @@ export default async function JhbAutomationToolsPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {/* FAQPage schema is emitted by FaqAccordion inside ToolsHubView */}
-      <ToolsHubView hub={hub} heroImageAlt={heroImageAlt} faqShowNumbers={settings.faqShowNumbers} />
+      <ToolsHubView hub={hub} heroImageAlt={heroImageAlt} />
     </>
   );
 }

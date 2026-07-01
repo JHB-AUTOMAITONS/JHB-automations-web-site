@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
-import { getSettings, getLegal, getAuthorPublisherDoc } from "@jhb/shared/content-server";
+import { getSettings } from "@jhb/shared/content-server";
 import { getServiceLinks } from "@jhb/shared/services-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
 import { productHref } from "@jhb/shared/products";
@@ -72,39 +72,29 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, serviceLinks, products, legal, authorPublisher] = await Promise.all([
+  const [settings, serviceLinks, products] = await Promise.all([
     getSettings(),
     getServiceLinks(),
     getPublishedProducts(),
-    getLegal(),
-    getAuthorPublisherDoc(),
   ]);
-  const pub = authorPublisher.global.publisher;
   const productLinks = products.map((p) => ({
     label: p.title,
     href: productHref(p),
     icon: "spark",
   }));
-  // Fixed routes; the slug field only feeds each page's canonical URL.
-  const legalLinks = [
-    legal.privacy.enabled ? { label: legal.privacy.title, href: "/privacy-policy" } : null,
-    legal.terms.enabled ? { label: legal.terms.title, href: "/terms-and-conditions" } : null,
-  ].filter(Boolean) as { label: string; href: string }[];
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const sameAs = [settings.instagram, settings.facebook, settings.linkedin].filter(
     (u) => u && u !== "#"
   );
 
-  // Publisher (Organization) — global Author & Publisher SEO settings enrich the
-  // sitewide Organization node (E-E-A-T) with sensible fallbacks to site settings.
   const orgSchema = {
     "@context": "https://schema.org",
-    "@type": pub.orgType || "Organization",
-    name: pub.name || settings.companyName || "JHB Automations",
-    url: pub.website || site,
-    logo: pub.logo || (/^https?:\/\//.test(settings.branding?.headerLogo || "") ? settings.branding.headerLogo : `${site}/logo.png`),
-    description: pub.description || settings.tagline,
+    "@type": "Organization",
+    name: settings.companyName || "JHB Automations",
+    url: site,
+    logo: /^https?:\/\//.test(settings.branding?.headerLogo || "") ? settings.branding.headerLogo : `${site}/logo.png`,
+    description: settings.tagline,
     email: settings.email,
     telephone: settings.phone,
     sameAs,
@@ -128,17 +118,6 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans antialiased">
-        {/* Web fonts offered by the admin Rich Text Editor font-family dropdown,
-            loaded so published content renders the same face the editor previews.
-            React 19 hoists these <link>s into <head>. Keep in sync with
-            apps/admin/src/components/editorFonts.ts (web: true). */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          precedence="default"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;700&family=Ubuntu:wght@400;500;700&display=swap"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
@@ -147,7 +126,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
-        <SiteChrome settings={settings} serviceLinks={serviceLinks} productLinks={productLinks} legalLinks={legalLinks}>
+        <SiteChrome settings={settings} serviceLinks={serviceLinks} productLinks={productLinks}>
           {children}
         </SiteChrome>
       </body>

@@ -22,26 +22,6 @@ export default async function AdminVasoolApp() {
     );
   }
 
-  const [productsResult, internalPages, draftRow] = await Promise.all([
-    getProducts(),
-    getInternalPages(),
-    supabase.from("jhb_content").select("data").eq("key", "products_draft").maybeSingle(),
-  ]);
-
-  const hasDraft = !!draftRow.data?.data;
-  const initialStatus: "draft" | "published" = hasDraft ? "draft" : "published";
-
-  const items = hasDraft
-    ? ((draftRow.data!.data as { items?: unknown[] }).items ?? productsResult.items)
-    : productsResult.items;
-
-  return (
-    <ProductsManager
-      initial={items as typeof productsResult.items}
-      internalPages={internalPages}
-      focusSlug="vasool-app"
-      section="product"
-      initialStatus={initialStatus}
-    />
-  );
+  const [{ items }, internalPages] = await Promise.all([getProducts(), getInternalPages()]);
+  return <ProductsManager initial={items} internalPages={internalPages} focusSlug="vasool-app" section="product" />;
 }

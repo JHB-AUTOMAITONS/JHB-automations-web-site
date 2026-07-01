@@ -60,59 +60,37 @@ export async function getImageMedia(): Promise<MediaImage[]> {
 }
 
 // Admin: full Media Library — images + where each is used across the site.
-// "Used in" is computed generically: every content source is reduced to a chunk
-// of text (its raw value or JSON), and an image is "used" by that source if its
-// public URL appears in it. This catches embedded blog images, hero/founder/about
-// images, service & product images, logos, etc. without hardcoding every field.
 export async function getMediaLibrary(): Promise<MediaLibraryItem[]> {
   try {
     const supabase = await createClient();
-    const [media, posts, home, content, services, tts, logos, settings] = await Promise.all([
+    const [media, posts, tts, home] = await Promise.all([
       supabase.from("jhb_media").select(IMG_COLS).like("mime", "image/%").order("created_at", { ascending: false }),
-      supabase.from("jhb_posts").select("cover_image, content_html"),
+      supabase.from("jhb_posts").select("title, cover_image"),
+      supabase.from("jhb_testimonials").select("name, photo_url"),
       supabase.from("jhb_home").select("data"),
-      supabase.from("jhb_content").select("key, data"),
-      supabase.from("jhb_services").select("*"),
-      supabase.from("jhb_testimonials").select("photo_url"),
-      supabase.from("jhb_client_logos").select("data"),
-      supabase.from("jhb_settings").select("key, data"),
     ]);
 
-    // Labelled text blobs in which an image URL may appear.
-    const sources: { label: string; text: string }[] = [];
-    const push = (label: string, v: unknown) => {
-      if (v == null) return;
-      const text = typeof v === "string" ? v : JSON.stringify(v);
-      if (text) sources.push({ label, text });
+    const usage = new Map<string, string[]>();
+    const add = (url: string | null | undefined, label: string) => {
+      if (!url) return;
+      const list = usage.get(url) ?? [];
+      if (!list.includes(label)) list.push(label);
+      usage.set(url, list);
     };
-
-    for (const p of (posts.data ?? []) as { cover_image: string | null; content_html: string | null }[]) {
-      push("Blog", p.cover_image); // featured / cover image
-      push("Blog Article", p.content_html); // images embedded in the article body
+    for (const p of (posts.data ?? []) as { title: string; cover_image: string | null }[]) {
+      add(p.cover_image, `Blog: ${p.title}`);
     }
-    for (const h of (home.data ?? []) as { data: unknown }[]) push("Home", h.data);
-    for (const c of (content.data ?? []) as { key: string; data: unknown }[]) {
-      const key = (c.key || "").toLowerCase();
-      if (key.includes("about")) push("About", c.data);
-      else if (key.includes("product")) {
-        // Split JHB Products vs Vasool per product item.
-        const items = (c.data as { items?: { slug?: string }[] } | null)?.items ?? [];
-        for (const it of items) push(it.slug === "vasool-app" ? "Vasool" : "JHB Products", it);
-        if (items.length === 0) push("JHB Products", c.data);
-      } else if (key.includes("tool")) push("JHB Products", c.data);
-      else if (key.includes("partner")) push("Home", c.data);
-      else push("Other", c.data);
+    for (const t of (tts.data ?? []) as { name: string; photo_url: string | null }[]) {
+      add(t.photo_url, `Testimonial: ${t.name}`);
     }
-    push("Services", services.data);
-    for (const t of (tts.data ?? []) as { photo_url: string | null }[]) push("Testimonials", t.photo_url);
-    for (const l of (logos.data ?? []) as { data: unknown }[]) push("Logos", l.data);
-    for (const s of (settings.data ?? []) as { data: unknown }[]) push("Logos", s.data); // branding logos / favicon
+    for (const h of (home.data ?? []) as { data: { hero?: { image?: string | null } } }[]) {
+      add(h.data?.hero?.image, "Hero / Banner");
+    }
 
-    return ((media.data as MediaImage[]) ?? []).map((m) => {
-      const labels = new Set<string>();
-      for (const s of sources) if (s.text.includes(m.url)) labels.add(s.label);
-      return { ...m, used_in: labels.size ? Array.from(labels).join(", ") : "Unused" };
-    });
+    return ((media.data as MediaImage[]) ?? []).map((m) => ({
+      ...m,
+      used_in: usage.get(m.url)?.join(", ") || "Unused",
+    }));
   } catch {
     return [];
   }

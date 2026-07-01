@@ -54,23 +54,7 @@ const fallbackCards: Card[] = testimonials.map((t) => ({
   accent: t.accent,
 }));
 
-export default function Testimonials({
-  items,
-  eyebrow = "Social Proof",
-  headingLead = "Trusted by",
-  headingHighlight = "Ambitious Teams",
-  description = "Real businesses. Real automation. Real growth. Hover any card to pause and read.",
-  ratingValue = "4.9/5",
-  ratingText = "from 200+ happy clients",
-}: {
-  items?: TestimonialRow[];
-  eyebrow?: string;
-  headingLead?: string;
-  headingHighlight?: string;
-  description?: string;
-  ratingValue?: string;
-  ratingText?: string;
-}) {
+export default function Testimonials({ items }: { items?: TestimonialRow[] }) {
   // Use DB testimonials when available; otherwise the built-in fallback set.
   const cards: Card[] =
     items && items.length > 0 ? items.map((r, i) => rowToCard(r, i)) : fallbackCards;
@@ -82,7 +66,7 @@ export default function Testimonials({
   return (
     <section
       id="testimonials"
-      className="relative overflow-hidden py-12 sm:py-16"
+      className="relative overflow-hidden py-16 sm:py-24"
     >
       {/* glowing background */}
       <div className="pointer-events-none absolute left-1/4 top-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[150px]" />
@@ -120,14 +104,13 @@ export default function Testimonials({
 
       <div className="container-x">
         <SectionHeading
-          eyebrow={eyebrow}
+          eyebrow="Social Proof"
           title={
             <>
-              {headingLead}{headingLead && headingHighlight ? " " : ""}
-              {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
+              Trusted by <span className="grad-text">Ambitious Teams</span>
             </>
           }
-          desc={description}
+          desc="Real businesses. Real automation. Real growth. Hover any card to pause and read."
         />
       </div>
 
@@ -142,23 +125,20 @@ export default function Testimonials({
       </div>
 
       {/* rating summary */}
-      {(ratingValue || ratingText) && (
-        <div className="container-x mt-10">
-          <div className="glass glow-border mx-auto flex max-w-md items-center justify-center gap-4 rounded-2xl px-6 py-4">
-            <div className="flex text-accent">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i}>★</span>
-              ))}
-            </div>
-            <p className="text-sm text-muted">
-              {ratingValue && (
-                <span className="font-display font-bold text-ink">{ratingValue}</span>
-              )}{" "}
-              {ratingText}
-            </p>
+      <div className="container-x mt-10">
+        <div className="glass glow-border mx-auto flex max-w-md items-center justify-center gap-4 rounded-2xl px-6 py-4">
+          <div className="flex text-accent">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i}>★</span>
+            ))}
           </div>
+          <p className="text-sm text-muted">
+            <span className="font-display font-bold text-ink">4.9/5</span> from{" "}
+            <span className="font-display font-bold text-ink">200+</span>{" "}
+            happy clients
+          </p>
         </div>
-      )}
+      </div>
     </section>
   );
 }

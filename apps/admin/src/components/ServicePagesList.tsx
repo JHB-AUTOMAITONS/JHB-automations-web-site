@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ServicePageSummary } from "@jhb/shared/service-pages";
 import {
+  setServicePageStatus,
   duplicateServicePage,
   resetServicePage,
 } from "@/app/actions";
@@ -90,6 +91,18 @@ export default function ServicePagesList({ items }: { items: ServicePageSummary[
                 >
                   Preview ↗
                 </a>
+                <button
+                  onClick={() =>
+                    run(
+                      () => setServicePageStatus(s.key, s.status === "published" ? "draft" : "published"),
+                      s.status === "published" ? "Unpublished." : "Published."
+                    )
+                  }
+                  disabled={busy}
+                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary disabled:opacity-60"
+                >
+                  {s.status === "published" ? "Unpublish" : "Publish"}
+                </button>
                 <button
                   onClick={() => {
                     setDupFrom(s);

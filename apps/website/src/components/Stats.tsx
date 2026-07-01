@@ -6,27 +6,20 @@ import { STATS_DEFAULT, type StatItem as StatItemType } from "@jhb/shared/conten
 
 export default function Stats({
   items = STATS_DEFAULT.items,
-  eyebrow = "Why Choose Us",
-  headingLead = "Numbers That",
-  headingHighlight = "Speak",
 }: {
   items?: StatItemType[];
-  eyebrow?: string;
-  headingLead?: string;
-  headingHighlight?: string;
 }) {
   return (
-    <section id="stats" className="relative py-12">
+    <section id="stats" className="relative py-16">
       <div className="container-x">
-        <div className="glass-strong glow-border relative overflow-hidden rounded-3xl px-6 py-10 sm:px-12">
+        <div className="glass-strong glow-border relative overflow-hidden rounded-3xl px-6 py-14 sm:px-12">
           <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
 
-          <div className="relative mb-10 text-center">
-            {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+          <div className="relative mb-12 text-center">
+            <span className="eyebrow">Why Choose Us</span>
             <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
-              {headingLead}{headingLead && headingHighlight ? " " : ""}
-              {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
+              Numbers That <span className="grad-text">Speak</span>
             </h2>
           </div>
 

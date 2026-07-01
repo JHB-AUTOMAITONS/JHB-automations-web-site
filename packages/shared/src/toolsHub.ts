@@ -1,8 +1,6 @@
 // "JHB Automation Tools" hub — client-safe types + seeded defaults.
 // The whole hub is one editable document stored in jhb_content ("tools_hub").
 
-import type { PageContainer } from "./containers";
-
 export type ToolCategory = {
   id: string;
   title: string;
@@ -35,30 +33,12 @@ export type ToolsHub = {
   benefits: HubBenefit[];
   faqs: ToolsHubFaq[];
   cta: { heading: string; text: string; buttonLabel: string; buttonHref: string };
-  // Editable section labels (eyebrows + split headings) for the hub's native
-  // sections. The body content lives in the fields above; these are the chrome.
-  sections: {
-    categoriesEyebrow: string;
-    categoriesHeadingLead: string;
-    categoriesHeadingHighlight: string;
-    crmEyebrow: string; // CRM section eyebrow ("Flagship Tool")
-    crmWorkflowHeading: string;
-    crmBenefitsHeading: string;
-    benefitsEyebrow: string;
-    benefitsHeadingLead: string;
-    benefitsHeadingHighlight: string;
-    otherToolsEyebrow: string;
-    otherToolsHeadingLead: string;
-    otherToolsHeadingHighlight: string;
-  };
   seo: {
     metaTitle: string;
     metaDescription: string;
     ogTitle: string;
     ogDescription: string;
   };
-  // Page-builder containers inserted between the hub page's native sections.
-  containers?: PageContainer[];
 };
 
 export const TOOLS_HUB_DEFAULT: ToolsHub = {
@@ -138,20 +118,6 @@ export const TOOLS_HUB_DEFAULT: ToolsHub = {
     buttonLabel: "Contact Us",
     buttonHref: "/#contact",
   },
-  sections: {
-    categoriesEyebrow: "Tool Categories",
-    categoriesHeadingLead: "Our",
-    categoriesHeadingHighlight: "automation suite",
-    crmEyebrow: "Flagship Tool",
-    crmWorkflowHeading: "CRM Workflow Process",
-    crmBenefitsHeading: "Key CRM Benefits",
-    benefitsEyebrow: "Why Automate",
-    benefitsHeadingLead: "Benefits of",
-    benefitsHeadingHighlight: "business automation",
-    otherToolsEyebrow: "More Tools",
-    otherToolsHeadingLead: "Other",
-    otherToolsHeadingHighlight: "automation tools",
-  },
   seo: {
     metaTitle: "JHB Automation Tools — CRM, Lead Management & Workflow Automation",
     metaDescription:
@@ -160,5 +126,4 @@ export const TOOLS_HUB_DEFAULT: ToolsHub = {
     ogDescription:
       "CRM, lead management, marketing, WhatsApp, workflow and AI automation tools to centralise customers, automate follow-ups and grow your business.",
   },
-  containers: [],
 };

@@ -4,34 +4,21 @@ import SectionHeading from "./SectionHeading";
 import PostCard from "./PostCard";
 import { getPublishedPosts } from "@jhb/shared/posts-server";
 
-export default async function BlogPreview({
-  eyebrow = "Insights",
-  headingLead = "Latest From the",
-  headingHighlight = "Blog",
-  description = "Practical tips on AI automation, marketing and growing your business.",
-  viewAllText = "View All Blogs",
-}: {
-  eyebrow?: string;
-  headingLead?: string;
-  headingHighlight?: string;
-  description?: string;
-  viewAllText?: string;
-} = {}) {
+export default async function BlogPreview() {
   const posts = await getPublishedPosts(3);
   if (posts.length === 0) return null;
 
   return (
-    <section id="blog" className="relative py-12 sm:py-16">
+    <section id="blog" className="relative py-16 sm:py-24">
       <div className="container-x">
         <SectionHeading
-          eyebrow={eyebrow}
+          eyebrow="Insights"
           title={
             <>
-              {headingLead}{headingLead && headingHighlight ? " " : ""}
-              {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
+              Latest From the <span className="grad-text">Blog</span>
             </>
           }
-          desc={description}
+          desc="Practical tips on AI automation, marketing and growing your business."
         />
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -42,9 +29,9 @@ export default async function BlogPreview({
           ))}
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-12 text-center">
           <Link href="/blog" className="btn btn-primary">
-            {viewAllText} <span aria-hidden>→</span>
+            View All Blogs <span aria-hidden>→</span>
           </Link>
         </div>
       </div>

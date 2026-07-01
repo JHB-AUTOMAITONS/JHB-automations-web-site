@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import {
+  WHY_CHOOSE_ICONS,
   type WhyChooseBenefit,
   type WhyChooseContainer,
 } from "@jhb/shared/service-pages";
+import ImagePicker from "./ImagePicker";
 
 const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -13,7 +15,10 @@ const uid = () =>
 
 const newBenefit = (): WhyChooseBenefit => ({
   id: uid(),
+  icon: "",
+  image: null,
   title: "",
+  desc: "",
   enabled: true,
 });
 
@@ -175,6 +180,18 @@ export default function WhyChooseEditor({
               {c.benefits.map((b, bi) => (
                 <div key={b.id} className={`rounded-xl border border-ink/10 bg-surface p-3 ${!b.enabled ? "opacity-70" : ""}`}>
                   <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={b.icon}
+                      onChange={(e) => setBenefit(ci, bi, { icon: e.target.value })}
+                      disabled={!!b.image}
+                      title={b.image ? "Overridden by image" : "Icon (✓ badge if none)"}
+                      className="rounded-lg border border-ink/10 bg-base px-2 py-1.5 text-xs outline-none focus:border-primary disabled:opacity-50"
+                    >
+                      <option value="">✓ (default)</option>
+                      {WHY_CHOOSE_ICONS.map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
                     <input value={b.title} onChange={(e) => setBenefit(ci, bi, { title: e.target.value })} placeholder="Benefit title" className="min-w-[10rem] flex-1 rounded-lg border border-ink/10 bg-base px-3 py-1.5 text-sm outline-none focus:border-primary" />
                     <div className="flex items-center gap-1">
                       <button type="button" onClick={() => setBenefit(ci, bi, { enabled: !b.enabled })} className="rounded-lg border border-ink/10 px-2 py-1 text-xs" title={b.enabled ? "Enabled" : "Disabled"}>{b.enabled ? "On" : "Off"}</button>
@@ -182,6 +199,15 @@ export default function WhyChooseEditor({
                       <button type="button" onClick={() => moveBenefit(ci, bi, bi + 1)} disabled={bi === c.benefits.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
                       <button type="button" onClick={() => removeBenefit(ci, bi)} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500 hover:bg-red-50">✕</button>
                     </div>
+                  </div>
+                  <input value={b.desc} onChange={(e) => setBenefit(ci, bi, { desc: e.target.value })} placeholder="Optional description" className="mt-2 w-full rounded-lg border border-ink/10 bg-base px-3 py-1.5 text-xs outline-none focus:border-primary" />
+                  <div className="mt-2">
+                    <ImagePicker
+                      label="Icon image (optional — overrides the icon)"
+                      value={b.image}
+                      onChange={(url) => setBenefit(ci, bi, { image: url || null })}
+                      alt={false}
+                    />
                   </div>
                 </div>
               ))}

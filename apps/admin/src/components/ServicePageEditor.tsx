@@ -2,27 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   extractHrefs,
-  seedRelatedServices,
   type InternalPage,
-  type RelatedServicesContent,
   type ServicePage,
   type ServicePagePayload,
   type ServiceStatus,
 } from "@jhb/shared/service-pages";
-import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
+import { saveServicePage, checkServiceLinks } from "@/app/actions";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import LocalDateTime from "./LocalDateTime";
 import WhatsIncludedEditor from "./WhatsIncludedEditor";
 import WhyChooseEditor from "./WhyChooseEditor";
-import RelatedServicesEditor, { type ServiceSummary } from "./RelatedServicesEditor";
 import { usePageContainers } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
-import { RelatedServicesView } from "@jhb/shared/related-services-view";
-import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import EditorHeader from "./EditorHeader";
 import AiSeoPanel from "./ai/AiSeoPanel";
 import AuthorPublisherEditor from "./AuthorPublisherEditor";
@@ -63,11 +57,9 @@ const finalizeSlug = (s: string) => normalizeSlugInput(s).replace(/-+$/g, "");
 export default function ServicePageEditor({
   page,
   internalPages,
-  services = [],
 }: {
   page: ServicePage;
   internalPages: InternalPage[];
-  services?: ServiceSummary[];
 }) {
   const [form, setForm] = useState<ServicePagePayload>({
     slug: page.slug,
@@ -75,8 +67,6 @@ export default function ServicePageEditor({
     meta_description: page.meta_description,
     meta_keywords: page.meta_keywords,
     hero_heading: page.hero_heading,
-    hero_highlight: page.hero_highlight,
-    hero_tail: page.hero_tail,
     hero_description: page.hero_description,
     hero_link: page.hero_link,
     features: page.features,
@@ -93,20 +83,17 @@ export default function ServicePageEditor({
   });
   const cb = usePageContainers(page.containers, SERVICE_SECTIONS);
 
-  const router = useRouter();
-  const [busy, setBusy] = useState<"" | "save" | "publish">("");
-  // Live publish status (drives the status pill). Editing never changes it —
-  // only Publish does.
-  const [liveStatus, setLiveStatus] = useState<ServiceStatus>(page.status);
-  // Unpublished-changes flag — enables the Publish button. Seeded from the
-  // server (a draft newer than the published content, or a page not yet live).
-  const [dirty, setDirty] = useState<boolean>(page.pending_changes ?? page.status !== "published");
-  const [savedAt, setSavedAt] = useState<string | null>(page.draft_updated_at ?? page.content_updated_at);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(page.content_updated_at);
   const [toast, setToast] = useState<Toast>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [linkResults, setLinkResults] = useState<LinkResult[] | null>(null);
   const [checking, setChecking] = useState(false);
   const firstRender = useRef(true);
+  // Mirror `saving` in a ref so the debounced autosave can read it without a
+  // stale closure — it must never fire a second save while one is in flight
+  // (that race could overwrite a just-published row back to draft).
+  const savingRef = useRef(false);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -116,71 +103,33 @@ export default function ServicePageEditor({
   const set = <K extends keyof ServicePagePayload>(k: K, v: ServicePagePayload[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // Related Services section. The server seeds chrome.related (migrating the old
-  // auto cards); this fallback only guards an older row that somehow lacks it.
-  const relatedFallback = useMemo(
-    () =>
-      seedRelatedServices({
-        currentKey: page.key,
-        chrome: form.chrome,
-        services: services.map((s) => ({ key: s.key, title: s.title, icon: s.icon })),
-      }),
-    // Seed once; edits flow through chrome.related thereafter.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [page.key],
-  );
-  const related: RelatedServicesContent = form.chrome.related ?? relatedFallback;
-  const setRelated = (v: RelatedServicesContent) => set("chrome", { ...form.chrome, related: v });
-  const serviceUrlByKey = useMemo(
-    () => Object.fromEntries(services.map((s) => [s.key, `/${s.slug}`])),
-    [services],
-  );
-
-  const draftPayload = (): ServicePagePayload => ({ ...form, status: liveStatus, containers: cb.containers });
-
-  // Save Draft — persists the working draft only; the live page is untouched.
-  // Unpublished changes remain, so Publish stays enabled.
-  const saveDraft = async () => {
-    setBusy("save");
-    const res = await saveServicePage(page.key, draftPayload());
-    setBusy("");
+  const save = async (status?: ServiceStatus) => {
+    setSaving(true);
+    savingRef.current = true;
+    const payload: ServicePagePayload = { ...form, status: status ?? form.status, containers: cb.containers };
+    const res = await saveServicePage(page.key, payload);
+    setSaving(false);
+    savingRef.current = false;
     if (res.ok) {
       setSavedAt(res.savedAt ?? new Date().toISOString());
-      flash({ type: "success", msg: "Draft saved." });
-      router.refresh();
+      if (status) set("status", status);
     } else flash({ type: "error", msg: res.error || "Save failed." });
+    return res.ok;
   };
 
-  // Publish — save the latest draft, then promote it to the live page (mirrors
-  // the Home page: saveHomeDraft → publishHome). Disables Publish until the next edit.
-  const publish = async () => {
-    setBusy("publish");
-    const saveRes = await saveServicePage(page.key, draftPayload());
-    if (!saveRes.ok) {
-      setBusy("");
-      return flash({ type: "error", msg: saveRes.error || "Save failed." });
-    }
-    const res = await publishServicePage(page.key);
-    setBusy("");
-    if (res.ok) {
-      setSavedAt(res.publishedAt ?? new Date().toISOString());
-      setLiveStatus("published");
-      setDirty(false);
-      flash({ type: "success", msg: "Published! Live on the website." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Publish failed." });
-  };
-
-  // Any field/container edit marks the page as having unpublished changes (which
-  // re-enables Publish). Skips the initial mount; Save Draft / Publish never
-  // touch `form`/`cb.containers`, so they don't trip this.
+  // autosave (debounced) — skips the initial render. Watches `cb.containers`
+  // too, so inserting/editing/reordering/deleting a container is persisted (it
+  // lives in separate state from `form` and was previously never autosaved).
+  // Skips while a save is in flight to avoid a concurrent write race.
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    setDirty(true);
-    // Fire on any content/container change; the body intentionally reads neither.
+    const t = setTimeout(() => {
+      if (!savingRef.current) void save();
+    }, 1600);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, cb.containers]);
 
@@ -197,28 +146,12 @@ export default function ServicePageEditor({
     return internalPages.filter((p) => !linked.has(p.url)).slice(0, 6);
   }, [form.hero_description, internalPages]);
 
-  const savedLabel =
-    busy === "save" ? (
-      "Saving…"
-    ) : busy === "publish" ? (
-      "Publishing…"
-    ) : savedAt ? (
-      <LocalDateTime value={savedAt} mode="time" prefix="Saved " fallback="Saved" />
-    ) : (
-      "Not saved yet"
-    );
-
-  // Split hero heading preview — mirrors the live site (lead + gradient highlight
-  // + optional tail). Matches ServiceDetail: highlight set → split; else the
-  // whole heading stays gradient. Recomputed each render → instant preview.
-  const heroPreviewNode = form.hero_highlight ? (
-    <>
-      {form.hero_heading && <span>{form.hero_heading} </span>}
-      <span className="grad-text">{form.hero_highlight}</span>
-      {form.hero_tail && <span> {form.hero_tail}</span>}
-    </>
+  const savedLabel = saving ? (
+    "Saving…"
+  ) : savedAt ? (
+    <LocalDateTime value={savedAt} mode="time" prefix="Saved " fallback="Saved" />
   ) : (
-    <span className="grad-text">{form.hero_heading || page.title}</span>
+    "Not saved yet"
   );
 
   return (
@@ -229,13 +162,26 @@ export default function ServicePageEditor({
         title={page.title}
         backHref="/service-pages"
         backLabel="← Service Pages"
-        status={liveStatus}
-        busy={busy}
+        status={form.status}
+        busy={saving ? (form.status === "published" ? "publish" : "save") : ""}
         toast={toast}
-        onSave={saveDraft}
-        onPublish={publish}
-        publishDisabled={!dirty}
-        extra={<span className="text-xs text-muted">{savedLabel}</span>}
+        onSave={() => save()}
+        onPublish={() => save("published")}
+        extra={
+          <>
+            <span className="text-xs text-muted">{savedLabel}</span>
+            {form.status === "published" && (
+              <button
+                type="button"
+                onClick={() => save("draft")}
+                disabled={saving}
+                className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:text-ink disabled:opacity-60"
+              >
+                Unpublish
+              </button>
+            )}
+          </>
+        }
       />
 
       <div className="mt-6 grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_440px] xl:overflow-hidden">
@@ -292,20 +238,9 @@ export default function ServicePageEditor({
           {cb.slot("top")}
 
           <Section title="Hero">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Heading (Lead)">
-                <input value={form.hero_heading} onChange={(e) => set("hero_heading", e.target.value)} className="input" placeholder="What's" />
-              </Field>
-              <Field label="Heading (Highlight)">
-                <input value={form.hero_highlight} onChange={(e) => set("hero_highlight", e.target.value)} className="input" placeholder="Included" />
-              </Field>
-              <Field label="Heading (Tail)">
-                <input value={form.hero_tail} onChange={(e) => set("hero_tail", e.target.value)} className="input" placeholder="(optional)" />
-              </Field>
-            </div>
-            <p className="-mt-1 text-[11px] text-muted">
-              The <span className="grad-text font-semibold">Highlight</span> word automatically uses the brand gradient — no formatting needed. Leave Highlight empty to keep the whole heading gradient (legacy style).
-            </p>
+            <Field label="Hero heading">
+              <input value={form.hero_heading} onChange={(e) => set("hero_heading", e.target.value)} className="input" />
+            </Field>
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Hero description</span>
               <RichEditor
@@ -362,15 +297,6 @@ export default function ServicePageEditor({
 
           {cb.slot("after-features")}
 
-          <Section title="Related Services">
-            <RelatedServicesEditor
-              value={related}
-              onChange={setRelated}
-              services={services}
-              internalPages={internalPages}
-            />
-          </Section>
-
           <Section title="CTA section">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="CTA heading">
@@ -384,6 +310,15 @@ export default function ServicePageEditor({
               </Field>
               <Field label="Button URL">
                 <input value={form.cta.button_href} onChange={(e) => set("cta", { ...form.cta, button_href: e.target.value })} className="input" placeholder="/#contact" />
+              </Field>
+            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Related services heading</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Heading lead">
+                <input value={form.chrome.relatedHeadingLead} onChange={(e) => set("chrome", { ...form.chrome, relatedHeadingLead: e.target.value })} className="input" placeholder="Explore Related" />
+              </Field>
+              <Field label="Heading highlight (gradient)">
+                <input value={form.chrome.relatedHeadingHighlight} onChange={(e) => set("chrome", { ...form.chrome, relatedHeadingHighlight: e.target.value })} className="input" placeholder="Services" />
               </Field>
             </div>
           </Section>
@@ -454,9 +389,9 @@ export default function ServicePageEditor({
                   )}
                   <h2 className="font-display text-2xl font-bold">
                     {form.hero_link ? (
-                      <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
+                      <a href={form.hero_link} className="text-primary underline">{form.hero_heading || page.title}</a>
                     ) : (
-                      heroPreviewNode
+                      form.hero_heading || page.title
                     )}
                   </h2>
                   {form.hero_description && (
@@ -544,8 +479,13 @@ export default function ServicePageEditor({
                     </div>
                   )}
                   {form.faq.filter((q) => q.question).length > 0 && (
-                    <div className="mt-5">
-                      <FaqAccordionView items={form.faq} />
+                    <div className="mt-5 space-y-2">
+                      {form.faq.filter((q) => q.question).map((q, i) => (
+                        <div key={i} className="rounded-xl border border-ink/10 p-3">
+                          <p className="text-sm font-semibold">{q.question}</p>
+                          <div className="mt-1 text-xs text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4" dangerouslySetInnerHTML={{ __html: q.answer }} />
+                        </div>
+                      ))}
                     </div>
                   )}
                   <PageContainersView containers={cb.containers} zone="after-faq" />
@@ -580,18 +520,6 @@ export default function ServicePageEditor({
                     </div>
                   ))}
                   <PageContainersView containers={cb.containers} zone="after-whychoose" />
-                  {/* Related Services — the SAME shared renderer the live page uses,
-                      so the preview matches exactly and updates on every edit. */}
-                  {related.enabled && (
-                    <div
-                      className="mt-5"
-                      onClickCapture={(e) => {
-                        if ((e.target as HTMLElement).closest("a")) e.preventDefault();
-                      }}
-                    >
-                      <RelatedServicesView content={related} serviceUrlByKey={serviceUrlByKey} />
-                    </div>
-                  )}
                   <PageContainersView containers={cb.containers} zone="bottom" />
                 </div>
               </div>

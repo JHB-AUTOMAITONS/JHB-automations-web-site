@@ -3,8 +3,6 @@
 // content (overview, feature sections, pricing, FAQs) rendered by the reusable
 // /products/[slug] page — so new products are added from the admin, no code.
 
-import type { PageContainer } from "./containers";
-
 export type ProductFeature = { title: string; desc: string };
 export type ProductSection = { title: string; subtitle: string; items: ProductFeature[] };
 export type PricingPlan = {
@@ -39,8 +37,6 @@ export type ProductAbout = {
   ogTitle: string;
   ogDescription: string;
   canonical: string;
-  // Page-builder containers inserted between the About page's native sections.
-  containers?: PageContainer[];
 };
 
 export const ABOUT_DEFAULT: ProductAbout = {
@@ -62,7 +58,6 @@ export const ABOUT_DEFAULT: ProductAbout = {
   ogTitle: "",
   ogDescription: "",
   canonical: "",
-  containers: [],
 };
 
 export type Product = {
@@ -89,8 +84,6 @@ export type Product = {
   ogDescription: string;
   status: "draft" | "published";
   sortOrder: number;
-  // Page-builder containers inserted between the product page's native sections.
-  containers?: PageContainer[];
 };
 
 export type ProductsDoc = { items: Product[] };

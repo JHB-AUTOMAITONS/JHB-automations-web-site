@@ -20,9 +20,6 @@ dist/
 # misc
 .DS_Store
 *.pem
-
-# stray nested clone (its own git repo — not part of this project)
-claude-seo/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

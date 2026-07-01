@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
-import PostCard from "@/components/PostCard";
-import BlogHeroBanner from "@jhb/shared/blog-hero-view";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import BlogSearch from "@/components/BlogSearch";
 import { getPublishedPosts } from "@jhb/shared/posts-server";
-import { buildMetadata, getSettings, getBlogHero } from "@jhb/shared/content-server";
+import { buildMetadata } from "@jhb/shared/content-server";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/blog", {
@@ -14,32 +14,39 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogIndex() {
-  const [posts, settings, hero] = await Promise.all([
-    getPublishedPosts(),
-    getSettings(),
-    getBlogHero(),
-  ]);
+  const posts = await getPublishedPosts();
 
   return (
-    <main className="relative">
-      {/* Full-width banner hero — fully CMS-managed (image, badge, heading,
-          overlay, height, alignment, radius). Same component as the admin preview. */}
-      <BlogHeroBanner hero={hero} />
+    <main className="relative pt-28">
+      <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
 
-      <section className="container-x pb-20 pt-12">
-        {posts.length === 0 ? (
-          <div className="mx-auto mt-10 max-w-md rounded-2xl border border-ink/10 bg-surface p-10 text-center text-muted shadow-soft">
-            {settings.blogSearchEmpty || "No articles published yet. Check back soon!"}
-          </div>
-        ) : (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post, i) => (
-              <Reveal key={post.id} delay={(i % 3) * 0.06}>
-                <PostCard post={post} />
-              </Reveal>
-            ))}
-          </div>
-        )}
+      <section className="container-x pb-28">
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "Blog", href: "/blog" },
+          ]}
+        />
+
+        <div className="mx-auto max-w-2xl text-center">
+          <Reveal>
+            <span className="eyebrow">Insights</span>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <h1 className="mt-5 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+              From the <span className="grad-text">Blog</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mt-4 text-lg text-muted">
+              Practical insights on AI automation, digital marketing and business
+              growth.
+            </p>
+          </Reveal>
+        </div>
+
+        <BlogSearch posts={posts} />
       </section>
     </main>
   );

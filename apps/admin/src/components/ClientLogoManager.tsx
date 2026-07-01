@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import EditorHeader from "./EditorHeader";
 import type { ClientLogo } from "@jhb/shared/client-logos";
 import {
   updateClientLogo,
@@ -119,12 +118,10 @@ export default function ClientLogoManager({ initial }: { initial: ClientLogo[] }
   };
 
   return (
-    <div>
-      <EditorHeader
-        title="Client Logos"
-        subtitle="Logo management for the Trusted Partnerships section. Changes go live instantly."
-        toast={toast}
-      />
+    <div className="mt-8">
+      {toast && (
+        <div className={`fixed right-6 top-6 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}>{toast.msg}</div>
+      )}
 
       {/* Add logos */}
       <div className="rounded-2xl border border-ink/10 bg-surface p-4 shadow-soft">

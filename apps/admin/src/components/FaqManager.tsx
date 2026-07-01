@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { saveServiceFaqs } from "@/app/actions";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import RichEditor from "./RichEditor";
-import EditorHeader from "./EditorHeader";
 
 type Faq = { question: string; answer: string };
 type Service = { key: string; title: string };
@@ -76,18 +75,19 @@ export default function FaqManager({
   };
 
   return (
-    <div>
-      <EditorHeader
-        title="Service FAQs"
-        subtitle="Manage the FAQ accordion shown on each service page. Drag to reorder."
-        busy={busy ? "publish" : ""}
-        toast={toast}
-        onPublish={save}
-        publishLabel="Save FAQs"
-      />
+    <div className="mt-8">
+      {toast && (
+        <div
+          className={`fixed right-6 top-6 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-soft-lg ${
+            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
 
-      {/* service-selector toolbar */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-surface p-4 shadow-soft">
+      {/* toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-surface p-4 shadow-soft">
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted">Service:</span>
           <select
@@ -115,6 +115,13 @@ export default function FaqManager({
             className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-primary hover:text-primary"
           >
             + Add FAQ
+          </button>
+          <button
+            onClick={save}
+            disabled={busy}
+            className="btn btn-primary !px-5 !py-2.5 !text-sm disabled:opacity-60"
+          >
+            {busy ? "Saving…" : "Save FAQs"}
           </button>
         </div>
       </div>
