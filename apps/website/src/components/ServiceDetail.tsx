@@ -322,9 +322,13 @@ export default function ServiceDetail({
                   ) : null}
                 </h2>
                 {wiDescription && (
-                  <p className={`mt-3 max-w-xl text-muted ${wiAlignCenter ? "mx-auto" : ""}`}>
-                    {linkify(wiDescription, links, used)}
-                  </p>
+                  // Rich HTML (admin RichEditor) — like the feature cards. Plain-text
+                  // values from older pages render unchanged. Manual word-links replace
+                  // the previous auto-linkify here.
+                  <div
+                    className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${wiAlignCenter ? "mx-auto" : ""}`}
+                    dangerouslySetInnerHTML={{ __html: wiDescription }}
+                  />
                 )}
               </div>
             </Reveal>

@@ -133,10 +133,10 @@ export default function WhatsIncludedEditor({
           <input value={value.highlight} onChange={(e) => set({ highlight: e.target.value })} className="input" placeholder="Included" />
         </label>
       </div>
-      <label className="block">
-        <span className="mb-1 block text-[11px] font-medium text-muted">Description</span>
-        <textarea value={value.description} onChange={(e) => set({ description: e.target.value })} rows={2} className="input resize-none" />
-      </label>
+      <div className="block">
+        <span className="mb-1 block text-[11px] font-medium text-muted">Description (rich text — select a word, click 🔗 to link)</span>
+        <RichEditor value={value.description} onChange={(html) => set({ description: html })} internalPages={internalPages} minHeight={120} />
+      </div>
 
       {/* styling */}
       <div className="grid gap-3 sm:grid-cols-3">
