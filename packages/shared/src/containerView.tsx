@@ -28,7 +28,7 @@ import type {
   WorkflowWidth,
   ContainerStyle,
 } from "./containers";
-import { smartImgAttrs } from "./containers";
+import { smartImgAttrs, mergeHeroContainers } from "./containers";
 
 /**
  * SINGLE source of truth for rendering page-builder containers. Used by the
@@ -71,16 +71,47 @@ const stripTags = (html: string) => (html || "").replace(/<[^>]+>/g, "").trim();
 
 function Hero({ c }: { c: HeroContainer }) {
   const p = c.props;
+  if (p.hidden) return null;
   const imgA = smartImgAttrs(p.imageSettings, { extraClass: "mt-10 rounded-3xl border border-ink/10 shadow-soft" });
+  // Optional custom background (colour/gradient or image) overrides the shared style.bg.
+  const hasCustomBg = !!(p.bgImage || p.bgColor);
+  const sectionClass = hasCustomBg ? PAD[c.style.padding] : shell(c.style);
+  const sectionStyle = p.bgImage
+    ? { backgroundImage: `url(${p.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" as const }
+    : p.bgColor
+      ? { background: p.bgColor }
+      : undefined;
+  // Heading: plain values keep the real <hN> tag (SEO); rich HTML renders in a
+  // heading-styled div (bold → gradient). Highlight is appended as a gradient tail.
+  const headingIsRich = /<[a-z][\s\S]*?>/i.test(p.heading || "");
+  const headingHtml = `${p.heading || ""}${p.highlight ? ` <span class="grad-text">${p.highlight}</span>` : ""}`;
   return (
-    <section className={shell(c.style)}>
+    <section className={sectionClass} style={sectionStyle}>
       <div className={`container-x ${ALIGN[c.style.align]}`}>
         <div className={c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}>
           {p.badge ? <Reveal><span className="eyebrow">{p.badge}</span></Reveal> : null}
-          <Reveal delay={0.08}>
-            <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-          </Reveal>
-          {p.subtitle ? <Reveal delay={0.16}><p className="mt-6 text-lg leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
+          {p.heading || p.highlight ? (
+            <Reveal delay={0.08}>
+              {headingIsRich ? (
+                <div
+                  role="heading"
+                  aria-level={c.headingTag ? Number(c.headingTag.slice(1)) : 2}
+                  className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text"
+                  dangerouslySetInnerHTML={{ __html: headingHtml }}
+                />
+              ) : (
+                <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
+              )}
+            </Reveal>
+          ) : null}
+          {p.subtitle ? (
+            <Reveal delay={0.16}>
+              <div
+                className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
+                dangerouslySetInnerHTML={{ __html: p.subtitle }}
+              />
+            </Reveal>
+          ) : null}
           {(p.primary.label || p.secondary.label) && (
             <Reveal delay={0.24}>
               <div className={`mt-8 flex flex-wrap gap-3 ${c.style.align === "center" ? "justify-center" : ""}`}>
@@ -91,8 +122,16 @@ function Hero({ c }: { c: HeroContainer }) {
           )}
           {p.image ? (
             <Reveal delay={0.3}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt={p.heading} className={imgA.className} style={imgA.style} loading={imgA.loading} {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})} />
+              <figure>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.image} alt={p.imageAlt || stripTags(p.heading) || ""} {...(p.imageTitle ? { title: p.imageTitle } : {})} className={imgA.className} style={imgA.style} loading={imgA.loading} {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})} />
+                {(p.imageCaption || p.imageDescription) ? (
+                  <figcaption className="mt-3 text-sm text-muted">
+                    {p.imageCaption ? <span className="block font-medium text-ink/80">{p.imageCaption}</span> : null}
+                    {p.imageDescription ? <span className="block">{p.imageDescription}</span> : null}
+                  </figcaption>
+                ) : null}
+              </figure>
             </Reveal>
           ) : null}
         </div>
@@ -815,7 +854,8 @@ function RenderContainer({ c }: { c: PageContainer }) {
 
 /** Renders every container in `zone`, in order. Empty zone → nothing. */
 export function PageContainersView({ containers, zone }: { containers: PageContainer[]; zone: string }) {
-  const inZone = containers.filter((c) => c.zone === zone);
+  // Fold any legacy Hero + Hero-Description pair into one Hero Section before rendering.
+  const inZone = mergeHeroContainers(containers).filter((c) => c.zone === zone);
   if (inZone.length === 0) return null;
   return (
     <>

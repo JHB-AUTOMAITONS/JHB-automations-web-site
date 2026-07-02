@@ -14,7 +14,7 @@ import { ContainerBody, StyleControls } from "./ContainerEditors";
 // per container type. Purely presentational (labels come from the shared
 // CONTAINER_LABELS); a new container type just needs one entry here.
 const CONTAINER_META: Record<ContainerType, { cat: string; icon: string; desc: string }> = {
-  hero: { cat: "Hero", icon: "🦸", desc: "Headline, subtitle, CTAs and image." },
+  hero: { cat: "Hero", icon: "🦸", desc: "All-in-one: heading, rich description, buttons, image, background." },
   herodesc: { cat: "Hero", icon: "📝", desc: "Rich-text hero description block." },
   features: { cat: "Content", icon: "✨", desc: "Grid of icon · title · text features." },
   about: { cat: "Content", icon: "ℹ️", desc: "Two-column about block with image." },

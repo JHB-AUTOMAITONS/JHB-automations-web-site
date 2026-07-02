@@ -87,21 +87,54 @@ function HeroEditor({ c, onChange }: { c: HeroContainer; onChange: (c: HeroConta
   const set = (patch: Partial<HeroContainer["props"]>) => onChange({ ...c, props: { ...p, ...patch } });
   return (
     <div className="space-y-3">
+      {/* show / hide */}
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-ink/10 bg-base p-2">
+        <span className="text-[11px] font-medium text-muted">Show this section</span>
+        <button type="button" onClick={() => set({ hidden: !p.hidden })} className="flex items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs">
+          <span className={`relative h-4 w-7 rounded-full transition-colors ${!p.hidden ? "bg-primary" : "bg-ink/20"}`}>
+            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${!p.hidden ? "left-[14px]" : "left-0.5"}`} />
+          </span>
+          {p.hidden ? "Hidden" : "Visible"}
+        </button>
+      </div>
+
       <label className="block"><span className={lbl}>Badge</span><input className={input} value={p.badge} onChange={(e) => set({ badge: e.target.value })} /></label>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted">Heading</span>
+            <span className="text-[11px] font-medium text-muted">Heading (rich text)</span>
             <HeadingTagSelect value={c.headingTag} fallback="h2" onChange={(t) => onChange({ ...c, headingTag: t })} />
           </div>
-          <input className={input} value={p.heading} onChange={(e) => set({ heading: e.target.value })} />
+          <RichEditor value={p.heading} onChange={(html) => set({ heading: html })} minHeight={90} />
         </div>
-        <label className="block"><span className={lbl}>Highlight</span><input className={input} value={p.highlight} onChange={(e) => set({ highlight: e.target.value })} /></label>
+        <label className="block"><span className={lbl}>Highlight (gradient tail)</span><input className={input} value={p.highlight} onChange={(e) => set({ highlight: e.target.value })} /></label>
       </div>
-      <label className="block"><span className={lbl}>Subtitle</span><textarea rows={2} className={`${input} resize-none`} value={p.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></label>
-      <Btn2 label="Primary" value={p.primary} onChange={(primary) => set({ primary })} />
-      <Btn2 label="Secondary" value={p.secondary} onChange={(secondary) => set({ secondary })} />
-      <ImagePicker label="Image (optional)" value={p.image} onChange={(url) => set({ image: url })} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
+      <div><span className={lbl}>Description (rich text)</span><RichEditor value={p.subtitle} onChange={(html) => set({ subtitle: html })} minHeight={120} /></div>
+
+      <Btn2 label="Primary button" value={p.primary} onChange={(primary) => set({ primary })} />
+      <Btn2 label="Secondary button" value={p.secondary} onChange={(secondary) => set({ secondary })} />
+
+      {/* hero image + meta + size controls */}
+      <div className="rounded-xl border border-ink/10 bg-base p-3">
+        <ImagePicker label="Hero image" value={p.image} onChange={(url) => set({ image: url })} alt={false} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <label className="block"><span className={lbl}>Image alt (SEO)</span><input className={input} value={p.imageAlt ?? ""} onChange={(e) => set({ imageAlt: e.target.value })} /></label>
+          <label className="block"><span className={lbl}>Image title</span><input className={input} value={p.imageTitle ?? ""} onChange={(e) => set({ imageTitle: e.target.value })} /></label>
+          <label className="block"><span className={lbl}>Image caption</span><input className={input} value={p.imageCaption ?? ""} onChange={(e) => set({ imageCaption: e.target.value })} /></label>
+          <label className="block"><span className={lbl}>Image description</span><input className={input} value={p.imageDescription ?? ""} onChange={(e) => set({ imageDescription: e.target.value })} /></label>
+        </div>
+      </div>
+
+      {/* background (overrides Style → Background) */}
+      <div className="rounded-xl border border-ink/10 bg-base p-3">
+        <span className={lbl}>Background (optional — overrides the Style background)</span>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-muted">Colour / gradient</span>
+          <input className={`${input} max-w-[240px]`} value={p.bgColor ?? ""} onChange={(e) => set({ bgColor: e.target.value })} placeholder="#0d1426 or linear-gradient(...)" />
+          {p.bgColor ? <button type="button" onClick={() => set({ bgColor: "" })} className="rounded-lg border border-ink/10 px-2 py-1 text-[11px] text-muted hover:bg-ink/[0.04]">Clear</button> : null}
+        </div>
+        <div className="mt-2"><ImagePicker label="Background image (optional — overrides colour)" value={p.bgImage ?? null} onChange={(url) => set({ bgImage: url })} alt={false} /></div>
+      </div>
     </div>
   );
 }

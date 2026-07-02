@@ -153,9 +153,29 @@ export function smartImgAttrs(
 // container — present and future — supports it with no per-type churn.
 type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: HeadingTag };
 
+// "Hero Section" — heading + rich description + buttons + image + background, all in
+// one container. `heading` and `subtitle` may be rich-text HTML (older plain values
+// still render as text). The legacy separate "Hero Description" (herodesc) container
+// is auto-folded in by mergeHeroContainers().
 export type HeroContainer = Base & {
   type: "hero";
-  props: { badge: string; heading: string; highlight: string; subtitle: string; primary: Btn; secondary: Btn; image: string | null; imageSettings?: ImageSettings };
+  props: {
+    badge: string;
+    heading: string; // rich-text HTML or plain text
+    highlight: string; // gradient tail rendered after the heading
+    subtitle: string; // rich-text HTML — the hero description
+    primary: Btn;
+    secondary: Btn;
+    image: string | null;
+    imageSettings?: ImageSettings;
+    imageAlt?: string;
+    imageTitle?: string;
+    imageCaption?: string;
+    imageDescription?: string;
+    bgImage?: string | null;
+    bgColor?: string; // solid colour or a full CSS gradient
+    hidden?: boolean; // hide/show the whole section
+  };
 };
 export type RichTextContainer = Base & { type: "richtext"; props: { html: string; width: "narrow" | "wide" } };
 export type FeatureItem = { id: string; icon: string; title: string; desc: string };
@@ -341,7 +361,7 @@ export type PageContainer =
   | CustomContainer;
 
 export const CONTAINER_LABELS: Record<ContainerType, string> = {
-  hero: "Hero",
+  hero: "Hero Section",
   herodesc: "Hero Description",
   features: "Features",
   services: "Services",
@@ -364,9 +384,11 @@ export const CONTAINER_LABELS: Record<ContainerType, string> = {
 };
 
 // Order shown in the "Add Container" dialog.
+// NOTE: "herodesc" is intentionally omitted — the standalone "Hero Description" is
+// now part of the unified "Hero Section" (hero). Existing herodesc containers still
+// render and are auto-merged into their hero by mergeHeroContainers().
 export const CONTAINER_TYPES: ContainerType[] = [
   "hero",
-  "herodesc",
   "features",
   "services",
   "workflow",
@@ -398,7 +420,7 @@ export function createContainer(type: ContainerType, zone: string): PageContaine
   const id = cid();
   switch (type) {
     case "hero":
-      return { id, zone, type, style: { ...DS, align: "center" }, props: { badge: "", heading: "Your headline", highlight: "here", subtitle: "A short supporting sentence.", primary: { label: "Get started", href: "/#contact" }, secondary: { label: "", href: "" }, image: null } };
+      return { id, zone, type, style: { ...DS, align: "center" }, props: { badge: "", heading: "Your headline", highlight: "here", subtitle: "<p>A short supporting sentence — edit with the full rich-text toolbar.</p>", primary: { label: "Get started", href: "/#contact" }, secondary: { label: "", href: "" }, image: null, imageAlt: "", imageTitle: "", imageCaption: "", imageDescription: "", bgImage: null, bgColor: "", hidden: false } };
     case "herodesc":
       return { id, zone, type, style: { ...DS, align: "center", padding: "sm" }, props: { html: "<p>Hero description text — edit me with the full rich-text toolbar.</p>" } };
     case "features":
@@ -481,4 +503,29 @@ export function cloneContainer(c: PageContainer): PageContainer {
   if (copy.type === "gallery") copy.props.images = copy.props.images.map((i) => ({ ...i, id: cid() }));
   if (copy.type === "imagecontent") copy.props.bullets = copy.props.bullets.map((b) => ({ ...b, id: cid() }));
   return copy;
+}
+
+/**
+ * Auto-merge the legacy "Hero" + "Hero Description" pair into a single Hero Section.
+ * A `herodesc` container immediately after a `hero` in the same zone is folded into
+ * that hero's `subtitle` (rich description) and dropped — no data loss, no manual
+ * re-entry. Applied on render (website + admin preview) and on editor load, so old
+ * pages show one unified Hero Section and saving persists the merge. Idempotent.
+ */
+export function mergeHeroContainers(cs: PageContainer[]): PageContainer[] {
+  const out: PageContainer[] = [];
+  for (let i = 0; i < cs.length; i++) {
+    const c = cs[i];
+    const next = cs[i + 1];
+    if (c.type === "hero" && next && next.type === "herodesc" && next.zone === c.zone) {
+      const desc = (next.props.html || "").trim();
+      const sub = (c.props.subtitle || "").trim();
+      const subtitle = [sub, desc].filter(Boolean).join("");
+      out.push({ ...c, props: { ...c.props, subtitle } });
+      i++; // consume the merged herodesc
+      continue;
+    }
+    out.push(c);
+  }
+  return out;
 }

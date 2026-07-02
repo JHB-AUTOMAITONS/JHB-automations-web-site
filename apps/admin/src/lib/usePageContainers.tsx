@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { cloneContainer, createContainer, type ContainerType, type PageContainer } from "@jhb/shared/containers";
+import { cloneContainer, createContainer, mergeHeroContainers, type ContainerType, type PageContainer } from "@jhb/shared/containers";
 import { TEMPLATE_BY_ID } from "@jhb/shared/container-templates";
 import { AddContainerModal, ContainerCard } from "@/components/ContainerParts";
 
@@ -21,7 +21,9 @@ export type NativeSection = { label: string; zone: string };
  * future pages get the whole system by calling this hook.
  */
 export function usePageContainers(initial: PageContainer[], sections: NativeSection[], topZone = "top") {
-  const [containers, setContainers] = useState<PageContainer[]>(initial);
+  // Fold any legacy Hero + Hero-Description pair into one Hero Section on load, so the
+  // editor shows the unified container and saving persists the merge.
+  const [containers, setContainers] = useState<PageContainer[]>(() => mergeHeroContainers(initial));
   // `setContainers` accepts an updater, so it plugs straight into the shared engine.
   const { slot, modal } = useContainerSlots(containers, setContainers, sections, topZone);
   return { containers, setContainers, slot, modal };
