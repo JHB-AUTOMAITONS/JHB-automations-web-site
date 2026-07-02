@@ -71,6 +71,7 @@ const stripTags = (html: string) => (html || "").replace(/<[^>]+>/g, "").trim();
 
 function Hero({ c }: { c: HeroContainer }) {
   const p = c.props;
+  const imgA = smartImgAttrs(p.imageSettings, { extraClass: "mt-10 rounded-3xl border border-ink/10 shadow-soft" });
   return (
     <section className={shell(c.style)}>
       <div className={`container-x ${ALIGN[c.style.align]}`}>
@@ -91,7 +92,7 @@ function Hero({ c }: { c: HeroContainer }) {
           {p.image ? (
             <Reveal delay={0.3}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt={p.heading} className="mt-10 w-full rounded-3xl border border-ink/10 object-cover shadow-soft" />
+              <img src={p.image} alt={p.heading} className={imgA.className} style={imgA.style} loading={imgA.loading} {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})} />
             </Reveal>
           ) : null}
         </div>
@@ -371,6 +372,7 @@ function ServicesBlock({ c }: { c: ServicesContainer }) {
 
 function AboutBlock({ c }: { c: AboutContainer }) {
   const p = c.props;
+  const imgA = smartImgAttrs(p.imageSettings, { extraClass: "rounded-3xl border border-ink/10 shadow-soft" });
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
@@ -386,7 +388,7 @@ function AboutBlock({ c }: { c: AboutContainer }) {
             <Reveal delay={0.1}>
               <div className={p.imagePosition === "left" ? "lg:order-1" : ""}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image} alt={p.heading} className="w-full rounded-3xl border border-ink/10 object-cover shadow-soft" />
+                <img src={p.image} alt={p.heading} className={imgA.className} style={imgA.style} loading={imgA.loading} {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})} />
               </div>
             </Reveal>
           ) : null}

@@ -101,7 +101,7 @@ function HeroEditor({ c, onChange }: { c: HeroContainer; onChange: (c: HeroConta
       <label className="block"><span className={lbl}>Subtitle</span><textarea rows={2} className={`${input} resize-none`} value={p.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></label>
       <Btn2 label="Primary" value={p.primary} onChange={(primary) => set({ primary })} />
       <Btn2 label="Secondary" value={p.secondary} onChange={(secondary) => set({ secondary })} />
-      <ImagePicker label="Image (optional)" value={p.image} onChange={(url) => set({ image: url })} />
+      <ImagePicker label="Image (optional)" value={p.image} onChange={(url) => set({ image: url })} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
     </div>
   );
 }
@@ -463,7 +463,7 @@ function AboutEditor({ c, onChange }: { c: AboutContainer; onChange: (c: AboutCo
       </div>
       <div><span className={lbl}>Body (rich text)</span><RichEditor value={p.bodyHtml} onChange={(html) => set({ bodyHtml: html })} /></div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <ImagePicker label="Image" value={p.image} onChange={(url) => set({ image: url })} />
+        <ImagePicker label="Image" value={p.image} onChange={(url) => set({ image: url })} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
         <label className="block"><span className={lbl}>Image position</span><select className={input} value={p.imagePosition} onChange={(e) => set({ imagePosition: e.target.value as "left" | "right" })}><option value="right">Right</option><option value="left">Left</option></select></label>
       </div>
     </div>

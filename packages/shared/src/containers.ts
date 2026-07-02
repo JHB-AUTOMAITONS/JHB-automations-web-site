@@ -153,7 +153,7 @@ type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: Head
 
 export type HeroContainer = Base & {
   type: "hero";
-  props: { badge: string; heading: string; highlight: string; subtitle: string; primary: Btn; secondary: Btn; image: string | null };
+  props: { badge: string; heading: string; highlight: string; subtitle: string; primary: Btn; secondary: Btn; image: string | null; imageSettings?: ImageSettings };
 };
 export type RichTextContainer = Base & { type: "richtext"; props: { html: string; width: "narrow" | "wide" } };
 export type FeatureItem = { id: string; icon: string; title: string; desc: string };
@@ -208,7 +208,7 @@ export type ServicesContainer = Base & {
 // About — a two-column eyebrow/heading/rich-body block with an image.
 export type AboutContainer = Base & {
   type: "about";
-  props: { eyebrow: string; heading: string; highlight: string; bodyHtml: string; image: string | null; imagePosition: "left" | "right" };
+  props: { eyebrow: string; heading: string; highlight: string; bodyHtml: string; image: string | null; imagePosition: "left" | "right"; imageSettings?: ImageSettings };
 };
 
 // Image + Content — a reusable marketing section with an image on one side and
