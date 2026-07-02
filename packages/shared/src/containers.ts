@@ -52,6 +52,7 @@ export type ImageSettings = {
   minHeight?: string;
   tablet?: ImageBox; // applied at <= 1024px
   mobile?: ImageBox; // applied at <= 640px
+  aspectRatio?: string; // e.g. "16 / 9" — locks height to width (aspect-ratio lock)
   objectFit?: ImageObjectFit;
   objectPosition?: string;
   align?: ImageAlign;
@@ -114,6 +115,7 @@ export function smartImgAttrs(
   if (s.maxHeight) style.maxHeight = s.maxHeight;
   if (s.minWidth) style.minWidth = s.minWidth;
   if (s.minHeight) style.minHeight = s.minHeight;
+  if (s.aspectRatio) style.aspectRatio = s.aspectRatio;
   if (s.objectFit) style.objectFit = s.objectFit;
   if (s.objectPosition) style.objectPosition = s.objectPosition;
   if (s.radius) style.borderRadius = s.radius;

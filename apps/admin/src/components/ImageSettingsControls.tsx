@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImageAlign, ImageObjectFit, ImageSettings } from "@jhb/shared/containers";
+import { smartImgAttrs, type ImageAlign, type ImageObjectFit, type ImageSettings } from "@jhb/shared/containers";
 
 /**
  * Reusable universal image size/style controls. Edits an optional `ImageSettings`
@@ -16,9 +16,12 @@ const tiny = "mb-1 block text-[10px] text-muted";
 export default function ImageSettingsControls({
   value,
   onChange,
+  previewUrl,
 }: {
   value: ImageSettings;
   onChange: (v: ImageSettings) => void;
+  /** When set, shows a live preview of the image with the current settings applied. */
+  previewUrl?: string;
 }) {
   const s = value || {};
   const set = (patch: Partial<ImageSettings>) => onChange({ ...s, ...patch });
@@ -33,6 +36,20 @@ export default function ImageSettingsControls({
         Size &amp; style — width, height, fit, border, responsive
       </summary>
       <div className="mt-2 space-y-3">
+        {/* live preview — re-renders instantly as the settings change */}
+        {previewUrl && (
+          <div className="rounded-lg border border-dashed border-ink/15 bg-base p-2">
+            <span className={lbl}>Live preview (updates as you type)</span>
+            <div className="mt-1 max-h-56 overflow-auto rounded border border-ink/10 bg-ink/[0.03] p-2 text-center">
+              {(() => {
+                const a = smartImgAttrs(value, { extraClass: "inline-block align-top" });
+                // eslint-disable-next-line @next/next/no-img-element
+                return <img src={previewUrl} alt="" className={a.className} style={a.style} />;
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* size */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <label className="block"><span className={lbl}>Width</span>
@@ -49,8 +66,19 @@ export default function ImageSettingsControls({
             <input className={input} value={s.minHeight ?? ""} onChange={(e) => set({ minHeight: opt(e.target.value) })} /></label>
         </div>
 
-        {/* fit / position / align */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {/* aspect ratio / fit / position / align */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+          <label className="block"><span className={lbl}>Aspect ratio (lock)</span>
+            <select className={input} value={s.aspectRatio ?? ""} onChange={(e) => set({ aspectRatio: opt(e.target.value) })}>
+              <option value="">Auto (unlocked)</option>
+              <option value="1 / 1">1:1 square</option>
+              <option value="4 / 3">4:3</option>
+              <option value="3 / 2">3:2</option>
+              <option value="16 / 9">16:9</option>
+              <option value="21 / 9">21:9</option>
+              <option value="3 / 4">3:4 portrait</option>
+            </select>
+          </label>
           <label className="block"><span className={lbl}>Object fit</span>
             <select className={input} value={s.objectFit ?? ""} onChange={(e) => set({ objectFit: opt(e.target.value) as ImageObjectFit | undefined })}>
               <option value="">Default</option><option value="cover">Cover</option><option value="contain">Contain</option>

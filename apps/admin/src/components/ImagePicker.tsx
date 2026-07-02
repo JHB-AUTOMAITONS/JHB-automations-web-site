@@ -262,7 +262,7 @@ export default function ImagePicker({ value, onChange, label, alt = true, settin
       {/* Universal size/style controls (only when the parent opts in + an image is set) */}
       {onChangeSettings && value && (
         <div className="mt-3">
-          <ImageSettingsControls value={settings ?? {}} onChange={onChangeSettings} />
+          <ImageSettingsControls value={settings ?? {}} onChange={onChangeSettings} previewUrl={value} />
         </div>
       )}
 
