@@ -10,10 +10,55 @@ import {
 import { SECTION_TEMPLATES } from "@jhb/shared/container-templates";
 import { ContainerBody, StyleControls } from "./ContainerEditors";
 
+// UI metadata for the Add-Container picker: category, icon and a short description
+// per container type. Purely presentational (labels come from the shared
+// CONTAINER_LABELS); a new container type just needs one entry here.
+const CONTAINER_META: Record<ContainerType, { cat: string; icon: string; desc: string }> = {
+  hero: { cat: "Hero", icon: "🦸", desc: "Headline, subtitle, CTAs and image." },
+  herodesc: { cat: "Hero", icon: "📝", desc: "Rich-text hero description block." },
+  features: { cat: "Content", icon: "✨", desc: "Grid of icon · title · text features." },
+  about: { cat: "Content", icon: "ℹ️", desc: "Two-column about block with image." },
+  cards: { cat: "Content", icon: "🗂️", desc: "Flexible grid of editable cards." },
+  richtext: { cat: "Content", icon: "✍️", desc: "Free rich-text block." },
+  faq: { cat: "Content", icon: "❓", desc: "Accordion of questions & answers." },
+  team: { cat: "Content", icon: "👥", desc: "Team member cards." },
+  image: { cat: "Media", icon: "🖼️", desc: "A single image with caption." },
+  imagebanner: { cat: "Media", icon: "🌄", desc: "Full-width banner image with overlay." },
+  gallery: { cat: "Media", icon: "🏞️", desc: "Responsive image gallery grid." },
+  video: { cat: "Media", icon: "🎬", desc: "Embed a YouTube / Vimeo / MP4 video." },
+  services: { cat: "Marketing", icon: "🛠️", desc: "Grid of service cards with links." },
+  testimonials: { cat: "Marketing", icon: "💬", desc: "Customer quotes grid." },
+  cta: { cat: "Marketing", icon: "📣", desc: "Call-to-action band with a button." },
+  advantage: { cat: "Marketing", icon: "🏆", desc: "Why-choose-us checklist section." },
+  imagecontent: { cat: "Layout", icon: "🧩", desc: "Image beside rich content + bullets." },
+  workflow: { cat: "Layout", icon: "🔀", desc: "Sequential process / timeline." },
+  contactform: { cat: "Forms", icon: "✉️", desc: "Working contact / lead form." },
+  custom: { cat: "Advanced", icon: "⚙️", desc: "Raw HTML / embed block." },
+};
+const CATEGORY_ORDER = ["Hero", "Content", "Media", "Marketing", "Layout", "Forms", "Advanced"];
+
+function PickerCard({ icon, label, desc, title, onClick }: { icon: string; label: string; desc: string; title?: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="group flex items-start gap-3 rounded-xl border border-ink/10 bg-base p-3 text-left transition hover:border-primary hover:bg-primary/5 hover:shadow-soft"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-lg">{icon}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-ink/90 transition group-hover:text-primary">{label}</span>
+        <span className="block text-[11px] leading-snug text-muted">{desc}</span>
+      </span>
+    </button>
+  );
+}
+
 /**
- * Type-picker modal opened by a "＋ Add Container" button. Lists pre-designed
- * section templates (e.g. "The JHB Advantage") alongside the generic container
- * types — picking either inserts a fully-editable container at this position.
+ * Type-picker modal opened by a "＋ Add Container" button. Groups every container
+ * type into searchable categories (icon + description) and lists the pre-designed
+ * section templates (e.g. "The JHB Advantage") on top — picking either inserts a
+ * fully-editable container at this position.
  */
 export function AddContainerModal({
   onClose,
@@ -24,35 +69,60 @@ export function AddContainerModal({
   onPick: (t: ContainerType) => void;
   onPickTemplate: (templateId: string) => void;
 }) {
+  const [q, setQ] = useState("");
+  const query = q.trim().toLowerCase();
+  const match = (label: string, desc: string) =>
+    !query || label.toLowerCase().includes(query) || desc.toLowerCase().includes(query);
+
+  const groups = CATEGORY_ORDER.map((cat) => ({
+    cat,
+    items: CONTAINER_TYPES.filter((t) => CONTAINER_META[t].cat === cat && match(CONTAINER_LABELS[t], CONTAINER_META[t].desc)),
+  })).filter((g) => g.items.length > 0);
+  const templates = SECTION_TEMPLATES.filter((t) => match(t.label, t.description ?? ""));
+  const empty = groups.length === 0 && templates.length === 0;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-ink/10 bg-surface p-5 shadow-soft-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-base font-bold">Add a container</h3>
-          <button type="button" onClick={onClose} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs">✕</button>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="my-8 w-full max-w-2xl rounded-2xl border border-ink/10 bg-surface shadow-soft-lg" onClick={(e) => e.stopPropagation()}>
+        {/* sticky header + search */}
+        <div className="sticky top-0 z-10 rounded-t-2xl border-b border-ink/10 bg-surface/95 p-4 backdrop-blur">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-base font-bold">Add a container</h3>
+            <button type="button" onClick={onClose} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs hover:bg-ink/[0.04]">✕</button>
+          </div>
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search container types…"
+            className="mt-3 w-full rounded-lg border border-ink/10 bg-base px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <p className="mt-2 text-[11px] text-muted">Pick a type — it inserts at this position and becomes editable right here.</p>
         </div>
-        <p className="mt-1 text-xs text-muted">Choose a type — it inserts at this position and becomes editable right here.</p>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {CONTAINER_TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => onPick(t)}
-              className="rounded-xl border border-ink/10 bg-base px-3 py-3 text-sm font-medium transition hover:border-primary hover:text-primary"
-            >
-              {CONTAINER_LABELS[t]}
-            </button>
-          ))}
-          {SECTION_TEMPLATES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => onPickTemplate(t.id)}
-              title={t.description}
-              className="rounded-xl border border-ink/10 bg-base px-3 py-3 text-sm font-medium transition hover:border-primary hover:text-primary"
-            >
-              {t.label}
-            </button>
+
+        <div className="max-h-[62vh] overflow-y-auto p-4">
+          {empty && <p className="py-10 text-center text-sm text-muted">No containers match “{q}”.</p>}
+
+          {templates.length > 0 && (
+            <div className="mb-5">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Templates</div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {templates.map((t) => (
+                  <PickerCard key={t.id} icon="🧱" label={t.label} desc={t.description ?? ""} title={t.description} onClick={() => onPickTemplate(t.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {groups.map((g) => (
+            <div key={g.cat} className="mb-5">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">{g.cat}</div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {g.items.map((t) => (
+                  <PickerCard key={t} icon={CONTAINER_META[t].icon} label={CONTAINER_LABELS[t]} desc={CONTAINER_META[t].desc} onClick={() => onPick(t)} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
