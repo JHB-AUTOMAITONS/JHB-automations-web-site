@@ -263,6 +263,27 @@ label[for] {
   opacity: 0.65;
 }
 
+/* Universal image controls — width/height respond per breakpoint via CSS vars set
+ * by smartImgAttrs() (packages/shared/src/containers.ts). Empty vars fall back to
+ * the larger breakpoint, then to auto, so images without settings are unaffected. */
+.smart-img {
+  width: var(--siw, auto);
+  height: var(--sih, auto);
+  max-width: 100%;
+}
+@media (max-width: 1024px) {
+  .smart-img {
+    width: var(--siw-t, var(--siw, auto));
+    height: var(--sih-t, var(--sih, auto));
+  }
+}
+@media (max-width: 640px) {
+  .smart-img {
+    width: var(--siw-m, var(--siw-t, var(--siw, auto)));
+    height: var(--sih-m, var(--sih-t, var(--sih, auto)));
+  }
+}
+
 /* Like button heart "pop" on click */
 @keyframes like-pop {
   0% { transform: scale(1); }

@@ -5,6 +5,8 @@ import { uploadMedia, getMediaAlt, updateMediaAltByUrl } from "@/app/actions";
 import { ALT_MIN, ALT_MAX, altStatus } from "@jhb/shared/media";
 import { optimizeImage, readImageDimensions, fmtBytes } from "@/lib/optimizeImage";
 import ImageInsertDialog from "./ImageInsertDialog";
+import ImageSettingsControls from "./ImageSettingsControls";
+import type { ImageSettings } from "@jhb/shared/containers";
 
 type Props = {
   value: string | null;
@@ -12,6 +14,10 @@ type Props = {
   label?: string;
   /** Show the SEO alt-text field below the image (default true). */
   alt?: boolean;
+  /** Optional universal size/style controls. When `onChangeSettings` is provided
+   *  a collapsible "Size & style" panel is shown below the image (once one is set). */
+  settings?: ImageSettings;
+  onChangeSettings?: (v: ImageSettings) => void;
 };
 
 const MAX_DIM = 1600; // cap longest edge — keeps 16:9 thumbnails crisp but small
@@ -19,7 +25,7 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024; // reject absurdly large source files
 
 type Info = { from: number; to: number; w: number; h: number };
 
-export default function ImagePicker({ value, onChange, label, alt = true }: Props) {
+export default function ImagePicker({ value, onChange, label, alt = true, settings, onChangeSettings }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   // Progress timers kept in refs so they can be cleared if the component
   // unmounts mid-upload — otherwise the creep interval keeps calling setState
@@ -250,6 +256,13 @@ export default function ImagePicker({ value, onChange, label, alt = true }: Prop
             {altSaving && <span className="ml-auto text-muted">Saving…</span>}
             {altSaved && !altSaving && <span className="ml-auto text-green-600">Saved ✓</span>}
           </div>
+        </div>
+      )}
+
+      {/* Universal size/style controls (only when the parent opts in + an image is set) */}
+      {onChangeSettings && value && (
+        <div className="mt-3">
+          <ImageSettingsControls value={settings ?? {}} onChange={onChangeSettings} />
         </div>
       )}
 

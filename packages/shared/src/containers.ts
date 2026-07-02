@@ -27,12 +27,124 @@ export type ContainerType =
   | "custom";
 
 import type { HeadingTag } from "./heading";
+import type { CSSProperties } from "react";
 
 export type ContainerBg = "none" | "subtle" | "gradient" | "dark";
 export type ContainerPad = "none" | "sm" | "md" | "lg";
 export type ContainerAlign = "left" | "center" | "right";
 export type ContainerStyle = { bg: ContainerBg; padding: ContainerPad; align: ContainerAlign };
 export type Btn = { label: string; href: string };
+
+// ─── Universal image presentation settings ───────────────────────────────────
+// Optional + fully additive: an image with no `imageSettings` renders exactly as
+// before. Shared by the admin controls (ImageSettingsControls) and the website
+// renderers via smartImgAttrs(), so the live preview matches production. Sizes
+// are free-form CSS lengths (px / % / rem / vw / vh / auto).
+export type ImageObjectFit = "cover" | "contain" | "fill" | "scale-down" | "none";
+export type ImageAlign = "left" | "center" | "right" | "full";
+export type ImageBox = { width?: string; height?: string };
+export type ImageSettings = {
+  width?: string;
+  height?: string;
+  maxWidth?: string;
+  maxHeight?: string;
+  minWidth?: string;
+  minHeight?: string;
+  tablet?: ImageBox; // applied at <= 1024px
+  mobile?: ImageBox; // applied at <= 640px
+  objectFit?: ImageObjectFit;
+  objectPosition?: string;
+  align?: ImageAlign;
+  radius?: string; // border-radius
+  borderWidth?: string;
+  borderColor?: string;
+  shadow?: "none" | "sm" | "md" | "lg";
+  opacity?: number; // 0..100
+  rotate?: number; // degrees
+  scale?: number; // 1 = 100%
+  zIndex?: number;
+  loading?: "lazy" | "eager";
+  fetchPriority?: "auto" | "high" | "low";
+};
+
+const IMG_SHADOW: Record<NonNullable<ImageSettings["shadow"]>, string> = {
+  none: "none",
+  sm: "0 1px 3px rgba(0,0,0,0.12)",
+  md: "0 8px 24px -8px rgba(0,0,0,0.25)",
+  lg: "0 20px 50px -12px rgba(0,0,0,0.35)",
+};
+
+export type SmartImgAttrs = {
+  className: string;
+  style: CSSProperties;
+  loading: "lazy" | "eager";
+  fetchPriority?: "auto" | "high" | "low";
+};
+
+/**
+ * Turn optional ImageSettings into <img> attributes. With no sizing set the image
+ * keeps its default width/fit classes (backward compatible); responsive
+ * width/height flow through CSS custom properties consumed by the global
+ * `.smart-img` rules (see globals.css) so they work with SSR and no JS.
+ */
+export function smartImgAttrs(
+  s: ImageSettings | null | undefined,
+  o: { extraClass?: string; fallbackWidth?: string; fallbackFit?: string } = {},
+): SmartImgAttrs {
+  const extra = o.extraClass ?? "";
+  const fallbackWidth = o.fallbackWidth ?? "w-full";
+  const fallbackFit = o.fallbackFit ?? "object-cover";
+  if (!s) {
+    return { className: [extra, fallbackWidth, fallbackFit].filter(Boolean).join(" "), style: {}, loading: "lazy" };
+  }
+  const style: CSSProperties = {};
+  // CSS custom properties aren't in the CSSProperties type; set them via a cast.
+  const vars = style as Record<string, string | number>;
+  const hasSize = !!(
+    s.width || s.height || s.tablet?.width || s.tablet?.height || s.mobile?.width || s.mobile?.height || s.align === "full"
+  );
+  if (s.width) vars["--siw"] = s.width;
+  if (s.height) vars["--sih"] = s.height;
+  if (s.tablet?.width) vars["--siw-t"] = s.tablet.width;
+  if (s.tablet?.height) vars["--sih-t"] = s.tablet.height;
+  if (s.mobile?.width) vars["--siw-m"] = s.mobile.width;
+  if (s.mobile?.height) vars["--sih-m"] = s.mobile.height;
+  if (s.align === "full" && !s.width) vars["--siw"] = "100%";
+  if (s.maxWidth) style.maxWidth = s.maxWidth;
+  if (s.maxHeight) style.maxHeight = s.maxHeight;
+  if (s.minWidth) style.minWidth = s.minWidth;
+  if (s.minHeight) style.minHeight = s.minHeight;
+  if (s.objectFit) style.objectFit = s.objectFit;
+  if (s.objectPosition) style.objectPosition = s.objectPosition;
+  if (s.radius) style.borderRadius = s.radius;
+  if (s.borderWidth) style.border = `${s.borderWidth} solid ${s.borderColor || "rgba(0,0,0,0.1)"}`;
+  if (s.shadow && s.shadow !== "none") style.boxShadow = IMG_SHADOW[s.shadow];
+  if (typeof s.opacity === "number" && s.opacity !== 100) style.opacity = Math.max(0, Math.min(100, s.opacity)) / 100;
+  const tf: string[] = [];
+  if (s.rotate) tf.push(`rotate(${s.rotate}deg)`);
+  if (typeof s.scale === "number" && s.scale !== 1) tf.push(`scale(${s.scale})`);
+  if (tf.length) style.transform = tf.join(" ");
+  if (typeof s.zIndex === "number") {
+    style.zIndex = s.zIndex;
+    style.position = "relative";
+  }
+  if (s.align === "center") {
+    style.marginLeft = "auto";
+    style.marginRight = "auto";
+  } else if (s.align === "right") {
+    style.marginLeft = "auto";
+    style.marginRight = "0";
+  }
+  const className = [
+    extra,
+    hasSize ? "smart-img" : fallbackWidth,
+    s.objectFit ? "" : fallbackFit,
+    s.align === "center" || s.align === "right" ? "block" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return { className, style, loading: s.loading ?? "lazy", ...(s.fetchPriority ? { fetchPriority: s.fetchPriority } : {}) };
+}
 
 // `headingTag` is the semantic element of the container's MAIN heading (the admin
 // picks it; defaults to h2 at render). Optional + on the shared base so every
@@ -126,13 +238,14 @@ export type ImageContentContainer = Base & {
     mobileOrder: "image-first" | "content-first";
     bgColor: string; // "" = use the shared style.bg
     bgImage: string | null; // overrides bgColor + style.bg when set
+    imageSettings?: ImageSettings; // optional universal size/style controls
   };
 };
 
 // Image — a single image with optional caption.
 export type ImageContainer = Base & {
   type: "image";
-  props: { url: string | null; alt: string; caption: string; width: "container" | "full"; rounded: boolean };
+  props: { url: string | null; alt: string; caption: string; width: "container" | "full"; rounded: boolean; imageSettings?: ImageSettings };
 };
 
 // Video — an embedded video (YouTube/Vimeo URL or direct file).

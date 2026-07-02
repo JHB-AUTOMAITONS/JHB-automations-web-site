@@ -28,6 +28,7 @@ import type {
   WorkflowWidth,
   ContainerStyle,
 } from "./containers";
+import { smartImgAttrs } from "./containers";
 
 /**
  * SINGLE source of truth for rendering page-builder containers. Used by the
@@ -463,6 +464,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
     </div>
   );
 
+  const imgA = smartImgAttrs(p.imageSettings, { extraClass: "rounded-3xl border border-ink/10 shadow-soft" });
   const image = (
     <div className={`min-w-0 ${imageOrder}`}>
       {p.image ? (
@@ -472,8 +474,10 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
             src={p.image}
             alt={p.imageAlt}
             {...(p.imageTitle ? { title: p.imageTitle } : {})}
-            loading="lazy"
-            className="w-full rounded-3xl border border-ink/10 object-cover shadow-soft"
+            className={imgA.className}
+            style={imgA.style}
+            loading={imgA.loading}
+            {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})}
           />
           {(p.imageCaption || p.imageDescription) && (
             <figcaption className="mt-3 text-sm text-muted">
@@ -503,9 +507,10 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
 function ImageBlock({ c }: { c: ImageContainer }) {
   const p = c.props;
   if (!p.url) return null;
+  const a = smartImgAttrs(p.imageSettings, { extraClass: `${p.rounded ? "rounded-3xl" : ""} border border-ink/10` });
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={p.url} alt={p.alt} className={`w-full object-cover ${p.rounded ? "rounded-3xl" : ""} border border-ink/10`} />
+    <img src={p.url} alt={p.alt} className={a.className} style={a.style} loading={a.loading} {...(a.fetchPriority ? { fetchPriority: a.fetchPriority } : {})} />
   );
   return (
     <section className={shell(c.style)}>

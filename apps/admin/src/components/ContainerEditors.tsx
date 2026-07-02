@@ -533,7 +533,7 @@ function ImageContentEditor({ c, onChange }: { c: ImageContentContainer; onChang
 
       {/* image + meta */}
       <div className="rounded-xl border border-ink/10 bg-base p-3">
-        <ImagePicker label="Image" value={p.image} onChange={(url) => set({ image: url })} alt={false} />
+        <ImagePicker label="Image" value={p.image} onChange={(url) => set({ image: url })} alt={false} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <label className="block"><span className={lbl}>Image alt (SEO)</span><input className={input} value={p.imageAlt} onChange={(e) => set({ imageAlt: e.target.value })} /></label>
           <label className="block"><span className={lbl}>Image title</span><input className={input} value={p.imageTitle} onChange={(e) => set({ imageTitle: e.target.value })} /></label>
@@ -562,7 +562,7 @@ function ImageEditor({ c, onChange }: { c: ImageContainer; onChange: (c: ImageCo
   const set = (patch: Partial<ImageContainer["props"]>) => onChange({ ...c, props: { ...p, ...patch } });
   return (
     <div className="space-y-3">
-      <ImagePicker label="Image" value={p.url} onChange={(url) => set({ url })} alt={false} />
+      <ImagePicker label="Image" value={p.url} onChange={(url) => set({ url })} alt={false} settings={p.imageSettings} onChangeSettings={(imageSettings) => set({ imageSettings })} />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block"><span className={lbl}>Alt text (SEO)</span><input className={input} value={p.alt} onChange={(e) => set({ alt: e.target.value })} /></label>
         <label className="block"><span className={lbl}>Caption (optional)</span><input className={input} value={p.caption} onChange={(e) => set({ caption: e.target.value })} /></label>

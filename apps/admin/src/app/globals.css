@@ -193,6 +193,26 @@ body {
   font-weight: 600;
 }
 
+/* Universal image controls — mirror apps/website/src/app/globals.css so the admin
+ * preview sizes images identically to production. Vars are set by smartImgAttrs(). */
+.smart-img {
+  width: var(--siw, auto);
+  height: var(--sih, auto);
+  max-width: 100%;
+}
+@media (max-width: 1024px) {
+  .smart-img {
+    width: var(--siw-t, var(--siw, auto));
+    height: var(--sih-t, var(--sih, auto));
+  }
+}
+@media (max-width: 640px) {
+  .smart-img {
+    width: var(--siw-m, var(--siw-t, var(--siw, auto)));
+    height: var(--sih-m, var(--sih-t, var(--sih, auto)));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
