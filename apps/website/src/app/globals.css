@@ -186,32 +186,36 @@ label[for] {
 }
 /* Lists — Tailwind Preflight zeroes list-style/margin/padding on ul/ol, so these
  * unlayered rules restore markers + indentation for all rendered rich text
- * (blog articles, About/CTA/product descriptions). Nested lists cycle their
- * marker style like the browser default. The .rt-checklist reset below wins by
- * higher specificity so checklists stay marker-less. */
+ * (blog articles, About/CTA/product descriptions) AND the admin Rich Text Editor.
+ * Use the `list-style-type` LONGHAND (not the `list-style` shorthand): the CSS
+ * minifier can split the shorthand and separate the marker from the padding — the
+ * bug where lists showed indent but no bullet. Longhand keeps the marker glued on.
+ * The .rt-checklist reset wins by higher specificity so checklists stay marker-less. */
 .prose-jhb ul {
-  list-style: disc;
+  list-style-type: disc;
+  list-style-position: outside;
   padding-left: 1.5rem;
   margin: 1rem 0;
 }
 .prose-jhb ol {
-  list-style: decimal;
+  list-style-type: decimal;
+  list-style-position: outside;
   padding-left: 1.5rem;
   margin: 1rem 0;
 }
 .prose-jhb ul ul {
-  list-style: circle;
+  list-style-type: circle;
   margin: 0.35rem 0;
 }
 .prose-jhb ul ul ul {
-  list-style: square;
+  list-style-type: square;
 }
 .prose-jhb ol ol {
-  list-style: lower-alpha;
+  list-style-type: lower-alpha;
   margin: 0.35rem 0;
 }
 .prose-jhb ol ol ol {
-  list-style: lower-roman;
+  list-style-type: lower-roman;
 }
 .prose-jhb li > ul,
 .prose-jhb li > ol {
