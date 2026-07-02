@@ -235,7 +235,7 @@ function GalleryEditor({ c, onChange }: { c: GalleryContainer; onChange: (c: Gal
         {p.images.map((im) => (
           <div key={im.id} className="rounded-xl border border-ink/10 bg-base p-3">
             <div className="flex items-center justify-between"><span className="text-[11px] text-muted">Image</span><button type="button" onClick={() => set({ images: p.images.filter((x) => x.id !== im.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button></div>
-            <div className="mt-2"><ImagePicker value={im.url || null} onChange={(url) => setImg(im.id, { url: url || "" })} alt={false} /></div>
+            <div className="mt-2"><ImagePicker value={im.url || null} onChange={(url) => setImg(im.id, { url: url || "" })} alt={false} settings={im.imageSettings} onChangeSettings={(imageSettings) => setImg(im.id, { imageSettings })} /></div>
             <input className="mt-2 w-full rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-xs" value={im.alt} onChange={(e) => setImg(im.id, { alt: e.target.value })} placeholder="Alt text (SEO)" />
           </div>
         ))}
@@ -395,7 +395,7 @@ function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsCo
               {card.bg && <button type="button" onClick={() => setCard(card.id, { bg: "" })} className="rounded-lg border border-ink/10 px-2 py-1 text-[11px] text-muted hover:bg-ink/[0.04]">Clear colour</button>}
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <ImagePicker label="Card image / icon" value={card.image} onChange={(url) => setCard(card.id, { image: url })} alt={false} />
+              <ImagePicker label="Card image / icon" value={card.image} onChange={(url) => setCard(card.id, { image: url })} alt={false} settings={card.imageSettings} onChangeSettings={(imageSettings) => setCard(card.id, { imageSettings })} />
               <ImagePicker label="Background image (optional)" value={card.bgImage} onChange={(url) => setCard(card.id, { bgImage: url })} alt={false} />
             </div>
           </div>

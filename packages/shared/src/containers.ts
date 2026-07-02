@@ -170,7 +170,7 @@ export type TestimonialsContainer = Base & {
 };
 export type FaqEntry = { id: string; q: string; a: string };
 export type FaqContainer = Base & { type: "faq"; props: { heading: string; highlight: string; showNumbers?: boolean; items: FaqEntry[] } };
-export type GalleryImg = { id: string; url: string; alt: string };
+export type GalleryImg = { id: string; url: string; alt: string; imageSettings?: ImageSettings };
 export type GalleryContainer = Base & { type: "gallery"; props: { heading: string; columns: 2 | 3 | 4; images: GalleryImg[] } };
 export type ImageBannerContainer = Base & {
   type: "imagebanner";
@@ -194,6 +194,7 @@ export type CardItem = {
   button: Btn; // optional: empty label hides it
   bg: string; // optional background colour (hex/css) — "" = default card style
   bgImage: string | null; // optional background image (overrides bg colour)
+  imageSettings?: ImageSettings; // optional universal size/style controls for the card image
 };
 export type CardsContainer = Base & {
   type: "cards";

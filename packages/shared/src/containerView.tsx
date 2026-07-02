@@ -195,12 +195,15 @@ function Gallery({ c }: { c: GalleryContainer }) {
       <div className="container-x">
         {p.heading ? <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl">{p.heading}</Heading></Reveal> : null}
         <div className={`grid gap-4 ${COLS[p.columns]}`}>
-          {p.images.map((img) => (
-            <Reveal key={img.id}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={img.alt} loading="lazy" className="aspect-[4/3] w-full rounded-2xl border border-ink/10 object-cover" />
-            </Reveal>
-          ))}
+          {p.images.map((img) => {
+            const a = smartImgAttrs(img.imageSettings, { extraClass: "rounded-2xl border border-ink/10", fallbackWidth: "aspect-[4/3] w-full" });
+            return (
+              <Reveal key={img.id}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.url} alt={img.alt} loading={a.loading} className={a.className} style={a.style} {...(a.fetchPriority ? { fetchPriority: a.fetchPriority } : {})} />
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -309,8 +312,11 @@ function Cards({ c }: { c: CardsContainer }) {
                 {hasBgImage && <div className="absolute inset-0 bg-ink/45" />}
                 <div className={`relative p-6 ${hasBgImage ? "text-white" : ""}`}>
                   {card.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={card.image} alt={stripTags(card.title)} className="mb-4 h-14 w-14 rounded-xl object-cover" />
+                    (() => {
+                      const a = smartImgAttrs(card.imageSettings, { extraClass: "mb-4 rounded-xl", fallbackWidth: "h-14 w-14" });
+                      // eslint-disable-next-line @next/next/no-img-element
+                      return <img src={card.image} alt={stripTags(card.title)} className={a.className} style={a.style} loading={a.loading} {...(a.fetchPriority ? { fetchPriority: a.fetchPriority } : {})} />;
+                    })()
                   ) : card.icon ? (
                     <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.06] text-2xl ring-1 ring-ink/10">{card.icon}</span>
                   ) : null}
