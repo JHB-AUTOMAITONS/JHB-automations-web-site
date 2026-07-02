@@ -1,161 +1,81 @@
 "use client";
 
-import { smartImgAttrs, type ImageAlign, type ImageObjectFit, type ImageSettings } from "@jhb/shared/containers";
+import { useState } from "react";
+import type { ImageAlign, ImageSettings } from "@jhb/shared/containers";
 
 /**
- * Reusable universal image size/style controls. Edits an optional `ImageSettings`
- * object (all fields optional → empty = default sizing). Rendered by ImagePicker
- * when the parent passes `onChangeSettings`, so every image field can share the
- * exact same controls. The website applies them via smartImgAttrs() (shared), so
- * the admin preview matches production.
+ * Compact image controls — alignment + width only. Edits an optional
+ * `ImageSettings` object (all fields optional → empty = default sizing).
+ * Rendered by ImagePicker when the parent passes `onChangeSettings`; keyed on the
+ * image URL there so the local "custom width" toggle re-initialises when the
+ * image changes. The website applies these via smartImgAttrs() (shared), so the
+ * admin preview matches production.
  */
-const lbl = "mb-1 block text-[11px] font-medium text-muted";
-const input = "w-full rounded-lg border border-ink/10 bg-base px-2.5 py-1.5 text-sm outline-none focus:border-primary";
-const tiny = "mb-1 block text-[10px] text-muted";
+const WIDTHS = ["25%", "50%", "75%", "100%"] as const;
+const ALIGNS: ImageAlign[] = ["left", "center", "right"];
 
 export default function ImageSettingsControls({
   value,
   onChange,
-  previewUrl,
 }: {
   value: ImageSettings;
   onChange: (v: ImageSettings) => void;
-  /** When set, shows a live preview of the image with the current settings applied. */
-  previewUrl?: string;
 }) {
   const s = value || {};
   const set = (patch: Partial<ImageSettings>) => onChange({ ...s, ...patch });
-  const setBox = (bp: "tablet" | "mobile", patch: { width?: string; height?: string }) =>
-    onChange({ ...s, [bp]: { ...(s[bp] || {}), ...patch } });
-  const num = (v: string): number | undefined => (v === "" ? undefined : Number(v));
-  const opt = (v: string) => v || undefined;
+
+  const w = s.width ?? "";
+  const [custom, setCustom] = useState(w !== "" && !(WIDTHS as readonly string[]).includes(w));
+
+  const btn = (active: boolean) =>
+    `rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
+      active ? "border-primary text-primary" : "border-ink/10 text-muted hover:text-ink"
+    }`;
 
   return (
-    <details className="rounded-lg border border-ink/10 bg-surface p-2">
-      <summary className="cursor-pointer text-[11px] font-medium text-muted">
-        Size &amp; style — width, height, fit, border, responsive
-      </summary>
-      <div className="mt-2 space-y-3">
-        {/* live preview — re-renders instantly as the settings change */}
-        {previewUrl && (
-          <div className="rounded-lg border border-dashed border-ink/15 bg-base p-2">
-            <span className={lbl}>Live preview (updates as you type)</span>
-            <div className="mt-1 max-h-56 overflow-auto rounded border border-ink/10 bg-ink/[0.03] p-2 text-center">
-              {(() => {
-                const a = smartImgAttrs(value, { extraClass: "inline-block align-top" });
-                // eslint-disable-next-line @next/next/no-img-element
-                return <img src={previewUrl} alt="" className={a.className} style={a.style} />;
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* size */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <label className="block"><span className={lbl}>Width</span>
-            <input className={input} value={s.width ?? ""} onChange={(e) => set({ width: opt(e.target.value) })} placeholder="auto / 600px / 100%" /></label>
-          <label className="block"><span className={lbl}>Height</span>
-            <input className={input} value={s.height ?? ""} onChange={(e) => set({ height: opt(e.target.value) })} placeholder="auto / 400px" /></label>
-          <label className="block"><span className={lbl}>Max width</span>
-            <input className={input} value={s.maxWidth ?? ""} onChange={(e) => set({ maxWidth: opt(e.target.value) })} placeholder="100%" /></label>
-          <label className="block"><span className={lbl}>Max height</span>
-            <input className={input} value={s.maxHeight ?? ""} onChange={(e) => set({ maxHeight: opt(e.target.value) })} placeholder="none" /></label>
-          <label className="block"><span className={lbl}>Min width</span>
-            <input className={input} value={s.minWidth ?? ""} onChange={(e) => set({ minWidth: opt(e.target.value) })} /></label>
-          <label className="block"><span className={lbl}>Min height</span>
-            <input className={input} value={s.minHeight ?? ""} onChange={(e) => set({ minHeight: opt(e.target.value) })} /></label>
-        </div>
-
-        {/* aspect ratio / fit / position / align */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
-          <label className="block"><span className={lbl}>Aspect ratio (lock)</span>
-            <select className={input} value={s.aspectRatio ?? ""} onChange={(e) => set({ aspectRatio: opt(e.target.value) })}>
-              <option value="">Auto (unlocked)</option>
-              <option value="1 / 1">1:1 square</option>
-              <option value="4 / 3">4:3</option>
-              <option value="3 / 2">3:2</option>
-              <option value="16 / 9">16:9</option>
-              <option value="21 / 9">21:9</option>
-              <option value="3 / 4">3:4 portrait</option>
-            </select>
-          </label>
-          <label className="block"><span className={lbl}>Object fit</span>
-            <select className={input} value={s.objectFit ?? ""} onChange={(e) => set({ objectFit: opt(e.target.value) as ImageObjectFit | undefined })}>
-              <option value="">Default</option><option value="cover">Cover</option><option value="contain">Contain</option>
-              <option value="fill">Fill</option><option value="scale-down">Scale down</option><option value="none">None</option>
-            </select>
-          </label>
-          <label className="block"><span className={lbl}>Object position</span>
-            <select className={input} value={s.objectPosition ?? ""} onChange={(e) => set({ objectPosition: opt(e.target.value) })}>
-              <option value="">Center</option><option value="top">Top</option><option value="bottom">Bottom</option>
-              <option value="left">Left</option><option value="right">Right</option>
-            </select>
-          </label>
-          <label className="block"><span className={lbl}>Align</span>
-            <select className={input} value={s.align ?? ""} onChange={(e) => set({ align: opt(e.target.value) as ImageAlign | undefined })}>
-              <option value="">Default</option><option value="left">Left</option><option value="center">Center</option>
-              <option value="right">Right</option><option value="full">Full width</option>
-            </select>
-          </label>
-        </div>
-
-        {/* border / style */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <label className="block"><span className={lbl}>Radius</span>
-            <input className={input} value={s.radius ?? ""} onChange={(e) => set({ radius: opt(e.target.value) })} placeholder="16px" /></label>
-          <label className="block"><span className={lbl}>Border width</span>
-            <input className={input} value={s.borderWidth ?? ""} onChange={(e) => set({ borderWidth: opt(e.target.value) })} placeholder="1px" /></label>
-          <label className="block"><span className={lbl}>Border color</span>
-            <input type="color" className="h-9 w-full cursor-pointer rounded border border-ink/10" value={s.borderColor || "#000000"} onChange={(e) => set({ borderColor: e.target.value })} /></label>
-          <label className="block"><span className={lbl}>Shadow</span>
-            <select className={input} value={s.shadow ?? ""} onChange={(e) => set({ shadow: opt(e.target.value) as ImageSettings["shadow"] })}>
-              <option value="">Default</option><option value="none">None</option><option value="sm">Small</option>
-              <option value="md">Medium</option><option value="lg">Large</option>
-            </select>
-          </label>
-        </div>
-
-        {/* transform */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <label className="block"><span className={lbl}>Opacity %</span>
-            <input type="number" min={0} max={100} className={input} value={s.opacity ?? ""} onChange={(e) => set({ opacity: num(e.target.value) })} placeholder="100" /></label>
-          <label className="block"><span className={lbl}>Rotate °</span>
-            <input type="number" className={input} value={s.rotate ?? ""} onChange={(e) => set({ rotate: num(e.target.value) })} placeholder="0" /></label>
-          <label className="block"><span className={lbl}>Scale</span>
-            <input type="number" step={0.1} className={input} value={s.scale ?? ""} onChange={(e) => set({ scale: num(e.target.value) })} placeholder="1" /></label>
-          <label className="block"><span className={lbl}>Z-index</span>
-            <input type="number" className={input} value={s.zIndex ?? ""} onChange={(e) => set({ zIndex: num(e.target.value) })} placeholder="0" /></label>
-        </div>
-
-        {/* responsive */}
-        <div>
-          <span className={lbl}>Responsive size (empty = inherit the larger breakpoint)</span>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <label className="block"><span className={tiny}>Tablet width</span>
-              <input className={input} value={s.tablet?.width ?? ""} onChange={(e) => setBox("tablet", { width: opt(e.target.value) })} placeholder="450px" /></label>
-            <label className="block"><span className={tiny}>Tablet height</span>
-              <input className={input} value={s.tablet?.height ?? ""} onChange={(e) => setBox("tablet", { height: opt(e.target.value) })} placeholder="auto" /></label>
-            <label className="block"><span className={tiny}>Mobile width</span>
-              <input className={input} value={s.mobile?.width ?? ""} onChange={(e) => setBox("mobile", { width: opt(e.target.value) })} placeholder="100%" /></label>
-            <label className="block"><span className={tiny}>Mobile height</span>
-              <input className={input} value={s.mobile?.height ?? ""} onChange={(e) => setBox("mobile", { height: opt(e.target.value) })} placeholder="auto" /></label>
-          </div>
-        </div>
-
-        {/* loading */}
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block"><span className={lbl}>Loading</span>
-            <select className={input} value={s.loading ?? ""} onChange={(e) => set({ loading: opt(e.target.value) as ImageSettings["loading"] })}>
-              <option value="">Lazy (default)</option><option value="lazy">Lazy</option><option value="eager">Eager</option>
-            </select>
-          </label>
-          <label className="block"><span className={lbl}>Fetch priority</span>
-            <select className={input} value={s.fetchPriority ?? ""} onChange={(e) => set({ fetchPriority: opt(e.target.value) as ImageSettings["fetchPriority"] })}>
-              <option value="">Auto</option><option value="high">High</option><option value="low">Low</option>
-            </select>
-          </label>
+    <div className="space-y-2.5 rounded-lg border border-ink/10 bg-surface p-2.5">
+      {/* Image alignment */}
+      <div>
+        <span className="mb-1 block text-[11px] font-medium text-muted">Image alignment</span>
+        <div className="flex gap-1.5">
+          {ALIGNS.map((a) => (
+            <button key={a} type="button" onClick={() => set({ align: a })} className={btn(s.align === a)}>
+              {a}
+            </button>
+          ))}
         </div>
       </div>
-    </details>
+
+      {/* Image width */}
+      <div>
+        <span className="mb-1 block text-[11px] font-medium text-muted">Image width</span>
+        <div className="flex flex-wrap gap-1.5">
+          {WIDTHS.map((pw) => (
+            <button
+              key={pw}
+              type="button"
+              onClick={() => {
+                setCustom(false);
+                set({ width: pw });
+              }}
+              className={btn(!custom && w === pw)}
+            >
+              {pw}
+            </button>
+          ))}
+          <button type="button" onClick={() => setCustom(true)} className={btn(custom)}>
+            Custom
+          </button>
+        </div>
+        {custom && (
+          <input
+            value={w}
+            onChange={(e) => set({ width: e.target.value || undefined })}
+            placeholder="e.g. 320px, 60%, 20rem"
+            className="mt-1.5 w-full rounded-md border border-ink/10 bg-base px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+          />
+        )}
+      </div>
+    </div>
   );
 }
