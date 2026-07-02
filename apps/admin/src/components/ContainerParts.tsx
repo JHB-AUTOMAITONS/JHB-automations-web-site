@@ -71,9 +71,6 @@ export function ContainerCard({
   onDuplicate,
   onDelete,
   onMoveToZone,
-  dragId,
-  setDragId,
-  onReorderDrop,
 }: {
   container: PageContainer;
   sections: { label: string; zone: string }[];
@@ -84,26 +81,12 @@ export function ContainerCard({
   onDuplicate: () => void;
   onDelete: () => void;
   onMoveToZone: (zone: string) => void;
-  dragId: string | null;
-  setDragId: (id: string | null) => void;
-  onReorderDrop: (targetId: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <div
-      draggable
-      onDragStart={() => setDragId(container.id)}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={() => {
-        onReorderDrop(container.id);
-        setDragId(null);
-      }}
-      onDragEnd={() => setDragId(null)}
-      className={`rounded-2xl border-2 border-dashed border-primary/40 bg-base p-4 ${dragId === container.id ? "opacity-60" : ""}`}
-    >
+    <div className="rounded-2xl border-2 border-dashed border-primary/40 bg-base p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2">
-          <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
             {CONTAINER_LABELS[container.type]} · added
           </span>

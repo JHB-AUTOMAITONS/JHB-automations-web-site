@@ -25,7 +25,6 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const favicon = (await getSettings()).branding?.favicon;
   return {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -65,7 +64,24 @@ export async function generateMetadata(): Promise<Metadata> {
       "Transform your business with intelligent AI automation, web development and data-driven growth.",
     images: ["/og.png"],
   },
-  ...(favicon ? { icons: { icon: favicon, shortcut: favicon, apple: favicon } } : {}),
+  // Favicon: static square brand-mark files in /public are the source of truth so
+  // the browser tab / bookmark / mobile icon always renders crisply. Root cause of
+  // the missing prod favicon: the admin branding.favicon was set to the full WIDE
+  // logo and there was no /favicon.ico, so browsers auto-requesting /favicon.ico got
+  // a 404 and a wide PNG can't render as a usable square icon. These files fix it
+  // deploy-independently. See apps/website/public/{favicon.ico,favicon-*.png,
+  // apple-touch-icon.png,site.webmanifest}. (To make favicons admin-managed again,
+  // reintroduce branding.favicon here as an override once it holds a SQUARE image.)
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
+  },
+  manifest: "/site.webmanifest",
   };
 }
 

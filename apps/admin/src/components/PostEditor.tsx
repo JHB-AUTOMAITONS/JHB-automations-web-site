@@ -413,7 +413,7 @@ function BlogPreview({
         {/* body */}
         {content.trim() ? (
           <div
-            className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4 [&_li]:my-1 [&_ul_ul]:list-[circle] [&_ul_ul_ul]:list-[square] [&_ol_ol]:list-[lower-alpha] [&_ol_ol_ol]:list-[lower-roman] [&_.rt-checklist]:list-none"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         ) : (

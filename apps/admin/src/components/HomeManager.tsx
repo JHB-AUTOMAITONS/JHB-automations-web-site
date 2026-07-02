@@ -111,7 +111,6 @@ export default function HomeManager({
     faqs.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active }))
   );
   const [addZone, setAddZone] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
   const setF = <K extends keyof FounderBlock>(k: K, v: FounderBlock[K]) =>
     setFounder((p) => ({ ...p, [k]: v }));
 
@@ -210,16 +209,6 @@ export default function HomeManager({
     });
   const moveToZone = (id: string, zone: string) =>
     setContainers((cs) => cs.map((x) => (x.id === id ? { ...x, zone } : x)));
-  const reorderWithinZone = (targetId: string) =>
-    setContainers((cs) => {
-      if (!dragId || dragId === targetId) return cs;
-      const drag = cs.find((x) => x.id === dragId);
-      const target = cs.find((x) => x.id === targetId);
-      if (!drag || !target || drag.zone !== target.zone) return cs;
-      const without = cs.filter((x) => x.id !== dragId);
-      const ti = without.findIndex((x) => x.id === targetId);
-      return [...without.slice(0, ti), drag, ...without.slice(ti)];
-    });
 
   // A "＋ Add Container" insertion line + any containers already inserted at this
   // position, rendered inline between the native section editors.
@@ -244,9 +233,6 @@ export default function HomeManager({
           onDuplicate={() => duplicateContainer(c.id)}
           onDelete={() => removeContainer(c.id)}
           onMoveToZone={(z) => moveToZone(c.id, z)}
-          dragId={dragId}
-          setDragId={setDragId}
-          onReorderDrop={(targetId) => reorderWithinZone(targetId)}
         />
       ))}
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { cloneContainer, createContainer, type ContainerType, type PageContainer } from "@jhb/shared/containers";
 import { TEMPLATE_BY_ID } from "@jhb/shared/container-templates";
 import { AddContainerModal, ContainerCard } from "@/components/ContainerParts";
@@ -42,19 +42,35 @@ export function useContainerSlots(
   sections: NativeSection[],
   topZone = "top",
 ) {
-  const [addZone, setAddZone] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
+  // `addAt` remembers WHERE the modal will insert: the zone plus the position
+  // within that zone (0 = before the first container, n = after the last).
+  const [addAt, setAddAt] = useState<{ zone: string; index: number } | null>(null);
 
   const zoneItems = (zone: string) => containers.filter((c) => c.zone === zone);
-  const addContainer = (zone: string, type: ContainerType) => {
-    setContainers((cs) => [...cs, createContainer(type, zone)]);
-    setAddZone(null);
+  // Splice a new container into the flat array so it lands at `index` within its
+  // zone. This is what lets the "＋" buttons between every card insert exactly
+  // where they sit instead of always appending to the end.
+  const insertAt = (zone: string, index: number, item: PageContainer) =>
+    setContainers((cs) => {
+      const sib = cs.filter((c) => c.zone === zone);
+      let flat: number;
+      if (index >= sib.length) {
+        const last = sib[sib.length - 1];
+        flat = last ? cs.findIndex((c) => c.id === last.id) + 1 : cs.length;
+      } else {
+        flat = cs.findIndex((c) => c.id === sib[index].id);
+      }
+      return [...cs.slice(0, flat), item, ...cs.slice(flat)];
+    });
+  const addContainer = (zone: string, index: number, type: ContainerType) => {
+    insertAt(zone, index, createContainer(type, zone));
+    setAddAt(null);
   };
-  const addTemplate = (zone: string, templateId: string) => {
+  const addTemplate = (zone: string, index: number, templateId: string) => {
     const t = TEMPLATE_BY_ID[templateId];
     if (!t) return;
-    setContainers((cs) => [...cs, t.create(zone)]);
-    setAddZone(null);
+    insertAt(zone, index, t.create(zone));
+    setAddAt(null);
   };
   const updateContainer = (id: string, c: PageContainer) => setContainers((cs) => cs.map((x) => (x.id === id ? c : x)));
   const removeContainer = (id: string) => setContainers((cs) => cs.filter((x) => x.id !== id));
@@ -79,56 +95,58 @@ export function useContainerSlots(
       return n;
     });
   const moveToZone = (id: string, zone: string) => setContainers((cs) => cs.map((x) => (x.id === id ? { ...x, zone } : x)));
-  const reorderWithinZone = (targetId: string) =>
-    setContainers((cs) => {
-      if (!dragId || dragId === targetId) return cs;
-      const drag = cs.find((x) => x.id === dragId);
-      const target = cs.find((x) => x.id === targetId);
-      if (!drag || !target || drag.zone !== target.zone) return cs;
-      const without = cs.filter((x) => x.id !== dragId);
-      const ti = without.findIndex((x) => x.id === targetId);
-      return [...without.slice(0, ti), drag, ...without.slice(ti)];
-    });
 
-  const slot = (zone: string) => (
-    <>
-      <button
-        type="button"
-        onClick={() => setAddZone(zone)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink/15 py-2 text-xs font-medium text-muted transition hover:border-primary hover:bg-primary/5 hover:text-primary"
-      >
-        <span aria-hidden>＋</span> Add Container
-      </button>
-      {zoneItems(zone).map((c) => (
-        <ContainerCard
-          key={c.id}
-          container={c}
-          sections={sections}
-          topZone={topZone}
-          onChange={(nc) => updateContainer(c.id, nc)}
-          onMoveUp={() => moveInZone(c.id, -1)}
-          onMoveDown={() => moveInZone(c.id, 1)}
-          onDuplicate={() => duplicateContainer(c.id)}
-          onDelete={() => removeContainer(c.id)}
-          onMoveToZone={(z) => moveToZone(c.id, z)}
-          dragId={dragId}
-          setDragId={setDragId}
-          onReorderDrop={(targetId) => reorderWithinZone(targetId)}
-        />
-      ))}
-    </>
+  // A "＋ Add Container" insert affordance. `prominent` = the always-solid button
+  // shown after the last card and on an empty zone; the before/between ones stay
+  // faint until hover but remain in the DOM so an insert point always exists next
+  // to every container (this is the fix for the button vanishing between cards).
+  const insertBtn = (zone: string, index: number, prominent: boolean) => (
+    <button
+      key={`ins-${zone}-${index}`}
+      type="button"
+      onClick={() => setAddAt({ zone, index })}
+      className={
+        prominent
+          ? "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink/15 py-2 text-xs font-medium text-muted transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+          : "flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-ink/10 py-1 text-[11px] font-medium text-muted/60 opacity-60 transition hover:border-primary hover:bg-primary/5 hover:text-primary hover:opacity-100"
+      }
+    >
+      <span aria-hidden>＋</span> Add Container
+    </button>
   );
 
+  const slot = (zone: string) => {
+    const items = zoneItems(zone);
+    if (items.length === 0) return insertBtn(zone, 0, true);
+    return (
+      <>
+        {insertBtn(zone, 0, false)}
+        {items.map((c, i) => (
+          <Fragment key={c.id}>
+            <ContainerCard
+              container={c}
+              sections={sections}
+              topZone={topZone}
+              onChange={(nc) => updateContainer(c.id, nc)}
+              onMoveUp={() => moveInZone(c.id, -1)}
+              onMoveDown={() => moveInZone(c.id, 1)}
+              onDuplicate={() => duplicateContainer(c.id)}
+              onDelete={() => removeContainer(c.id)}
+              onMoveToZone={(z) => moveToZone(c.id, z)}
+            />
+            {insertBtn(zone, i + 1, i === items.length - 1)}
+          </Fragment>
+        ))}
+      </>
+    );
+  };
+
   const modal =
-    addZone !== null ? (
+    addAt !== null ? (
       <AddContainerModal
-        onClose={() => setAddZone(null)}
-        onPick={(t) => {
-          if (addZone !== null) addContainer(addZone, t);
-        }}
-        onPickTemplate={(id) => {
-          if (addZone !== null) addTemplate(addZone, id);
-        }}
+        onClose={() => setAddAt(null)}
+        onPick={(t) => addContainer(addAt.zone, addAt.index, t)}
+        onPickTemplate={(id) => addTemplate(addAt.zone, addAt.index, id)}
       />
     ) : null;
 
