@@ -105,6 +105,7 @@ function sanitizePastedHtml(html: string): string {
   tpl.content
     .querySelectorAll("script,style,meta,link,title,head,noscript,iframe,object,embed")
     .forEach((n) => n.remove());
+  const BG_BLOCKS = /^(P|DIV|H[1-6]|UL|OL|LI|SECTION|ARTICLE|BLOCKQUOTE|FONT)$/;
   tpl.content.querySelectorAll<HTMLElement>("*").forEach((el) => {
     Array.from(el.attributes).forEach((a) => {
       const n = a.name.toLowerCase();
@@ -113,6 +114,16 @@ function sanitizePastedHtml(html: string): string {
         el.removeAttribute(a.name);
       }
     });
+    // Word / Google Docs paste carries block-level backgrounds (e.g.
+    // "background: rgb(244,244,244)") that render as a light box on the dark
+    // website. Strip them from block elements; span-level backgrounds are kept
+    // so intentional text highlights survive.
+    if (BG_BLOCKS.test(el.tagName)) {
+      el.style.removeProperty("background");
+      el.style.removeProperty("background-color");
+      el.removeAttribute("bgcolor");
+      if (!el.getAttribute("style")) el.removeAttribute("style");
+    }
   });
   return tpl.innerHTML;
 }

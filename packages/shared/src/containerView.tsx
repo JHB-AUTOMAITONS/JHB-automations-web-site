@@ -69,6 +69,26 @@ function Head({ lead, highlight }: { lead: string; highlight: string }) {
 // that must not contain markup.
 const stripTags = (html: string) => (html || "").replace(/<[^>]+>/g, "").trim();
 
+// Remove background styles that ride in on HTML pasted from Word / Google Docs
+// (e.g. style="background: rgb(244, 244, 244)") so rich hero text never renders
+// inside a light box on the dark site. By default only BLOCK elements are
+// cleaned — span-level backgrounds are the editor's intentional highlight
+// feature. Pass `all` to also strip spans (used for headings, which must never
+// carry a background).
+const BG_BLOCK_TAGS = /^(p|div|h[1-6]|ul|ol|li|section|article|blockquote|font)$/i;
+function stripBgStyles(html: string, all = false): string {
+  if (!html || !/background|bgcolor/i.test(html)) return html;
+  return html.replace(/<([a-z][a-z0-9]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/gi, (m, tag, attrs) => {
+    if (!all && !BG_BLOCK_TAGS.test(tag)) return m;
+    const cleaned = (attrs as string)
+      .replace(/\s+bgcolor\s*=\s*("[^"]*"|'[^']*'|\S+)/gi, "")
+      .replace(/style\s*=\s*"([^"]*)"/gi, (_s, css: string) => `style="${css.replace(/background(?:-color)?\s*:[^;"]*;?/gi, "")}"`)
+      .replace(/style\s*=\s*'([^']*)'/gi, (_s, css: string) => `style='${css.replace(/background(?:-color)?\s*:[^;']*;?/gi, "")}'`)
+      .replace(/\s+style\s*=\s*(""|'')/gi, "");
+    return `<${tag}${cleaned}>`;
+  });
+}
+
 function Hero({ c }: { c: HeroContainer }) {
   const p = c.props;
   if (p.hidden) return null;
@@ -83,8 +103,15 @@ function Hero({ c }: { c: HeroContainer }) {
       : undefined;
   // Heading: plain values keep the real <hN> tag (SEO); rich HTML renders in a
   // heading-styled div (bold → gradient). Highlight is appended as a gradient tail.
+  // Backgrounds are stripped so Word/Docs-pasted headings never bring a light box
+  // onto the dark theme (the heading strips ALL backgrounds; the description only
+  // block-level ones, keeping the editor's intentional word highlights).
   const headingIsRich = /<[a-z][\s\S]*?>/i.test(p.heading || "");
-  const headingHtml = `${p.heading || ""}${p.highlight ? ` <span class="grad-text">${p.highlight}</span>` : ""}`;
+  const headingHtml = stripBgStyles(
+    `${p.heading || ""}${p.highlight ? ` <span class="grad-text">${p.highlight}</span>` : ""}`,
+    true,
+  );
+  const subtitleHtml = stripBgStyles(p.subtitle || "");
   return (
     <section className={sectionClass} style={sectionStyle}>
       <div className={`container-x ${ALIGN[c.style.align]}`}>
@@ -108,7 +135,7 @@ function Hero({ c }: { c: HeroContainer }) {
             <Reveal delay={0.16}>
               <div
                 className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
-                dangerouslySetInnerHTML={{ __html: p.subtitle }}
+                dangerouslySetInnerHTML={{ __html: subtitleHtml }}
               />
             </Reveal>
           ) : null}
