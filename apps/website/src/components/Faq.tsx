@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HOME_FAQ_DEFAULTS, type HomeFaqItem } from "@jhb/shared/home-faqs";
 import { faqPlainText } from "@jhb/shared/faqs";
+import { smartImgAttrs, type ImageSettings } from "@jhb/shared/containers";
 import Reveal from "./Reveal";
 import SmartLink from "./SmartLink";
 
@@ -19,6 +20,14 @@ export default function Faq({
   linkText = "Talk to our team",
   linkHref = "/#contact",
   showNumbers = true,
+  image = null,
+  imageAlt = "",
+  imageTitle = "",
+  imageCaption = "",
+  imageDescription = "",
+  imageSide = "left",
+  imageSettings,
+  showIllustration = true,
 }: {
   items?: HomeFaqItem[];
   eyebrow?: string;
@@ -28,8 +37,27 @@ export default function Faq({
   linkText?: string;
   linkHref?: string;
   showNumbers?: boolean;
+  image?: string | null;
+  imageAlt?: string;
+  imageTitle?: string;
+  imageCaption?: string;
+  imageDescription?: string;
+  imageSide?: "left" | "right";
+  imageSettings?: ImageSettings;
+  showIllustration?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(0);
+
+  // Illustration column: an admin-uploaded image (with the universal size panel),
+  // the built-in decorative artwork (the original design, default), or nothing —
+  // in which case the accordion spans the full width.
+  const hasImage = !!image;
+  const showArt = hasImage || showIllustration !== false;
+  const artRight = imageSide === "right";
+  const imgA = smartImgAttrs(imageSettings, {
+    extraClass: "mx-auto rounded-3xl border border-ink/10",
+    fallbackWidth: "w-full max-w-md",
+  });
 
   // DB-driven FAQs (fallback to built-in defaults when none are published)
   const source = items && items.length > 0 ? items : HOME_FAQ_DEFAULTS;
@@ -54,14 +82,47 @@ export default function Faq({
       />
 
       <div className="container-x">
-        <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          {/* Left: illustration */}
-          <Reveal className="order-2 lg:order-1">
-            <FaqIllustration />
-          </Reveal>
+        <div
+          className={`grid items-center gap-10 ${
+            showArt ? (artRight ? "lg:grid-cols-[1.1fr_0.9fr]" : "lg:grid-cols-[0.9fr_1.1fr]") : ""
+          }`}
+        >
+          {/* Illustration column — uploaded image, built-in artwork, or hidden */}
+          {showArt && (
+            <Reveal
+              className={
+                hasImage
+                  ? `order-1 ${artRight ? "lg:order-2" : "lg:order-1"}`
+                  : `order-2 ${artRight ? "lg:order-2" : "lg:order-1"}`
+              }
+            >
+              {hasImage ? (
+                <figure>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image!}
+                    alt={imageAlt}
+                    {...(imageTitle ? { title: imageTitle } : {})}
+                    className={imgA.className}
+                    style={imgA.style}
+                    loading={imgA.loading}
+                    {...(imgA.fetchPriority ? { fetchPriority: imgA.fetchPriority } : {})}
+                  />
+                  {(imageCaption || imageDescription) && (
+                    <figcaption className="mt-3 text-center text-sm text-muted">
+                      {imageCaption ? <span className="block font-medium text-ink/80">{imageCaption}</span> : null}
+                      {imageDescription ? <span className="block">{imageDescription}</span> : null}
+                    </figcaption>
+                  )}
+                </figure>
+              ) : (
+                <FaqIllustration />
+              )}
+            </Reveal>
+          )}
 
-          {/* Right: heading + accordion */}
-          <div className="order-1 lg:order-2">
+          {/* Heading + accordion */}
+          <div className={showArt ? `${hasImage ? "order-2" : "order-1"} ${artRight ? "lg:order-1" : "lg:order-2"}` : ""}>
             <Reveal>
               {eyebrow && <span className="eyebrow">{eyebrow}</span>}
             </Reveal>

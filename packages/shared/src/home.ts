@@ -1,6 +1,6 @@
 // Home page content — client-safe types + defaults (no server-only imports).
 
-import type { PageContainer } from "./containers";
+import type { ImageSettings, PageContainer } from "./containers";
 
 export type HeroBlock = {
   badge: string;
@@ -51,6 +51,18 @@ export type TestimonialsHeader = SectionHeader & {
 export type FaqHeader = SectionHeader & {
   linkText: string; // inline help link label, e.g. "Talk to our team"
   linkHref: string;
+  // Optional FAQ illustration image. When unset the built-in decorative artwork
+  // shows (unless showIllustration is false, which hides the column entirely and
+  // lets the accordion span the full width). All additive — existing pages
+  // render unchanged.
+  image?: string | null;
+  imageAlt?: string;
+  imageTitle?: string;
+  imageCaption?: string;
+  imageDescription?: string;
+  imageSide?: "left" | "right"; // default left (the current illustration side)
+  imageSettings?: ImageSettings;
+  showIllustration?: boolean; // default true — the built-in artwork
 };
 
 export type BlogHeader = SectionHeader & {
@@ -76,6 +88,10 @@ export type FounderBlock = {
   eyebrow: string;
   heading: string;
   highlight: string;
+  // Horizontal alignment of the eyebrow + heading only (description/list keep
+  // their layout). "left" matches the original hardcoded design, so existing
+  // pages render unchanged until an admin picks something else.
+  headingAlign?: "left" | "center" | "right";
   descriptionHtml: string;
   focusTitle: string;
   focusPoints: string[];

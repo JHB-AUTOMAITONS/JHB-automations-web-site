@@ -24,6 +24,7 @@ import type { PartnersDoc } from "@jhb/shared/partners";
 import RichText from "./RichText";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
+import AlignPicker from "./AlignPicker";
 import HomeFaqManager from "./HomeFaqManager";
 import StatsManager from "./StatsManager";
 import PartnersManager from "./PartnersManager";
@@ -461,6 +462,11 @@ export default function HomeManager({
               <Field label="Heading" value={founder.heading} onChange={(v) => setF("heading", v)} />
               <Field label="Highlighted phrase" value={founder.highlight} onChange={(v) => setF("highlight", v)} />
             </div>
+            <AlignPicker
+              label="Heading alignment"
+              value={founder.headingAlign ?? "left"}
+              onChange={(v) => setF("headingAlign", v)}
+            />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Description</span>
               <RichText value={founder.descriptionHtml} onChange={(html) => setF("descriptionHtml", html)} />
@@ -520,6 +526,39 @@ export default function HomeManager({
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Help link text (e.g. Talk to our team)" value={faqHeader.linkText} onChange={(v) => setFaqHeader((p) => ({ ...p, linkText: v }))} />
               <Field label="Help link URL" value={faqHeader.linkHref} onChange={(v) => setFaqHeader((p) => ({ ...p, linkHref: v }))} />
+            </div>
+            {/* FAQ illustration image — replaces the built-in artwork when set */}
+            <div className="mt-4 rounded-xl border border-ink/10 bg-base p-3">
+              <ImagePicker
+                label="FAQ illustration image (optional — replaces the built-in artwork)"
+                value={faqHeader.image ?? null}
+                onChange={(u) => setFaqHeader((p) => ({ ...p, image: u }))}
+                alt={false}
+                settings={faqHeader.imageSettings}
+                onChangeSettings={(imageSettings) => setFaqHeader((p) => ({ ...p, imageSettings }))}
+              />
+              <div className="mt-3 flex flex-wrap items-end gap-4">
+                <AlignPicker
+                  label="Image side"
+                  options={["left", "right"]}
+                  value={faqHeader.imageSide === "right" ? "right" : "left"}
+                  onChange={(v) => setFaqHeader((p) => ({ ...p, imageSide: v === "right" ? "right" : "left" }))}
+                />
+                <label className="flex items-center gap-2 pb-1 text-xs text-muted">
+                  <input
+                    type="checkbox"
+                    checked={faqHeader.showIllustration !== false}
+                    onChange={(e) => setFaqHeader((p) => ({ ...p, showIllustration: e.target.checked }))}
+                  />
+                  Show the built-in artwork when no image is uploaded (off = FAQ list spans full width)
+                </label>
+              </div>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Field label="Image alt text (SEO)" value={faqHeader.imageAlt ?? ""} onChange={(v) => setFaqHeader((p) => ({ ...p, imageAlt: v }))} />
+                <Field label="Image title" value={faqHeader.imageTitle ?? ""} onChange={(v) => setFaqHeader((p) => ({ ...p, imageTitle: v }))} />
+                <Field label="Image caption" value={faqHeader.imageCaption ?? ""} onChange={(v) => setFaqHeader((p) => ({ ...p, imageCaption: v }))} />
+                <Field label="Image description" value={faqHeader.imageDescription ?? ""} onChange={(v) => setFaqHeader((p) => ({ ...p, imageDescription: v }))} />
+              </div>
             </div>
           </HeaderCard>
 
@@ -605,6 +644,7 @@ export default function HomeManager({
               stats={stats}
               partners={partners}
               faqs={faqPreview}
+              faqHeader={faqHeader}
               founder={founder}
               cta={cta}
               containers={containers}
@@ -745,6 +785,7 @@ function Preview({
   stats,
   partners,
   faqs,
+  faqHeader,
   founder,
   cta,
   containers,
@@ -756,6 +797,7 @@ function Preview({
   stats: StatsContent;
   partners: PartnersDoc;
   faqs: FaqPreviewRow[];
+  faqHeader: FaqHeader;
   founder: FounderBlock;
   cta: CtaBlock;
   containers: PageContainer[];
@@ -853,9 +895,11 @@ function Preview({
       {/* founder */}
       {founder.enabled && (
         <div className="border-t border-ink/10 p-5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{founder.eyebrow}</span>
-          <div className="mt-1 font-display text-base font-bold">
-            {founder.heading} <span className="grad-text">{founder.highlight}</span>
+          <div className={founder.headingAlign === "center" ? "text-center" : founder.headingAlign === "right" ? "text-right" : ""}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{founder.eyebrow}</span>
+            <div className="mt-1 font-display text-base font-bold">
+              {founder.heading} <span className="grad-text">{founder.highlight}</span>
+            </div>
           </div>
           <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: founder.descriptionHtml }} />
           {(founder.name || founder.company) && (
@@ -878,6 +922,13 @@ function Preview({
       {activeFaqs.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">FAQ</p>
+          {faqHeader.image && (
+            <div className={`mt-3 ${faqHeader.imageSide === "right" ? "text-right" : "text-left"}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={faqHeader.image} alt={faqHeader.imageAlt ?? ""} className="inline-block max-h-32 rounded-xl border border-ink/10 object-contain" />
+              {faqHeader.imageCaption ? <p className="mt-1 text-[10px] text-muted">{faqHeader.imageCaption}</p> : null}
+            </div>
+          )}
           <div className="mt-3">
             <FaqAccordionView items={activeFaqs} />
           </div>

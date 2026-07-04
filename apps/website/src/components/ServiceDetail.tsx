@@ -14,7 +14,7 @@ import type {
 } from "@jhb/shared/service-pages";
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
-import type { ContainerBg, PageContainer } from "@jhb/shared/containers";
+import { smartImgAttrs, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
@@ -174,6 +174,24 @@ export default function ServiceDetail({
   // Enabled "Why Choose Us" containers (admin-managed). Falls back to the
   // original static section below when none are configured.
   const whyChoose = (db?.whyChoose ?? []).filter((c) => c.enabled);
+  // Hero heading alignment (chrome.heroHeadingAlign) — eyebrow + H1 only;
+  // "left"/unset keeps the original design.
+  const heroHeadingAlignClass =
+    db?.chrome?.heroHeadingAlign === "center"
+      ? "text-center"
+      : db?.chrome?.heroHeadingAlign === "right"
+        ? "text-right"
+        : "";
+  // Hero image layout (chrome.heroImage) — absent/tile renders the legacy icon
+  // tile unchanged; "image" renders the uploaded image with the universal size
+  // panel applied; "hidden" removes the column so content spans full width.
+  const heroImg = db?.chrome?.heroImage ?? {};
+  const heroImgMode = heroImg.mode || "tile";
+  const showHeroVisual = heroImgMode !== "hidden";
+  const heroImgLeft = heroImgMode === "image" && heroImg.align === "left";
+  const heroImgA = smartImgAttrs(heroImg.settings, {
+    extraClass: "mx-auto rounded-3xl border border-ink/10 shadow-soft",
+  });
   return (
     <main className="relative pt-24">
       {/* ambient glows */}
@@ -197,21 +215,27 @@ export default function ServiceDetail({
           <span className="min-w-0 break-words text-primary">{heading}</span>
         </nav>
 
-        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="min-w-0">
-            <motion.span
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="eyebrow"
-            >
-              {data.tagline}
-            </motion.span>
+        <div
+          className={`grid items-center gap-10 ${
+            showHeroVisual ? (heroImgLeft ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.1fr_0.9fr]") : ""
+          }`}
+        >
+          <div className={`min-w-0 ${heroImgLeft ? "lg:order-2" : ""}`}>
+            <div className={heroHeadingAlignClass}>
+              <motion.span
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="eyebrow"
+              >
+                {data.tagline}
+              </motion.span>
+            </div>
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="mt-6 break-words font-display text-[2rem] font-bold leading-[1.12] tracking-tight sm:text-5xl sm:leading-[1.08]"
+              className={`mt-6 break-words font-display text-[2rem] font-bold leading-[1.12] tracking-tight sm:text-5xl sm:leading-[1.08] ${heroHeadingAlignClass}`}
             >
               {db?.heroLink ? (
                 <a
@@ -260,7 +284,35 @@ export default function ServiceDetail({
             </motion.div>
           </div>
 
-          {/* icon visual */}
+          {/* hero visual — custom image (chrome.heroImage), or the legacy icon tile */}
+          {showHeroVisual && heroImgMode === "image" && db?.image ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className={`min-w-0 order-first ${heroImgLeft ? "lg:order-1" : "lg:order-none"}`}
+            >
+              <figure>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={db.image}
+                  alt={db.imageAlt || heading}
+                  {...(db.imageTitle ? { title: db.imageTitle } : {})}
+                  className={heroImgA.className}
+                  style={heroImgA.style}
+                  loading={heroImg.settings?.loading ?? "eager"}
+                  {...(heroImgA.fetchPriority ? { fetchPriority: heroImgA.fetchPriority } : {})}
+                />
+                {(heroImg.caption || heroImg.description) && (
+                  <figcaption className="mt-3 text-center text-sm text-muted">
+                    {heroImg.caption ? <span className="block font-medium text-ink/80">{heroImg.caption}</span> : null}
+                    {heroImg.description ? <span className="block">{heroImg.description}</span> : null}
+                  </figcaption>
+                )}
+              </figure>
+            </motion.div>
+          ) : null}
+          {showHeroVisual && !(heroImgMode === "image" && db?.image) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -298,6 +350,7 @@ export default function ServiceDetail({
               </div>
             ))}
           </motion.div>
+          )}
         </div>
       </section>
 

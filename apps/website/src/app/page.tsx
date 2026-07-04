@@ -137,6 +137,14 @@ export default async function Home() {
         linkText={home.faqHeader.linkText}
         linkHref={home.faqHeader.linkHref}
         showNumbers={settings.faqShowNumbers}
+        image={home.faqHeader.image ?? null}
+        imageAlt={home.faqHeader.imageAlt ?? ""}
+        imageTitle={home.faqHeader.imageTitle ?? ""}
+        imageCaption={home.faqHeader.imageCaption ?? ""}
+        imageDescription={home.faqHeader.imageDescription ?? ""}
+        imageSide={home.faqHeader.imageSide ?? "left"}
+        imageSettings={home.faqHeader.imageSettings}
+        showIllustration={home.faqHeader.showIllustration !== false}
       />
       <PageContainers containers={home.containers} zone="after-faq" />
       <BlogPreview

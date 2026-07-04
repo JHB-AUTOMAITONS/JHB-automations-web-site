@@ -6,6 +6,10 @@ import Reveal from "./Reveal";
 // to the client bundle.
 export default function FounderPerspective({ founder }: { founder: FounderBlock }) {
   if (!founder.enabled) return null;
+  // Admin-selected alignment for the eyebrow + heading only ("left" = the
+  // original design; description/focus list keep their layout untouched).
+  const headingAlign =
+    founder.headingAlign === "center" ? "text-center" : founder.headingAlign === "right" ? "text-right" : "";
 
   return (
     <section id="founder" className="relative py-12 sm:py-16">
@@ -13,11 +17,11 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left: copy */}
           <div className="order-2 lg:order-1">
-            <Reveal>
+            <Reveal className={headingAlign}>
               <span className="eyebrow">{founder.eyebrow}</span>
             </Reveal>
             <Reveal delay={0.08}>
-              <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className={`mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl ${headingAlign}`}>
                 {founder.heading} <span className="grad-text">{founder.highlight}</span>
               </h2>
             </Reveal>

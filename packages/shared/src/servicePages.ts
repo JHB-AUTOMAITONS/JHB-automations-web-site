@@ -1,6 +1,6 @@
 // Service Page Editor types — client-safe.
 
-import type { ContainerAlign, ContainerBg, ContainerPad, PageContainer } from "./containers";
+import type { ContainerAlign, ContainerBg, ContainerPad, ImageSettings, PageContainer } from "./containers";
 
 export type ServiceFeature = {
   title: string;
@@ -149,11 +149,27 @@ export type RelatedServicesContent = {
 // Per-page chrome: hero CTA buttons + the Related Services section.
 // Stored as `chrome` jsonb column; all fields are optional on the DB side and
 // fall back to SERVICE_CHROME_DEFAULT when unset.
+// Hero image layout — all optional so absent config renders the legacy design
+// (the 160px icon tile on the right) unchanged. Lives inside `chrome` jsonb so
+// no new column / migration is needed.
+export type ServiceHeroImage = {
+  mode?: "tile" | "image" | "hidden"; // tile = legacy icon tile (default)
+  align?: "left" | "center" | "right"; // image column side; default right
+  settings?: ImageSettings; // width/height/radius/fit/shadow… (universal panel)
+  caption?: string;
+  description?: string;
+};
+
 export type ServiceChrome = {
   heroPrimaryText: string;
   heroPrimaryHref: string;
   heroSecondaryText: string;
   heroSecondaryHref: string;
+  // Horizontal alignment of the hero eyebrow + H1 only. "left" matches the
+  // original design, so existing pages render unchanged until edited.
+  heroHeadingAlign?: "left" | "center" | "right";
+  // Hero image layout (see ServiceHeroImage). Absent → legacy icon tile.
+  heroImage?: ServiceHeroImage;
   // Legacy heading fields — kept for back-compat / fallback. The editable
   // Related Services section (`related`) supersedes them once seeded.
   relatedHeadingLead: string;

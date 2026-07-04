@@ -8,13 +8,16 @@ import {
   seedRelatedServices,
   type InternalPage,
   type RelatedServicesContent,
+  type ServiceHeroImage,
   type ServicePage,
   type ServicePagePayload,
   type ServiceStatus,
 } from "@jhb/shared/service-pages";
+import { smartImgAttrs } from "@jhb/shared/containers";
 import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
+import AlignPicker from "./AlignPicker";
 import LocalDateTime from "./LocalDateTime";
 import WhatsIncludedEditor from "./WhatsIncludedEditor";
 import WhyChooseEditor from "./WhyChooseEditor";
@@ -306,6 +309,11 @@ export default function ServicePageEditor({
             <p className="-mt-1 text-[11px] text-muted">
               The <span className="grad-text font-semibold">Highlight</span> word automatically uses the brand gradient — no formatting needed. Leave Highlight empty to keep the whole heading gradient (legacy style).
             </p>
+            <AlignPicker
+              label="Heading alignment"
+              value={form.chrome.heroHeadingAlign ?? "left"}
+              onChange={(v) => set("chrome", { ...form.chrome, heroHeadingAlign: v })}
+            />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Hero description</span>
               <RichEditor
@@ -322,15 +330,87 @@ export default function ServicePageEditor({
                 placeholder="https://… or /seo (optional) — makes the hero heading a link"
               />
             </Field>
-            <Field label="Service image">
-              <ImagePicker value={form.image_url} onChange={(u) => set("image_url", u)} alt={false} />
-            </Field>
-            <Field label="Image alt text">
-              <input value={form.image_alt ?? ""} onChange={(e) => set("image_alt", e.target.value)} className="input" placeholder="Describe the image for SEO & accessibility" />
-            </Field>
-            <Field label="Image title (optional, SEO)">
-              <input value={form.image_title ?? ""} onChange={(e) => set("image_title", e.target.value)} className="input" placeholder="Title attribute shown on hover" />
-            </Field>
+            <div className="rounded-xl border border-ink/10 bg-base p-3">
+              <Field label="Service image">
+                <ImagePicker
+                  value={form.image_url}
+                  onChange={(u) => set("image_url", u)}
+                  alt={false}
+                  settings={form.chrome.heroImage?.settings}
+                  onChangeSettings={(settings) =>
+                    set("chrome", { ...form.chrome, heroImage: { ...(form.chrome.heroImage ?? {}), settings } })
+                  }
+                />
+              </Field>
+              {(() => {
+                const hi: ServiceHeroImage = form.chrome.heroImage ?? {};
+                const setHi = (patch: Partial<ServiceHeroImage>) =>
+                  set("chrome", { ...form.chrome, heroImage: { ...hi, ...patch } });
+                return (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex flex-wrap items-end gap-4">
+                      <Field label="Hero image style">
+                        <select
+                          value={hi.mode ?? "tile"}
+                          onChange={(e) => setHi({ mode: e.target.value as ServiceHeroImage["mode"] })}
+                          className="input"
+                        >
+                          <option value="tile">Icon tile (default design)</option>
+                          <option value="image">Full image (uses the size panel)</option>
+                          <option value="hidden">Hidden — content spans full width</option>
+                        </select>
+                      </Field>
+                      {(hi.mode ?? "tile") === "image" && (
+                        <AlignPicker
+                          label="Image position"
+                          value={hi.align ?? "right"}
+                          onChange={(v) => setHi({ align: v })}
+                        />
+                      )}
+                    </div>
+                    {(hi.mode ?? "tile") === "image" && (
+                      <>
+                        <div>
+                          <span className="mb-1 block text-[11px] font-medium text-muted">Image width presets (or set a custom width in the Size &amp; style panel above)</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {["25%", "50%", "75%", "100%"].map((w) => (
+                              <button
+                                key={w}
+                                type="button"
+                                onClick={() => setHi({ settings: { ...(hi.settings ?? {}), width: w } })}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                                  hi.settings?.width === w
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-ink/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {w}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Field label="Image caption (optional)">
+                            <input value={hi.caption ?? ""} onChange={(e) => setHi({ caption: e.target.value })} className="input" />
+                          </Field>
+                          <Field label="Image description (optional)">
+                            <input value={hi.description ?? ""} onChange={(e) => setHi({ description: e.target.value })} className="input" />
+                          </Field>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field label="Image alt text">
+                  <input value={form.image_alt ?? ""} onChange={(e) => set("image_alt", e.target.value)} className="input" placeholder="Describe the image for SEO & accessibility" />
+                </Field>
+                <Field label="Image title (optional, SEO)">
+                  <input value={form.image_title ?? ""} onChange={(e) => set("image_title", e.target.value)} className="input" placeholder="Title attribute shown on hover" />
+                </Field>
+              </div>
+            </div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Hero buttons</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Primary button text">
@@ -443,16 +523,24 @@ export default function ServicePageEditor({
               <div className="mx-auto bg-surface shadow-soft transition-all" style={{ width: DEVICE_W[device], maxWidth: "100%" }}>
                 <div className="p-5">
                   <PageContainersView containers={cb.containers} zone="top" />
-                  {form.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={form.image_url}
-                      alt={form.image_alt ?? ""}
-                      {...(form.image_title ? { title: form.image_title } : {})}
-                      className="mb-4 aspect-[16/9] w-full rounded-xl object-cover"
-                    />
-                  )}
-                  <h2 className="font-display text-2xl font-bold">
+                  {form.image_url && (form.chrome.heroImage?.mode ?? "tile") !== "hidden" && (() => {
+                    const hi = form.chrome.heroImage ?? {};
+                    const a = smartImgAttrs(hi.settings, {
+                      extraClass: "mb-4 rounded-xl mx-auto",
+                      fallbackWidth: (hi.mode ?? "tile") === "image" ? "w-full" : "aspect-[16/9] w-full",
+                    });
+                    return (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={form.image_url}
+                        alt={form.image_alt ?? ""}
+                        {...(form.image_title ? { title: form.image_title } : {})}
+                        className={a.className}
+                        style={a.style}
+                      />
+                    );
+                  })()}
+                  <h2 className={`font-display text-2xl font-bold ${form.chrome.heroHeadingAlign === "center" ? "text-center" : form.chrome.heroHeadingAlign === "right" ? "text-right" : ""}`}>
                     {form.hero_link ? (
                       <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
                     ) : (
