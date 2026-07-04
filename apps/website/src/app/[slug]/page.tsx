@@ -87,7 +87,18 @@ export default async function ServicePage({
     .map((s) => ({ title: s.title, slug: s.slug, icon: s.icon }));
   // key → public URL, so the editable Related Services cards resolve their target.
   const relatedUrlByKey = Object.fromEntries(services.map((s) => [s.key, `/${s.slug}`]));
-  const faqs = faqRows.map((f) => ({ question: f.question, answer: f.answer }));
+  // FAQ source of truth: the Service Page editor's published FAQs (the
+  // `jhb_services.faq` column). Falls back to the legacy /faqs-screen table
+  // (jhb_service_faqs) for pages whose FAQs were never edited in the page
+  // editor, so nothing that is currently live disappears.
+  const editorFaqs =
+    dbContent && dbContent.status === "published"
+      ? (dbContent.faq ?? []).filter((f) => (f.question || "").trim())
+      : [];
+  const faqs = (editorFaqs.length > 0 ? editorFaqs : faqRows).map((f) => ({
+    question: f.question,
+    answer: f.answer,
+  }));
   const links = linkRows.map((l) => ({
     anchor_text: l.anchor_text,
     url: l.url,

@@ -148,6 +148,7 @@ export type PublishedServiceContent = {
   hero_link: string | null;
   features: ServiceFeature[] | null;
   whats_included: WhatsIncludedContent | null;
+  faq: ServiceFaqItem[] | null;
   why_choose: WhyChooseContainer[] | null;
   cta: ServiceCta | null;
   image_url: string | null;
@@ -164,7 +165,7 @@ export async function getPublishedServiceContent(
     const supabase = await createClient();
     const { data } = await supabase
       .from("jhb_services")
-      .select("status, hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, why_choose, cta, image_url, image_alt, image_title, containers, chrome")
+      .select("status, hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, faq, why_choose, cta, image_url, image_alt, image_title, containers, chrome")
       .eq("key", key)
       .maybeSingle();
     return (data as PublishedServiceContent) ?? null;
