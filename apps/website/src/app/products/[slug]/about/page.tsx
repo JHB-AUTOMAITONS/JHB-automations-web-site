@@ -103,7 +103,7 @@ export default async function AboutProductPage({
 
         {/* Hero */}
         <section className="container-x">
-          <nav className="flex items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
+          <nav className="flex flex-wrap items-center gap-2 text-sm text-muted" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-ink">Home</Link>
             <span>/</span>
             <Link href={`/products/${p.slug}`} className="hover:text-ink">{p.title}</Link>

@@ -112,7 +112,7 @@ export default function Contact({
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
                     📞
                   </span>
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-muted">{callLabel}</p>
                     <p className="font-medium">{settings.phone}</p>
                   </div>
@@ -121,7 +121,7 @@ export default function Contact({
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
                     ✉️
                   </span>
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-muted">{emailLabel}</p>
                     <p className="font-medium">{settings.email}</p>
                   </div>
@@ -130,7 +130,7 @@ export default function Contact({
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
                     📍
                   </span>
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-muted">{visitLabel}</p>
                     <p className="font-medium">{settings.address}</p>
                   </div>

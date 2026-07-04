@@ -85,7 +85,7 @@ export default function LikeButton({
       aria-pressed={liked}
       title={liked ? "You liked this post" : "Like this post"}
       className={`group/like inline-flex items-center gap-2 rounded-full border font-medium transition-colors ${
-        detail ? "px-4 py-2 text-sm" : "px-3 py-1.5 text-xs"
+        detail ? "px-4 py-2 text-sm" : "min-h-10 px-3 py-1.5 text-xs"
       } ${liked ? "border-red-200 bg-red-50 text-red-500" : "border-ink/10 text-muted hover:border-red-200 hover:text-red-500"}`}
     >
       <span className={`inline-flex transition-transform group-hover/like:scale-110 ${burst ? "like-pop" : ""}`}>

@@ -35,7 +35,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           <motion.h1
             {...fade}
             transition={{ duration: 0.5, delay: 0.05 }}
-            className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl"
+            className="mt-5 font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl"
           >
             {hub.hero.heading} <span className="grad-text">{hub.hero.highlight}</span>
           </motion.h1>
@@ -67,7 +67,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
       <section id="tools" className="container-x mt-16">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.categoriesEyebrow && <span className="eyebrow">{hub.sections.categoriesEyebrow}</span>}
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             {hub.sections.categoriesHeadingLead}{hub.sections.categoriesHeadingLead && hub.sections.categoriesHeadingHighlight ? " " : ""}
             {hub.sections.categoriesHeadingHighlight && <span className="grad-text">{hub.sections.categoriesHeadingHighlight}</span>}
           </h2>
@@ -97,7 +97,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
       <section id="crm" className="container-x mt-16 scroll-mt-28">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.crmEyebrow && <span className="eyebrow">{hub.sections.crmEyebrow}</span>}
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             <span className="grad-text">{hub.crm.heading}</span>
           </h2>
           <div
@@ -113,12 +113,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
               key={f.title}
               {...fade}
               transition={{ duration: 0.45, delay: (i % 2) * 0.06 }}
-              className="flex gap-4 rounded-2xl border border-ink/10 bg-surface p-5 shadow-soft"
+              className="flex gap-4 rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft"
             >
               <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
                 {i + 1}
               </span>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-display text-lg font-semibold">{f.title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.desc}</p>
               </div>
@@ -169,7 +169,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
       <section id="other-tools" className="container-x mt-16 scroll-mt-28">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.otherToolsEyebrow && <span className="eyebrow">{hub.sections.otherToolsEyebrow}</span>}
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             {hub.sections.otherToolsHeadingLead}{hub.sections.otherToolsHeadingLead && hub.sections.otherToolsHeadingHighlight ? " " : ""}
             {hub.sections.otherToolsHeadingHighlight && <span className="grad-text">{hub.sections.otherToolsHeadingHighlight}</span>}
           </h2>
@@ -180,12 +180,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
               key={c.id}
               {...fade}
               transition={{ duration: 0.45, delay: (i % 3) * 0.06 }}
-              className="flex gap-4 rounded-2xl border border-ink/10 bg-surface p-5 shadow-soft"
+              className="flex gap-4 rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft"
             >
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary ring-1 ring-ink/10">
                 <Icon name={c.icon} className="h-5 w-5" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-display text-base font-semibold">{c.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted">{c.desc}</p>
               </div>
@@ -200,7 +200,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
       <section className="container-x mt-16">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.benefitsEyebrow && <span className="eyebrow">{hub.sections.benefitsEyebrow}</span>}
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             {hub.sections.benefitsHeadingLead}{hub.sections.benefitsHeadingLead && hub.sections.benefitsHeadingHighlight ? " " : ""}
             {hub.sections.benefitsHeadingHighlight && <span className="grad-text">{hub.sections.benefitsHeadingHighlight}</span>}
           </h2>

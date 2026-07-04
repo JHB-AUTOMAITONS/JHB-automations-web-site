@@ -14,7 +14,7 @@ export default function BlogFaq({ faqs, showNumbers = true }: { faqs: BlogFaq[];
   return (
     <section className="mx-auto mt-12 max-w-[1200px] border-t border-ink/10 pt-10" aria-label="Frequently asked questions">
       <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">FAQ</span>
-      <h2 className="mt-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+      <h2 className="mt-5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
         Frequently Asked <span className="grad-text">Questions</span>
       </h2>
 
@@ -34,7 +34,7 @@ export default function BlogFaq({ faqs, showNumbers = true }: { faqs: BlogFaq[];
                 aria-expanded={isOpen}
                 className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
               >
-                <span className="font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
+                <span className="min-w-0 break-words font-display text-base font-semibold !text-[#1877F2] sm:text-lg">
                   {showNumbers && <span className="mr-2 tabular-nums">{String(i + 1).padStart(2, "0")}.</span>}
                   {f.question}
                 </span>

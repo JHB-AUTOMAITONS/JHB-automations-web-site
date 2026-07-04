@@ -44,7 +44,7 @@ function Reveal({ children, className }: { children: ReactNode; delay?: number; 
   return <div className={className}>{children}</div>;
 }
 
-const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-10", md: "py-14", lg: "py-20" };
+const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-8 sm:py-10", md: "py-12 sm:py-14", lg: "py-16 sm:py-20" };
 const ALIGN: Record<ContainerStyle["align"], string> = { left: "text-left", center: "text-center", right: "text-right" };
 const COLS: Record<2 | 3 | 4, string> = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" };
 
@@ -123,11 +123,11 @@ function Hero({ c }: { c: HeroContainer }) {
                 <div
                   role="heading"
                   aria-level={c.headingTag ? Number(c.headingTag.slice(1)) : 2}
-                  className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text"
+                  className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text"
                   dangerouslySetInnerHTML={{ __html: headingHtml }}
                 />
               ) : (
-                <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
+                <Heading tag={c.headingTag} fallback="h2" className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
               )}
             </Reveal>
           ) : null}
@@ -173,7 +173,7 @@ function Features({ c }: { c: FeaturesContainer }) {
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.subtitle) && (
-          <div className={`mb-12 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
+          <div className={`mb-10 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
             {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
@@ -234,17 +234,17 @@ function Faq({ c }: { c: FaqContainer }) {
     <section className={shell(c.style)}>
       <div className="container-x">
         {p.heading ? (
-          <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-8 text-center font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
+          <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         ) : null}
         <div className="mx-auto max-w-3xl space-y-3">
           {p.items.map((f, i) => (
             <Reveal key={f.id}>
-              <details className="glass rounded-2xl p-5">
-                <summary className="cursor-pointer font-display font-semibold !text-[#1877F2]">
+              <details className="glass rounded-2xl">
+                <summary className="block cursor-pointer break-words p-5 font-display font-semibold !text-[#1877F2]">
                   {p.showNumbers !== false && <span className="mr-2 tabular-nums">{String(i + 1).padStart(2, "0")}.</span>}
                   {f.q}
                 </summary>
-                <p className="mt-3 leading-relaxed text-muted">{f.a}</p>
+                <p className="break-words px-5 pb-5 leading-relaxed text-muted">{f.a}</p>
               </details>
             </Reveal>
           ))}
@@ -281,15 +281,18 @@ function ImageBanner({ c }: { c: ImageBannerContainer }) {
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
-        <div className="relative overflow-hidden rounded-3xl border border-ink/10">
+        {/* min-h on the wrapper guarantees the banner height with or without overlay
+            content; the image fills absolutely so long overlay text GROWS the banner
+            instead of being clipped at the fixed height. */}
+        <div className="relative min-h-[320px] overflow-hidden rounded-3xl border border-ink/10 sm:min-h-[420px]">
           {p.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.image} alt={p.heading} className="h-[320px] w-full object-cover sm:h-[420px]" />
+            <img src={p.image} alt={p.heading} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
-            <div className="h-[320px] w-full bg-gradient-to-br from-primary/20 to-secondary/20 sm:h-[420px]" />
+            <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-primary/20 to-secondary/20" />
           )}
           {(p.heading || p.subtitle || p.button.label) && (
-            <div className={`absolute inset-0 flex flex-col items-center justify-center p-8 text-center ${p.overlay ? "bg-ink/45 text-white" : ""}`}>
+            <div className={`relative flex min-h-[320px] flex-col items-center justify-center p-8 text-center sm:min-h-[420px] ${p.overlay ? "bg-ink/45 text-white" : ""}`}>
               {p.heading ? <Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl">{p.heading}</Heading> : null}
               {p.subtitle ? <p className="mt-3 max-w-xl">{p.subtitle}</p> : null}
               {p.button.label ? <Link href={p.button.href || "#"} className="btn btn-primary mt-6">{p.button.label}</Link> : null}
@@ -307,7 +310,7 @@ function RichTextBlock({ c }: { c: RichTextContainer }) {
       <div className="container-x">
         <Reveal>
           <div
-            className={`prose-jhb leading-relaxed ${ALIGN[c.style.align]} ${c.props.width === "narrow" ? "mx-auto max-w-2xl" : "max-w-4xl"}`}
+            className={`prose-jhb leading-relaxed ${ALIGN[c.style.align]} ${c.props.width === "narrow" ? "mx-auto max-w-2xl" : `max-w-4xl ${c.style.align === "center" ? "mx-auto" : ""}`}`}
             dangerouslySetInnerHTML={{ __html: c.props.html }}
           />
         </Reveal>
@@ -389,7 +392,7 @@ function Cards({ c }: { c: CardsContainer }) {
                   {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: card.title }} /> : null}
                   {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: card.description }} /> : null}
                   {card.button.label ? (
-                    <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-2 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
+                    <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-3 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
                   ) : null}
                 </div>
               </div>
@@ -419,7 +422,7 @@ function ServicesBlock({ c }: { c: ServicesContainer }) {
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.subtitle) && (
-          <div className={`mb-12 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
+          <div className={`mb-10 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
             {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
@@ -452,7 +455,7 @@ function AboutBlock({ c }: { c: AboutContainer }) {
           <Reveal>
             <div className={p.imagePosition === "left" && p.image ? "lg:order-2" : ""}>
               {p.eyebrow ? <span className="eyebrow">{p.eyebrow}</span> : null}
-              <Heading tag={c.headingTag} fallback="h2" className="mt-4 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
+              <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
               <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
             </div>
           </Reveal>
@@ -514,7 +517,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
     <div className={`min-w-0 ${contentOrder}`}>
       {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
       {p.heading ? (
-        <div className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: p.heading }} />
+        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: p.heading }} />
       ) : null}
       {p.description ? (
         <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.description }} />
@@ -569,7 +572,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
   return (
     <section className={sectionClass} style={sectionStyle}>
       <div className="container-x">
-        <div className={`grid grid-cols-1 items-start gap-8 lg:gap-12 ${cols} ${VALIGN[p.verticalAlign]}`}>
+        <div className={`grid grid-cols-1 items-start gap-10 ${cols} ${VALIGN[p.verticalAlign]}`}>
           {content}
           {image}
         </div>
@@ -821,7 +824,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
     <section className={shell(c.style)}>
       <WorkflowWrap width={p.width}>
         {(p.eyebrow || hasHeading || p.subtitle) && (
-          <div className={`mb-12 max-w-2xl ${headAlign}`}>
+          <div className={`mb-10 max-w-2xl ${headAlign}`}>
             {p.eyebrow ? <Reveal><span className="eyebrow">{p.eyebrow}</span></Reveal> : null}
             {hasHeading ? (
               <Reveal delay={0.06}>
@@ -848,7 +851,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
 function CustomBlock({ c }: { c: CustomContainer }) {
   return (
     <section className={shell(c.style)}>
-      <div className="container-x" dangerouslySetInnerHTML={{ __html: c.props.html }} />
+      <div className="container-x overflow-x-auto [&_img]:h-auto [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: c.props.html }} />
     </section>
   );
 }

@@ -16,7 +16,7 @@ export default function Stats({
   headingHighlight?: string;
 }) {
   return (
-    <section id="stats" className="relative py-12">
+    <section id="stats" className="relative py-12 sm:py-16">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl px-6 py-10 sm:px-12">
           <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
@@ -24,7 +24,7 @@ export default function Stats({
 
           <div className="relative mb-10 text-center">
             {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-            <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
+            <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
               {headingLead}{headingLead && headingHighlight ? " " : ""}
               {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
             </h2>
@@ -85,7 +85,7 @@ function StatItem({
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="flex flex-col items-center text-center"
     >
-      <div className="relative h-32 w-32">
+      <div className="relative h-28 w-28 sm:h-32 sm:w-32">
         <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
           <circle
             cx="60"

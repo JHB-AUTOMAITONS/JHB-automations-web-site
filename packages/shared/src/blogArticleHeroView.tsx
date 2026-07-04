@@ -40,7 +40,6 @@ export default function BlogArticleHeroBanner({
     <section
       className="relative w-full overflow-hidden"
       style={{
-        height: `clamp(300px, 50vw, ${height}px)`,
         borderBottomLeftRadius: radius,
         borderBottomRightRadius: radius,
       }}
@@ -63,8 +62,13 @@ export default function BlogArticleHeroBanner({
         style={{ backgroundColor: hero.overlayColor || "#0a0e1a", opacity: overlay }}
       />
 
-      {/* content — centered, white, over the overlay (clears the fixed nav) */}
-      <div className="container-x relative flex h-full items-center justify-center pt-16">
+      {/* content — centered, white, over the overlay (clears the fixed nav).
+          min-height (not a fixed section height) so long titles GROW the banner
+          instead of being clipped; the absolute picture/overlay track it. */}
+      <div
+        className="container-x relative flex items-center justify-center pb-8 pt-16"
+        style={{ minHeight: `clamp(300px, 50vw, ${height}px)` }}
+      >
         <div className="flex w-full max-w-3xl flex-col items-center text-center">
           <nav
             className="flex flex-wrap items-center justify-center gap-2 text-xs text-white/80 sm:text-sm"

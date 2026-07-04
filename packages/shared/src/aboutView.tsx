@@ -62,7 +62,7 @@ export function AboutView({
       <PageContainersView containers={about.containers} zone="after-hero" />
 
       {/* Story / Mission + Vision */}
-      <section className="container-x py-14">
+      <section className="container-x py-12 sm:py-16">
         <div className="grid gap-6 lg:grid-cols-2">
           <Reveal>
             <div className="glass glow-border h-full rounded-3xl p-8">
@@ -99,7 +99,7 @@ export function AboutView({
       <PageContainersView containers={about.containers} zone="after-stats" />
 
       {/* Values */}
-      <section className="container-x py-14">
+      <section className="container-x py-12 sm:py-16">
         <div className="mx-auto mb-10 max-w-2xl text-center">
           <Reveal>
             <span className="eyebrow">{about.valuesEyebrow}</span>

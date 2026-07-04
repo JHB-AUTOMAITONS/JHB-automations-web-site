@@ -37,7 +37,7 @@ export default function PostCard({ post }: { post: PostCardType }) {
       </div>
 
       <div className="pointer-events-none relative flex flex-1 flex-col p-5">
-        <h3 className="font-display text-lg font-semibold leading-snug transition-colors group-hover:text-primary">
+        <h3 className="break-words font-display text-lg font-semibold leading-snug transition-colors group-hover:text-primary">
           {post.title}
         </h3>
         {post.excerpt && (

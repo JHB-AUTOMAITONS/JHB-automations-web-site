@@ -25,7 +25,7 @@ type RelatedLink = { title: string; slug: string; icon: string };
 
 // "What's Included" styling maps — mirror the page-builder container styles so
 // the section matches the rest of the site when its background/spacing changes.
-const WI_PAD = { none: "py-0", sm: "py-10", md: "py-14", lg: "py-20" } as const;
+const WI_PAD = { none: "py-0", sm: "py-8 sm:py-10", md: "py-12 sm:py-14", lg: "py-16 sm:py-20" } as const;
 const WI_COLS = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3" } as const;
 function wiBgClass(bg: ContainerBg): string {
   return bg === "subtle"
@@ -200,8 +200,9 @@ export default function ServiceDetail({
 
       <PageContainers containers={db?.containers ?? []} zone="top" />
 
-      {/* Hero */}
-      <section className="container-x">
+      {/* Hero — carries its own bottom padding when the What's Included section
+          below is disabled (or padding-less) and so contributes no top gap. */}
+      <section className={`container-x ${!wiEnabled || wiPad === "none" ? "pb-12" : ""}`}>
         {/* breadcrumb */}
         <nav className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
           <Link href="/#home" className="transition-colors hover:text-ink">
@@ -479,7 +480,7 @@ export default function ServiceDetail({
                       {c.heading} <span className="grad-text">{c.highlight}</span>
                     </h2>
                     {c.description && (
-                      <p className="mt-4 text-muted">{linkify(c.description, links, used)}</p>
+                      <p className="mt-4 break-words text-muted">{linkify(c.description, links, used)}</p>
                     )}
                   </div>
                   <ul className="space-y-4">
@@ -527,7 +528,7 @@ export default function ServiceDetail({
                   <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
                     The JHB <span className="grad-text">Advantage</span>
                   </h2>
-                  <p className="mt-4 text-muted">
+                  <p className="mt-4 break-words text-muted">
                     We don&apos;t just deliver {data.title.toLowerCase()} — we
                     deliver measurable business growth, with full transparency at
                     every step.
@@ -594,7 +595,7 @@ export default function ServiceDetail({
 
       {/* FAQ — near the bottom, just above the CTA */}
       {faqs.length > 0 && (
-        <div className="pb-10">
+        <div className="pb-12">
           <FaqAccordion items={faqs} showNumbers={faqShowNumbers} />
         </div>
       )}
@@ -602,7 +603,7 @@ export default function ServiceDetail({
       <PageContainers containers={db?.containers ?? []} zone="after-faq" />
 
       {/* CTA */}
-      <section className="container-x pb-14">
+      <section className="container-x pb-20">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
           <h2 className="break-words font-display text-3xl font-bold sm:text-4xl">
             <span className="grad-text">{ctaHeading}</span>

@@ -32,7 +32,7 @@ export default function LegalPageView({ doc }: { doc: LegalDoc }) {
   return (
     <main className="relative pt-24">
       <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
-      <article className="mx-auto w-full max-w-[860px] px-4 pb-16 sm:px-6 lg:px-8">
+      <article className="mx-auto w-full max-w-[860px] px-6 pb-20 md:px-10">
         <nav className="mb-8 flex items-center gap-2 text-sm text-muted">
           <Link href="/" className="transition-colors hover:text-ink">Home</Link>
           <span>/</span>

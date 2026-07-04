@@ -181,7 +181,7 @@ export default async function BlogPostPage({
         {/* Wider reading container — blog detail only (~1200px content, up to 1320px
             frame; 16/24/40px responsive padding). Does not touch the shared
             container-x utility, so other pages are unaffected. */}
-        <article className="mx-auto w-full max-w-[1320px] px-4 pb-12 sm:px-6 lg:px-10">
+        <article className="mx-auto w-full max-w-[1320px] px-4 pb-20 sm:px-6 lg:px-10">
           {/* Hero disabled → plain title header here (no banner, no featured image).
               Hero enabled → the title/breadcrumb/meta live inside the hero above. */}
           {!articleHero.enabled && (
@@ -252,7 +252,7 @@ export default async function BlogPostPage({
 
         {/* related */}
         {related.length > 0 && (
-          <div className="mx-auto mt-10 max-w-6xl">
+          <div className="mx-auto mt-10 max-w-[1200px]">
             <h2 className="mb-8 font-display text-2xl font-bold">
               Related <span className="grad-text">Articles</span>
             </h2>

@@ -28,11 +28,11 @@ export default async function BlogIndex() {
 
       <section className="container-x pb-20 pt-12">
         {posts.length === 0 ? (
-          <div className="mx-auto mt-10 max-w-md rounded-2xl border border-ink/10 bg-surface p-10 text-center text-muted shadow-soft">
+          <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-surface p-10 text-center text-muted shadow-soft">
             {settings.blogSearchEmpty || "No articles published yet. Check back soon!"}
           </div>
         ) : (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((post, i) => (
               <Reveal key={post.id} delay={(i % 3) * 0.06}>
                 <PostCard post={post} />

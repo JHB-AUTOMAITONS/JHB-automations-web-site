@@ -83,7 +83,7 @@ export default async function ContactPage() {
                 <span className="mt-1 text-xs uppercase tracking-wider text-muted">
                   {c.label}
                 </span>
-                <span className="font-medium text-ink transition-colors group-hover:text-primary">
+                <span className="min-w-0 max-w-full break-words font-medium text-ink transition-colors group-hover:text-primary">
                   {c.value}
                 </span>
               </a>

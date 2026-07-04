@@ -213,7 +213,7 @@ export default function Navbar({
             exit={{ opacity: 0, y: -10 }}
             className="container-x lg:hidden"
           >
-            <div className="glass-strong mt-3 flex flex-col gap-1 rounded-2xl p-4">
+            <div className="glass-strong mt-3 flex max-h-[calc(100dvh-8.5rem)] flex-col gap-1 overflow-y-auto rounded-2xl p-4">
               {resolvedNavItems.map((item, i) => (
                 <Fragment key={item.label + item.href}>
                   {dropdownFor(item.label, item.dropdown) ? (
@@ -250,7 +250,7 @@ export default function Navbar({
                                   href={d.href}
                                   prefetch={false}
                                   onClick={() => setOpen(false)}
-                                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+                                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
                                 >
                                   <Icon
                                     name={d.icon}

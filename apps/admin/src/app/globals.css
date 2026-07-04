@@ -146,6 +146,22 @@ body {
 }
 
 /* Rendered rich-text + editor body */
+/* Mirror the website's mobile-safety guards so previews match production. */
+.prose-jhb {
+  overflow-wrap: break-word;
+}
+.prose-jhb img {
+  max-width: 100%;
+  height: auto;
+}
+.prose-jhb table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+.prose-jhb pre {
+  overflow-x: auto;
+}
 .prose-jhb p {
   margin: 0;
 }

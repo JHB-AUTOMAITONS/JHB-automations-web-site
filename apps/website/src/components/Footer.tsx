@@ -48,13 +48,13 @@ export default function Footer({
                 className="h-10 w-auto object-contain transition-opacity hover:opacity-80"
               />
             </Link>
-            <p className="mt-4 max-w-xs text-sm text-muted">{settings.tagline}</p>
+            <p className="mt-4 max-w-xs break-words text-sm text-muted">{settings.tagline}</p>
             <div className="mt-5 flex gap-3">
               {socials.map((s) => (
                 <a
                   key={s.label}
                   href={s.href || "#"}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 bg-ink/[0.04] text-xs uppercase text-muted transition-all hover:border-primary hover:text-primary"
+                  className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 bg-ink/[0.04] text-xs uppercase text-muted transition-all hover:border-primary hover:text-primary"
                   aria-label={`Social ${s.label}`}
                 >
                   {s.label}
@@ -94,7 +94,7 @@ export default function Footer({
             <h4 className="font-display text-sm font-semibold uppercase tracking-wider text-ink/90">
               {settings.footerNewsletterTitle || "Newsletter"}
             </h4>
-            <p className="mt-4 text-sm text-muted">
+            <p className="mt-4 break-words text-sm text-muted">
               {settings.footerNewsletterDesc || "Get automation insights and growth tips in your inbox."}
             </p>
             <form onSubmit={subscribe} className="mt-4 flex gap-2">
@@ -123,7 +123,7 @@ export default function Footer({
         <div className="flex flex-col items-center justify-between gap-3 border-t border-ink/10 py-6 text-sm text-muted sm:flex-row">
           <p>© {new Date().getFullYear()} {settings.footerCopyrightName || "JHB Automations. All rights reserved."}</p>
           {legalLinks.length > 0 && (
-            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Legal">
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-label="Legal">
               {legalLinks.map((l) => (
                 <Link key={l.href} href={l.href} className="transition-colors hover:text-primary">
                   {l.label}

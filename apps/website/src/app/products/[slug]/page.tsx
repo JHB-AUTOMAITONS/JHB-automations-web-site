@@ -103,7 +103,7 @@ export default async function ProductPage({
 
         {/* ---- Hero ---- */}
         <section className="container-x">
-          <nav className="flex items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
+          <nav className="flex flex-wrap items-center gap-2 text-sm text-muted" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-ink">Home</Link>
             <span>/</span>
             <span className="text-primary">JHB Products</span>
@@ -163,7 +163,7 @@ export default async function ProductPage({
                 <span className="eyebrow">Overview</span>
               </Reveal>
               <Reveal delay={0.08}>
-                <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
                   What is <span className="grad-text">{p.title}</span>?
                 </h2>
               </Reveal>
@@ -230,7 +230,7 @@ export default async function ProductPage({
                 <span className="eyebrow">Pricing</span>
               </Reveal>
               <Reveal delay={0.08}>
-                <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
                   Simple, <span className="grad-text">transparent pricing</span>
                 </h2>
               </Reveal>

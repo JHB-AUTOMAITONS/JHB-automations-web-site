@@ -94,7 +94,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"
+            className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"
           >
             <SmartLink
               href={content.ctaPrimaryHref}

@@ -23,7 +23,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 90px;
+  scroll-padding-top: 104px;
   overflow-x: hidden;
   max-width: 100%;
 }
@@ -183,6 +183,24 @@ label[for] {
 }
 
 /* Rendered rich-text (About / CTA descriptions) */
+/* Mobile-safety guards for ALL admin-authored content: long unbroken words/URLs
+ * wrap instead of clipping at the viewport edge; images scale down; wide tables
+ * and code blocks scroll inside the article instead of the page. */
+.prose-jhb {
+  overflow-wrap: break-word;
+}
+.prose-jhb img {
+  max-width: 100%;
+  height: auto;
+}
+.prose-jhb table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+.prose-jhb pre {
+  overflow-x: auto;
+}
 .prose-jhb p {
   margin: 0;
 }
