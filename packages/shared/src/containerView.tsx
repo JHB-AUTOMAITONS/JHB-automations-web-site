@@ -134,7 +134,7 @@ function Hero({ c }: { c: HeroContainer }) {
           {p.subtitle ? (
             <Reveal delay={0.16}>
               <div
-                className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
+                className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
                 dangerouslySetInnerHTML={{ __html: subtitleHtml }}
               />
             </Reveal>
@@ -337,7 +337,7 @@ function HeroDesc({ c }: { c: HeroDescContainer }) {
       <div className={`container-x ${ALIGN[c.style.align]}`}>
         <Reveal>
           <div
-            className={`prose-jhb text-lg leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}`}
+            className={`prose-jhb text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}`}
             dangerouslySetInnerHTML={{ __html: c.props.html }}
           />
         </Reveal>
@@ -386,8 +386,8 @@ function Cards({ c }: { c: CardsContainer }) {
                   ) : card.icon ? (
                     <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.06] text-2xl ring-1 ring-ink/10">{card.icon}</span>
                   ) : null}
-                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: card.title }} /> : null}
-                  {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: card.description }} /> : null}
+                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: card.title }} /> : null}
+                  {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: card.description }} /> : null}
                   {card.button.label ? (
                     <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-2 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
                   ) : null}
@@ -453,7 +453,7 @@ function AboutBlock({ c }: { c: AboutContainer }) {
             <div className={p.imagePosition === "left" && p.image ? "lg:order-2" : ""}>
               {p.eyebrow ? <span className="eyebrow">{p.eyebrow}</span> : null}
               <Heading tag={c.headingTag} fallback="h2" className="mt-4 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-              <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
+              <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
             </div>
           </Reveal>
           {p.image ? (
@@ -517,7 +517,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
         <div className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: p.heading }} />
       ) : null}
       {p.description ? (
-        <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.description }} />
+        <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.description }} />
       ) : null}
       {p.bullets.length > 0 && (
         <ul className="mt-5 space-y-2.5">
@@ -834,7 +834,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
             ) : null}
             {p.subtitle ? (
               <Reveal delay={0.12}>
-                <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: p.subtitle }} />
+                <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: p.subtitle }} />
               </Reveal>
             ) : null}
           </div>

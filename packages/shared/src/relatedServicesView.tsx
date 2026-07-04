@@ -88,7 +88,7 @@ export function RelatedServicesView({
           ) : null}
           {content.subtitle ? (
             <div
-              className="prose-jhb mt-3 text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+              className="prose-jhb mt-3 text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
               dangerouslySetInnerHTML={{ __html: content.subtitle }}
             />
           ) : null}

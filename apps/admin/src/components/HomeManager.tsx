@@ -817,7 +817,7 @@ function Preview({
           dangerouslySetInnerHTML={{ __html: composeHeroHeading(hero.title, hero.highlight) }}
         />
         <div
-          className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
+          className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
           dangerouslySetInnerHTML={{ __html: hero.subtitle }}
         />
         <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hero.buttonText}</span>
@@ -846,7 +846,7 @@ function Preview({
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
-          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: about.title }} />
+          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.title }} />
           <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.descriptionHtml }} />
           {about.image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -857,8 +857,8 @@ function Preview({
       <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
       <div className="border-t border-ink/10 p-5 text-center">
-        <div className="font-display text-base font-bold grad-text [&_p]:m-0 [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
-        <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
+        <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
+        <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
         {serviceCards.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-2 text-left">
             {serviceCards.slice(0, 6).map((c) => (

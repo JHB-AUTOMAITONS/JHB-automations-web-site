@@ -42,7 +42,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           <motion.div
             {...fade}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: hub.hero.description }}
           />
           {hub.hero.ctaLabel && (
@@ -101,7 +101,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
             <span className="grad-text">{hub.crm.heading}</span>
           </h2>
           <div
-            className="prose-jhb mt-4 text-muted [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-4 text-muted [&_a]:text-primary"
             dangerouslySetInnerHTML={{ __html: hub.crm.overviewHtml }}
           />
         </motion.div>

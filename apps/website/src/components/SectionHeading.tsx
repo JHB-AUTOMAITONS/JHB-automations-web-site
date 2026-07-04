@@ -22,7 +22,7 @@ export default function SectionHeading({ eyebrow, title, desc, descHtml }: Props
       {descHtml ? (
         <Reveal delay={0.16}>
           <div
-            className="prose-jhb mx-auto mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_a]:underline [&_p]:m-0"
+            className="prose-jhb mx-auto mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_p]:m-0"
             dangerouslySetInnerHTML={{ __html: descHtml }}
           />
         </Reveal>

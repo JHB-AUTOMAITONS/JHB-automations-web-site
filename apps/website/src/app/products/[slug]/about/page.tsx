@@ -142,7 +142,7 @@ export default async function AboutProductPage({
               {a.heroDescription && (
                 <Reveal delay={0.12}>
                   <div
-                    className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                    className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                     dangerouslySetInnerHTML={{ __html: a.heroDescription }}
                   />
                 </Reveal>
@@ -165,7 +165,7 @@ export default async function AboutProductPage({
               <Reveal><span className="eyebrow">Our Story</span></Reveal>
               <Reveal delay={0.08}>
                 <div
-                  className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                  className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                   dangerouslySetInnerHTML={{ __html: a.overview }}
                 />
               </Reveal>
@@ -208,11 +208,11 @@ export default async function AboutProductPage({
                       <div
                         role="heading"
                         aria-level={3}
-                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
+                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
                         dangerouslySetInnerHTML={{ __html: f.title }}
                       />
                       <div
-                        className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                        className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
                         dangerouslySetInnerHTML={{ __html: f.desc }}
                       />
                     </div>
@@ -238,11 +238,11 @@ export default async function AboutProductPage({
                     <div
                       role="heading"
                       aria-level={3}
-                      className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
+                      className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
                       dangerouslySetInnerHTML={{ __html: b.title }}
                     />
                     <div
-                      className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                      className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
                       dangerouslySetInnerHTML={{ __html: b.desc }}
                     />
                   </div>

@@ -145,7 +145,7 @@ function LegalDocCard({
                 <h1 className="font-display text-xl font-bold tracking-tight">{doc.title || label}</h1>
                 {doc.lastUpdated && <p className="mt-1 text-[11px] text-muted">Last updated: {doc.lastUpdated}</p>}
                 {doc.contentHtml.trim() ? (
-                  <div className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline [&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_p]:mt-2" dangerouslySetInnerHTML={{ __html: doc.contentHtml }} />
+                  <div className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_p]:mt-2" dangerouslySetInnerHTML={{ __html: doc.contentHtml }} />
                 ) : (
                   <p className="mt-4 text-xs italic text-muted">Add content to see it here…</p>
                 )}

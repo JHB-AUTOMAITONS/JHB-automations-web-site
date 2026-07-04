@@ -402,7 +402,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
           {hub.hero.heading} <span className="grad-text">{hub.hero.highlight}</span>
         </h3>
         <div
-          className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
+          className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
           dangerouslySetInnerHTML={{ __html: hub.hero.description }}
         />
         {hub.hero.ctaLabel && <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hub.hero.ctaLabel}</span>}
@@ -441,7 +441,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         )}
         <h4 className="mt-1 text-center font-display text-base font-bold grad-text">{hub.crm.heading}</h4>
         <div
-          className="prose-jhb mt-1 text-center text-[11px] text-muted [&_a]:text-primary [&_a]:underline"
+          className="prose-jhb mt-1 text-center text-[11px] text-muted [&_a]:text-primary"
           dangerouslySetInnerHTML={{ __html: hub.crm.overviewHtml }}
         />
 

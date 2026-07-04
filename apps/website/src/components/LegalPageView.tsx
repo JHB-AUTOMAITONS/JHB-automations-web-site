@@ -43,7 +43,7 @@ export default function LegalPageView({ doc }: { doc: LegalDoc }) {
         {doc.lastUpdated && <p className="mt-3 text-sm text-muted">Last updated: {doc.lastUpdated}</p>}
 
         <div
-          className="prose-jhb mt-8 text-base leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-5 [&_h3]:font-semibold [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_p]:mt-3"
+          className="prose-jhb mt-8 text-base leading-relaxed text-ink/80 [&_a]:text-primary [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-5 [&_h3]:font-semibold [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_p]:mt-3"
           dangerouslySetInnerHTML={{ __html: doc.contentHtml }}
         />
       </article>

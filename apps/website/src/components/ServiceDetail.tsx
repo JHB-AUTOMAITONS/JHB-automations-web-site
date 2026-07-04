@@ -69,7 +69,7 @@ function linkify(text: string, links: AnchorLink[], used: Set<string>): ReactNod
           href={link.url}
           {...(newTab ? { target: "_blank" } : {})}
           {...(rel ? { rel } : {})}
-          className="font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary"
+          className="font-medium text-primary transition-opacity hover:opacity-80"
         >
           {match}
         </Link>,
@@ -256,7 +256,7 @@ export default function ServiceDetail({
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                 dangerouslySetInnerHTML={{ __html: db.heroDescriptionHtml }}
               />
             ) : (
@@ -379,7 +379,7 @@ export default function ServiceDetail({
                   // values from older pages render unchanged. Manual word-links replace
                   // the previous auto-linkify here.
                   <div
-                    className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${wiAlignCenter ? "mx-auto" : ""}`}
+                    className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${wiAlignCenter ? "mx-auto" : ""}`}
                     dangerouslySetInnerHTML={{ __html: wiDescription }}
                   />
                 )}
@@ -429,11 +429,11 @@ export default function ServiceDetail({
                       <div
                         role="heading"
                         aria-level={3}
-                        className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_a]:transition-colors hover:[&_a]:decoration-primary"
+                        className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:transition-colors"
                         dangerouslySetInnerHTML={{ __html: f.title }}
                       />
                       <div
-                        className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
+                        className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
                         dangerouslySetInnerHTML={{ __html: f.desc }}
                       />
                       {f.link && (
@@ -441,7 +441,7 @@ export default function ServiceDetail({
                           href={f.link}
                           {...extAttrs(f.link)}
                           tabIndex={-1}
-                          className="pointer-events-auto relative z-20 mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary"
+                          className="pointer-events-auto relative z-20 mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary transition-opacity hover:opacity-80"
                         >
                           {f.linkText || "Learn more"} →
                         </Link>

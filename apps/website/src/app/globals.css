@@ -36,6 +36,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Links are never underlined — word links rely on the primary colour instead
+ * (premium design). Applies in every state; rich-text renderers match. */
+a,
+a:hover,
+a:focus,
+a:visited {
+  text-decoration: none;
+}
+
 /* Standard cursor behavior: pointer on interactive elements */
 button,
 [role="button"],
@@ -180,9 +189,12 @@ label[for] {
 .prose-jhb p + p {
   margin-top: 0.75rem;
 }
-.prose-jhb a {
+.prose-jhb a,
+.prose-jhb a:hover,
+.prose-jhb a:focus,
+.prose-jhb a:visited {
   color: var(--primary);
-  text-decoration: underline;
+  text-decoration: none;
 }
 /* Lists — Tailwind Preflight zeroes list-style/margin/padding on ul/ol, so these
  * unlayered rules restore markers + indentation for all rendered rich text

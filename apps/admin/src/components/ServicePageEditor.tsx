@@ -549,7 +549,7 @@ export default function ServicePageEditor({
                   </h2>
                   {form.hero_description && (
                     <div
-                      className="prose-jhb mt-2 text-sm text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                      className="prose-jhb mt-2 text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                       dangerouslySetInnerHTML={{ __html: form.hero_description }}
                     />
                   )}
@@ -598,15 +598,15 @@ export default function ServicePageEditor({
                                 )}
                                 <div className="min-w-0">
                                   <div
-                                    className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary [&_a]:underline"
+                                    className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary"
                                     dangerouslySetInnerHTML={{ __html: f.title }}
                                   />
                                   <div
-                                    className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                                    className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
                                     dangerouslySetInnerHTML={{ __html: f.desc }}
                                   />
                                   {f.link && (
-                                    <span className="mt-1 inline-block text-xs font-medium text-primary underline">
+                                    <span className="mt-1 inline-block text-xs font-medium text-primary">
                                       {f.linkText || "Learn more"} →
                                     </span>
                                   )}

@@ -20,7 +20,7 @@ export type FaqAccordionItem = { question: string; answer: string };
 // along via dangerouslySetInnerHTML. Kept in sync with the website's
 // FaqAccordion FAQ_ANSWER_CLASS.
 const FAQ_ANSWER_CLASS =
-  "px-5 pb-5 break-words text-sm leading-relaxed text-muted [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_p+p]:mt-2 [&_em]:italic [&_strong]:font-semibold [&_s]:line-through [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_h1]:font-display [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_hr]:my-3 [&_hr]:border-ink/15";
+  "px-5 pb-5 break-words text-sm leading-relaxed text-muted [&_a]:break-words [&_a]:text-primary [&_p]:m-0 [&_p+p]:mt-2 [&_em]:italic [&_strong]:font-semibold [&_s]:line-through [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1 [&_h1]:font-display [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_hr]:my-3 [&_hr]:border-ink/15";
 
 export default function FaqAccordionView({
   items,

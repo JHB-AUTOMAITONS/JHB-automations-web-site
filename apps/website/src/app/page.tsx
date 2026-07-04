@@ -160,7 +160,7 @@ export default async function Home() {
       {seo?.seo_content && (
         <section className="container-x py-10">
           <div
-            className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: seo.seo_content }}
           />
         </section>

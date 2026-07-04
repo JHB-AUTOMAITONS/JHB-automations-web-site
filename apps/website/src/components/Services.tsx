@@ -29,7 +29,7 @@ export default function Services({
       <div className="container-x">
         <SectionHeading
           eyebrow={eyebrow}
-          title={<span className="grad-text [&_p]:m-0 [&_p]:inline [&_a]:underline" dangerouslySetInnerHTML={{ __html: heading }} />}
+          title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: heading }} />}
           descHtml={subheading}
         />
 
@@ -88,7 +88,7 @@ function ServiceCard({
   // events-none` lets clicks on plain text fall through to the card-wide link,
   // while word-links re-enable pointer events so they stay individually clickable.
   const richText =
-    "pointer-events-none [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:text-primary [&_a]:underline [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_b]:font-semibold [&_strong]:font-semibold";
+    "pointer-events-none [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:text-primary [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_b]:font-semibold [&_strong]:font-semibold";
 
   return (
     <motion.div

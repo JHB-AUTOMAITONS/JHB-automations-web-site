@@ -86,7 +86,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="prose-jhb mt-6 max-w-full break-words text-base leading-relaxed text-muted sm:max-w-xl sm:text-lg [&_a]:break-words [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="prose-jhb mt-6 max-w-full break-words text-base leading-relaxed text-muted sm:max-w-xl sm:text-lg [&_a]:break-words [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: content.subtitle }}
           />
 

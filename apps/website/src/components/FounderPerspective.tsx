@@ -27,7 +27,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
             </Reveal>
             <Reveal delay={0.16}>
               <div
-                className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:text-primary [&_a]:underline"
+                className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:text-primary"
                 dangerouslySetInnerHTML={{ __html: founder.descriptionHtml }}
               />
             </Reveal>

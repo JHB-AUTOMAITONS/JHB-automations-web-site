@@ -345,7 +345,7 @@ export default function TestimonialsManager({
               </div>
 
               <div
-                className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+                className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink/80 [&_a]:text-primary"
                 dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
               />
 

@@ -243,7 +243,7 @@ function TestimonialCard({ t }: { t: Card }) {
 
       {/* quote — rich HTML (supports font size, bold, links, colour from the editor) */}
       <div
-        className="mt-3 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_a]:underline"
+        className="mt-3 text-sm leading-relaxed text-ink/80 [&_a]:text-primary"
         dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
       />
 

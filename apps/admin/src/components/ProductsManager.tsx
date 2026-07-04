@@ -321,7 +321,7 @@ function ProductPreview({ product: p }: { product: Product }) {
         </h3>
         {p.description && (
           <div
-            className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
             dangerouslySetInnerHTML={{ __html: p.description }}
           />
         )}
@@ -341,7 +341,7 @@ function ProductPreview({ product: p }: { product: Product }) {
             What is <span className="grad-text">{p.title}</span>?
           </h4>
           <div
-            className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary"
             dangerouslySetInnerHTML={{ __html: p.overview }}
           />
         </div>
@@ -357,8 +357,8 @@ function ProductPreview({ product: p }: { product: Product }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {sec.items.map((it, ii) => (
                 <div key={ii} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: it.title }} />
-                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: it.desc }} />
+                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: it.title }} />
+                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: it.desc }} />
                 </div>
               ))}
             </div>
@@ -433,7 +433,7 @@ function AboutPreview({ product: p }: { product: Product }) {
         </h3>
         {a.heroDescription && (
           <div
-            className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
             dangerouslySetInnerHTML={{ __html: a.heroDescription }}
           />
         )}
@@ -449,7 +449,7 @@ function AboutPreview({ product: p }: { product: Product }) {
         <div className="border-t border-ink/10 p-5 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Our Story</p>
           <div
-            className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary [&_a]:underline"
+            className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary"
             dangerouslySetInnerHTML={{ __html: a.overview }}
           />
         </div>
@@ -478,8 +478,8 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.features.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: f.title }} />
-                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: f.desc }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: f.title }} />
+                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: f.desc }} />
               </div>
             ))}
           </div>
@@ -494,8 +494,8 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.benefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: b.title }} />
-                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={{ __html: b.desc }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: b.title }} />
+                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: b.desc }} />
               </div>
             ))}
           </div>

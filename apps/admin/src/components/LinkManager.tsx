@@ -383,7 +383,7 @@ export default function LinkManager({
                       href={external ? r.url : `${WEBSITE_URL}${r.url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary underline decoration-primary/40 underline-offset-2"
+                      className="text-sm font-medium text-primary"
                     >
                       {r.anchor_text}
                     </a>

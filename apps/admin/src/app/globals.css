@@ -152,9 +152,13 @@ body {
 .prose-jhb p + p {
   margin-top: 0.5rem;
 }
-.prose-jhb a {
+/* Match the website: content links are never underlined (colour only). */
+.prose-jhb a,
+.prose-jhb a:hover,
+.prose-jhb a:focus,
+.prose-jhb a:visited {
   color: var(--primary);
-  text-decoration: underline;
+  text-decoration: none;
 }
 /* Lists — mirror apps/website/src/app/globals.css so the admin live preview AND the
  * Rich Text Editor's contenteditable render lists identically to the published site.
