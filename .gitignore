@@ -35,6 +35,11 @@ apps/website/deploy/public_html/
 apps/website/deploy/*.zip
 apps/website/deploy/.ftp-pass
 
+# Never commit or serve archives from the public root — anything here is served at
+# the site root, so a stray project zip would be publicly downloadable (and could
+# leak its bundled .env / source / git history).
+apps/website/public/*.zip
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
