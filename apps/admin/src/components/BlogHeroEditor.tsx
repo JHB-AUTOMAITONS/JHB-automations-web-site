@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { BlogHero } from "@jhb/shared/content";
 import BlogHeroBanner from "@jhb/shared/blog-hero-view";
 import { saveBlogHeroDraft, publishBlogHero } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import ImagePicker from "./ImagePicker";
 
@@ -23,18 +24,30 @@ export default function BlogHeroEditor({ initial }: { initial: BlogHero }) {
   const flash = (t: Toast) => { setToast(t); setTimeout(() => setToast(null), 3500); };
 
   const saveDraft = async () => {
+    if (busy) return;
     setBusy("save");
-    const res = await saveBlogHeroDraft(h as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) { flash({ type: "success", msg: "Draft saved — not live yet." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveBlogHeroDraft(h as unknown as Record<string, unknown>));
+      if (res.ok) { flash({ type: "success", msg: "Draft saved — not live yet." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
   const publish = async () => {
+    if (busy) return;
     setBusy("publish");
-    const res = await publishBlogHero(h as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) { flash({ type: "success", msg: "Published — live on /blog." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Publish failed." });
+    try {
+      const res = await withTimeout(publishBlogHero(h as unknown as Record<string, unknown>));
+      if (res.ok) { flash({ type: "success", msg: "Published — live on /blog." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Publish failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Publish failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   return (

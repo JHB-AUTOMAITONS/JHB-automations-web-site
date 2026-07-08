@@ -13,6 +13,7 @@ import {
   reorderHomeFaqs,
   seedHomeFaqs,
 } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Row = { id: string; question: string; answer: string; active: boolean };
@@ -79,16 +80,23 @@ export default function HomeFaqManager({
   };
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) => {
+    if (busy) return false;
     setBusy(true);
-    const res = await fn();
-    setBusy(false);
-    if (res.ok) {
-      flash({ type: "success", msg: ok });
-      router.refresh();
-      return true;
+    try {
+      const res = await withTimeout(fn());
+      if (res.ok) {
+        flash({ type: "success", msg: ok });
+        router.refresh();
+        return true;
+      }
+      flash({ type: "error", msg: res.error || "Action failed." });
+      return false;
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Action failed. Please try again.") });
+      return false;
+    } finally {
+      setBusy(false);
     }
-    flash({ type: "error", msg: res.error || "Action failed." });
-    return false;
   };
 
   const saveRow = (r: Row) => run(() => updateHomeFaq(r.id, { question: r.question, answer: r.answer, active: r.active }), "FAQ saved.");

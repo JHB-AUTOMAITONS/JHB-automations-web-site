@@ -21,7 +21,7 @@ export default async function BlogPreview({
   if (posts.length === 0) return null;
 
   return (
-    <section id="blog" className="relative py-12 sm:py-16">
+    <section id="blog" className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <SectionHeading
           eyebrow={eyebrow}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { saveSettings } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import type { NavItemOverride, PageHeroContent, SiteSettings } from "@jhb/shared/content";
 import EditorHeader from "./EditorHeader";
 
@@ -39,19 +40,31 @@ export default function SettingsEditor({ initial }: { initial: SiteSettings }) {
   const flash = (t: Toast) => { setToast(t); setTimeout(() => setToast(null), 3500); };
 
   const saveDraft = async () => {
+    if (busy) return;
     setBusy("save");
-    const res = await saveSettings(s as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) flash({ type: "success", msg: "Draft saved." });
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveSettings(s as unknown as Record<string, unknown>));
+      if (res.ok) flash({ type: "success", msg: "Draft saved." });
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   const publish = async () => {
+    if (busy) return;
     setBusy("publish");
-    const res = await saveSettings(s as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) flash({ type: "success", msg: "Settings saved & live." });
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveSettings(s as unknown as Record<string, unknown>));
+      if (res.ok) flash({ type: "success", msg: "Settings saved & live." });
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   return (

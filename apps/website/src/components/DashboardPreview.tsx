@@ -9,7 +9,7 @@ export default function DashboardPreview() {
   const inView = useInView(ref, { once: false, margin: "-100px" });
 
   return (
-    <section id="dashboard" className="relative py-12 sm:py-16">
+    <section id="dashboard" className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <SectionHeading
           eyebrow="AI Command Center"

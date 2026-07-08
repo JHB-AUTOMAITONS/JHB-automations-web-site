@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { runSeoMigration } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 
 // "Run Migration" control for Admin → SEO. Repairs the jhb_seo table (adds any
 // missing columns) and reloads the PostgREST schema cache by calling the
@@ -14,19 +15,25 @@ export default function SeoMigrationButton({ hasError = false }: { hasError?: bo
   const [msg, setMsg] = useState<{ kind: "ok" | "err" | "sql"; text: string } | null>(null);
 
   const run = async () => {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
-    const res = await runSeoMigration();
-    setBusy(false);
-    if (res.ok) {
-      const n = res.columns?.length ?? 0;
-      setMsg({ kind: "ok", text: `Migration applied ✓ (${n} columns). Reloading…` });
-      // Re-fetch the server component so the form loads with the fixed schema.
-      setTimeout(() => router.refresh(), 800);
-    } else if ("needsSql" in res && res.needsSql) {
-      setMsg({ kind: "sql", text: res.error });
-    } else {
-      setMsg({ kind: "err", text: res.error || "Migration failed." });
+    try {
+      const res = await withTimeout(runSeoMigration());
+      if (res.ok) {
+        const n = res.columns?.length ?? 0;
+        setMsg({ kind: "ok", text: `Migration applied ✓ (${n} columns). Reloading…` });
+        // Re-fetch the server component so the form loads with the fixed schema.
+        setTimeout(() => router.refresh(), 800);
+      } else if ("needsSql" in res && res.needsSql) {
+        setMsg({ kind: "sql", text: res.error });
+      } else {
+        setMsg({ kind: "err", text: res.error || "Migration failed." });
+      }
+    } catch (e) {
+      setMsg({ kind: "err", text: actionErrorMessage(e, "Migration failed. Please try again.") });
+    } finally {
+      setBusy(false);
     }
   };
 

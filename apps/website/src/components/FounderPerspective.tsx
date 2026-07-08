@@ -12,7 +12,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
     founder.headingAlign === "center" ? "text-center" : founder.headingAlign === "right" ? "text-right" : "";
 
   return (
-    <section id="founder" className="relative py-12 sm:py-16">
+    <section id="founder" className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left: copy */}

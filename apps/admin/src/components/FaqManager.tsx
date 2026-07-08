@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveServiceFaqs } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import RichEditor from "./RichEditor";
 import EditorHeader from "./EditorHeader";
@@ -62,16 +63,22 @@ export default function FaqManager({
   };
 
   const save = async () => {
+    if (busy) return;
     setBusy(true);
-    const res = await saveServiceFaqs(selected, items);
-    setBusy(false);
-    if (res.ok) {
-      flash({ type: "success", msg: "FAQs saved." });
-      // keep local copy in sync so switching away/back shows saved state
-      faqsByService[selected] = items;
-      router.refresh();
-    } else {
-      flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveServiceFaqs(selected, items));
+      if (res.ok) {
+        flash({ type: "success", msg: "FAQs saved." });
+        // keep local copy in sync so switching away/back shows saved state
+        faqsByService[selected] = items;
+        router.refresh();
+      } else {
+        flash({ type: "error", msg: res.error || "Save failed." });
+      }
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy(false);
     }
   };
 

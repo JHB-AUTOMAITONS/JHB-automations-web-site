@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateUserRole } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 
 export type Profile = {
   id: string;
@@ -42,14 +43,20 @@ export default function UsersTable({
   };
 
   const change = async (id: string, role: string) => {
+    if (savingId) return;
     setSavingId(id);
-    const res = await updateUserRole(id, role);
-    setSavingId(null);
-    if (res.ok) {
-      flash({ type: "success", msg: "Role updated." });
-      startTransition(() => router.refresh());
-    } else {
-      flash({ type: "error", msg: res.error || "Could not update role." });
+    try {
+      const res = await withTimeout(updateUserRole(id, role));
+      if (res.ok) {
+        flash({ type: "success", msg: "Role updated." });
+        startTransition(() => router.refresh());
+      } else {
+        flash({ type: "error", msg: res.error || "Could not update role." });
+      }
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Could not update role. Please try again.") });
+    } finally {
+      setSavingId(null);
     }
   };
 

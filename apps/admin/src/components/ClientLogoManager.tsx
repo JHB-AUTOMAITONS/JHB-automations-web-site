@@ -11,6 +11,7 @@ import {
   reorderClientLogos,
 } from "@/app/actions";
 import LogoUploader, { uploadOptimizedLogo } from "./LogoUploader";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 type Row = { id: string; logo_url: string | null; alt_text: string; active: boolean };
@@ -70,12 +71,19 @@ export default function ClientLogoManager({ initial }: { initial: ClientLogo[] }
   };
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) => {
+    if (busy) return false;
     setBusy(true);
-    const res = await fn();
-    setBusy(false);
-    if (res.ok) { flash({ type: "success", msg: ok }); router.refresh(); return true; }
-    flash({ type: "error", msg: res.error || "Action failed." });
-    return false;
+    try {
+      const res = await withTimeout(fn());
+      if (res.ok) { flash({ type: "success", msg: ok }); router.refresh(); return true; }
+      flash({ type: "error", msg: res.error || "Action failed." });
+      return false;
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Action failed. Please try again.") });
+      return false;
+    } finally {
+      setBusy(false);
+    }
   };
 
   const saveRow = (r: Row) =>
@@ -83,13 +91,19 @@ export default function ClientLogoManager({ initial }: { initial: ClientLogo[] }
 
   // Persist a logo immediately on upload/remove — no separate Save click needed.
   const onLogoChange = async (i: number, url: string | null) => {
+    if (busy) return;
     const r = { ...rows[i], logo_url: url };
     set(i, { logo_url: url });
     setBusy(true);
-    const res = await updateClientLogo(r.id, { logo_url: r.logo_url, alt_text: r.alt_text, active: r.active });
-    setBusy(false);
-    if (res.ok) { flash({ type: "success", msg: url ? "Logo uploaded & saved." : "Logo removed." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(updateClientLogo(r.id, { logo_url: r.logo_url, alt_text: r.alt_text, active: r.active }));
+      if (res.ok) { flash({ type: "success", msg: url ? "Logo uploaded & saved." : "Logo removed." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const saveOrder = async () => {
@@ -98,24 +112,30 @@ export default function ClientLogoManager({ initial }: { initial: ClientLogo[] }
 
   // Add one or more logos (optimized upload → new rows). Name auto-derived (internal only).
   const addLogos = async (files: FileList | null) => {
+    if (busy) return;
     if (!files || files.length === 0) return;
     const arr = Array.from(files);
     setAdding({ done: 0, total: arr.length });
     setBusy(true);
-    for (let i = 0; i < arr.length; i++) {
-      try {
-        const base = arr[i].name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || `logo-${i + 1}`;
-        const r = await uploadOptimizedLogo(arr[i]);
-        await createClientLogo(base, r.url, `${base} logo`);
-      } catch {
-        /* skip a failed file, continue */
+    try {
+      for (let i = 0; i < arr.length; i++) {
+        try {
+          const base = arr[i].name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || `logo-${i + 1}`;
+          const r = await withTimeout(uploadOptimizedLogo(arr[i]));
+          await withTimeout(createClientLogo(base, r.url, `${base} logo`));
+        } catch {
+          /* skip a failed file, continue */
+        }
+        setAdding({ done: i + 1, total: arr.length });
       }
-      setAdding({ done: i + 1, total: arr.length });
+      flash({ type: "success", msg: `Added ${arr.length} logo${arr.length === 1 ? "" : "s"}.` });
+      router.refresh();
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Adding logos failed. Please try again.") });
+    } finally {
+      setBusy(false);
+      setAdding(null);
     }
-    setBusy(false);
-    setAdding(null);
-    flash({ type: "success", msg: `Added ${arr.length} logo${arr.length === 1 ? "" : "s"}.` });
-    router.refresh();
   };
 
   return (

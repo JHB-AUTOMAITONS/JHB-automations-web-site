@@ -91,7 +91,7 @@ export default function Contact({
   };
 
   return (
-    <section id="contact" className="relative py-12 sm:py-16">
+    <section id="contact" className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl">
           <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />

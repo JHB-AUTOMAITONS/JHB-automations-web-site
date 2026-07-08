@@ -26,7 +26,7 @@ export default function ClientLogos({
   return (
     <section
       id="clients"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-12 sm:py-14"
+      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-8 sm:py-10 lg:py-12"
       aria-labelledby="clients-heading"
     >
       {/* ambient glow */}

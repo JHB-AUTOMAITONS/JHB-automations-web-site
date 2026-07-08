@@ -7,7 +7,7 @@ export default function CtaSection({ cta }: { cta: CtaBlock }) {
   if (!cta.enabled) return null;
 
   return (
-    <section className="relative py-12 sm:py-14">
+    <section className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <Reveal
           y={30}

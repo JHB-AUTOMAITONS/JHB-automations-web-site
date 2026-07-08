@@ -13,7 +13,7 @@ export default function AboutSection({
   if (!about.enabled) return null;
 
   return (
-    <section id="about" className="relative py-12 sm:py-16">
+    <section id="about" className="relative py-8 sm:py-10 lg:py-12">
       <div className="container-x">
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <Reveal x={-30} y={0}>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveServiceLinks } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 
 type Service = { key: string; title: string };
 type Page = { label: string; url: string };
@@ -112,14 +113,20 @@ export default function LinkManager({
   });
 
   const save = async () => {
+    if (busy) return;
     setBusy(true);
-    const res = await saveServiceLinks(selected, rows);
-    setBusy(false);
-    if (res.ok) {
-      flash({ type: "success", msg: "Links saved." });
-      linksByService[selected] = rows;
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveServiceLinks(selected, rows));
+      if (res.ok) {
+        flash({ type: "success", msg: "Links saved." });
+        linksByService[selected] = rows;
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, type Post, type BlogFaq } from "@jhb/shared/posts";
 import { savePost, deletePost } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
 import BlogFaqEditor from "./BlogFaqEditor";
@@ -81,37 +82,45 @@ export default function PostEditor({
   };
 
   const save = async (status: "draft" | "published") => {
+    if (busy) return;
     setBusy(status === "draft" ? "save" : "publish");
-    const res = await savePost({
-      id: post?.id,
-      slug,
-      title,
-      excerpt,
-      content_html: content,
-      cover_image: cover,
-      category,
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-      author,
-      meta_title: metaTitle,
-      meta_description: metaDesc,
-      status,
-      containers: cb.containers,
-      faqs,
-      faqs_enabled: faqsEnabled,
-    });
-    setBusy("");
-    if (res.ok) {
-      flash({
-        type: "success",
-        msg: status === "published" ? "Published!" : "Draft saved.",
-      });
-      if (!editing && res.id) {
-        router.push(`/posts/${res.id}`);
+    try {
+      const res = await withTimeout(
+        savePost({
+          id: post?.id,
+          slug,
+          title,
+          excerpt,
+          content_html: content,
+          cover_image: cover,
+          category,
+          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+          author,
+          meta_title: metaTitle,
+          meta_description: metaDesc,
+          status,
+          containers: cb.containers,
+          faqs,
+          faqs_enabled: faqsEnabled,
+        })
+      );
+      if (res.ok) {
+        flash({
+          type: "success",
+          msg: status === "published" ? "Published!" : "Draft saved.",
+        });
+        if (!editing && res.id) {
+          router.push(`/posts/${res.id}`);
+        } else {
+          router.refresh();
+        }
       } else {
-        router.refresh();
+        flash({ type: "error", msg: res.error || "Save failed." });
       }
-    } else {
-      flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
     }
   };
 

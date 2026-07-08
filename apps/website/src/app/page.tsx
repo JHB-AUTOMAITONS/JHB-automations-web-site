@@ -158,7 +158,7 @@ export default async function Home() {
       <CtaSection cta={home.cta} />
       <PageContainers containers={home.containers} zone="after-cta" />
       {seo?.seo_content && (
-        <section className="container-x py-12 sm:py-16">
+        <section className="container-x py-8 sm:py-10 lg:py-12">
           <div
             className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: seo.seo_content }}

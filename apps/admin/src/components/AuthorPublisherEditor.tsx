@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { AuthorPublisher, AuthorPublisherDoc, SeoAuthor, SeoPublisher } from "@jhb/shared/content";
 import { AUTHOR_PUBLISHER_DEFAULT } from "@jhb/shared/content";
 import { loadAuthorPublisher, saveAuthorPublisherDraft, publishAuthorPublisher } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import ImagePicker from "./ImagePicker";
 
 // Self-contained "Author & Publisher (SEO)" card — drop in anywhere with a
@@ -72,11 +73,17 @@ export default function AuthorPublisherEditor({
   };
 
   const persist = async (publish: boolean) => {
+    if (busy) return;
     setBusy(publish ? "publish" : "save");
     const fn = publish ? publishAuthorPublisher : saveAuthorPublisherDraft;
-    const res = await fn(doc as unknown as Record<string, unknown>);
-    setBusy("");
-    flash(res.ok ? { type: "success", msg: publish ? "Published." : "Draft saved." } : { type: "error", msg: res.error || "Failed." });
+    try {
+      const res = await withTimeout(fn(doc as unknown as Record<string, unknown>));
+      flash(res.ok ? { type: "success", msg: publish ? "Published." : "Draft saved." } : { type: "error", msg: res.error || "Failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, publish ? "Publish failed. Please try again." : "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   const fieldsDisabled = !isGlobal && useGlobal;

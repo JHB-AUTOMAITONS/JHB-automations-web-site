@@ -15,6 +15,7 @@ import {
 } from "@jhb/shared/service-pages";
 import { smartImgAttrs } from "@jhb/shared/containers";
 import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import AlignPicker from "./AlignPicker";
@@ -143,35 +144,49 @@ export default function ServicePageEditor({
 
   // Save Draft — persists the working draft only; the live page is untouched.
   // Unpublished changes remain, so Publish stays enabled.
+  // try/catch/finally guarantees `busy` is always cleared, so the button can
+  // never get stuck on "Saving…" even if the server action throws.
   const saveDraft = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("save");
-    const res = await saveServicePage(page.key, draftPayload());
-    setBusy("");
-    if (res.ok) {
-      setSavedAt(res.savedAt ?? new Date().toISOString());
-      flash({ type: "success", msg: "Draft saved." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveServicePage(page.key, draftPayload()));
+      if (res.ok) {
+        setSavedAt(res.savedAt ?? new Date().toISOString());
+        flash({ type: "success", msg: "Draft saved." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   // Publish — save the latest draft, then promote it to the live page (mirrors
   // the Home page: saveHomeDraft → publishHome). Disables Publish until the next edit.
   const publish = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("publish");
-    const saveRes = await saveServicePage(page.key, draftPayload());
-    if (!saveRes.ok) {
+    try {
+      const saveRes = await withTimeout(saveServicePage(page.key, draftPayload()));
+      if (!saveRes.ok) {
+        flash({ type: "error", msg: saveRes.error || "Save failed." });
+        return;
+      }
+      const res = await withTimeout(publishServicePage(page.key));
+      if (res.ok) {
+        setSavedAt(res.publishedAt ?? new Date().toISOString());
+        setLiveStatus("published");
+        setDirty(false);
+        flash({ type: "success", msg: "Published! Live on the website." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Publish failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Publish failed. Please try again.") });
+    } finally {
       setBusy("");
-      return flash({ type: "error", msg: saveRes.error || "Save failed." });
     }
-    const res = await publishServicePage(page.key);
-    setBusy("");
-    if (res.ok) {
-      setSavedAt(res.publishedAt ?? new Date().toISOString());
-      setLiveStatus("published");
-      setDirty(false);
-      flash({ type: "success", msg: "Published! Live on the website." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Publish failed." });
   };
 
   // Any field/container edit marks the page as having unpublished changes (which

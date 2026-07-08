@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { restoreVersion, deleteVersion } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import LocalDateTime from "./LocalDateTime";
 
 export type VersionRow = {
@@ -42,27 +43,39 @@ export default function VersionHistory({ versions }: { versions: VersionRow[] })
   }, [versions]);
 
   const restore = async (v: VersionRow) => {
+    if (busy) return;
     if (!confirm(`Restore "${v.label || v.module}" to version ${v.version_number}?\n\nThis overwrites the current content with this snapshot. A new version is saved so you can undo the restore.`))
       return;
     setBusy(v.id);
-    const res = await restoreVersion(v.id);
-    setBusy(null);
-    if (res.ok) {
-      flash({ type: "success", msg: `Restored to version ${v.version_number}. Now live.` });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Restore failed." });
+    try {
+      const res = await withTimeout(restoreVersion(v.id));
+      if (res.ok) {
+        flash({ type: "success", msg: `Restored to version ${v.version_number}. Now live.` });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Restore failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Restore failed. Please try again.") });
+    } finally {
+      setBusy(null);
+    }
   };
 
   const remove = async (v: VersionRow) => {
+    if (busy) return;
     if (!confirm(`Permanently delete version ${v.version_number} of "${v.label || v.module}"? This cannot be undone.`))
       return;
     setBusy(v.id);
-    const res = await deleteVersion(v.id);
-    setBusy(null);
-    if (res.ok) {
-      flash({ type: "success", msg: "Version deleted." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Delete failed." });
+    try {
+      const res = await withTimeout(deleteVersion(v.id));
+      if (res.ok) {
+        flash({ type: "success", msg: "Version deleted." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Delete failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Delete failed. Please try again.") });
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (

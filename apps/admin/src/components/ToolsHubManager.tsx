@@ -7,6 +7,7 @@ import { TOOLS_HUB_DEFAULT } from "@jhb/shared/tools-hub";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { PageContainer } from "@jhb/shared/containers";
 import { saveToolsHub } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
@@ -73,13 +74,19 @@ export default function ToolsHubManager({
   };
 
   const save = async () => {
+    if (busy) return;
     setBusy("publish");
-    const res = await saveToolsHub({ ...form, containers: cb.containers } as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) {
-      flash({ type: "success", msg: "Saved & live." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveToolsHub({ ...form, containers: cb.containers } as unknown as Record<string, unknown>));
+      if (res.ok) {
+        flash({ type: "success", msg: "Saved & live." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   // section setters

@@ -16,6 +16,7 @@ import type {
 } from "@jhb/shared/home";
 import { composeHeroHeading } from "@jhb/shared/home";
 import { saveHomeDraft, publishHome } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
@@ -145,32 +146,44 @@ export default function HomeManager({
   });
 
   const save = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("save");
-    const res = await saveHomeDraft(assemble() as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) {
-      setStatus("draft");
-      flash({ type: "success", msg: "Draft saved." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveHomeDraft(assemble() as unknown as Record<string, unknown>));
+      if (res.ok) {
+        setStatus("draft");
+        flash({ type: "success", msg: "Draft saved." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   const publish = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("publish");
-    const saveRes = await saveHomeDraft(
-      assemble() as unknown as Record<string, unknown>
-    );
-    if (!saveRes.ok) {
+    try {
+      const saveRes = await withTimeout(
+        saveHomeDraft(assemble() as unknown as Record<string, unknown>)
+      );
+      if (!saveRes.ok) {
+        flash({ type: "error", msg: saveRes.error || "Save failed." });
+        return;
+      }
+      const res = await withTimeout(publishHome());
+      if (res.ok) {
+        setStatus("published");
+        flash({ type: "success", msg: "Published! Live on the website." });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Publish failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Publish failed. Please try again.") });
+    } finally {
       setBusy("");
-      return flash({ type: "error", msg: saveRes.error || "Save failed." });
     }
-    const res = await publishHome();
-    setBusy("");
-    if (res.ok) {
-      setStatus("published");
-      flash({ type: "success", msg: "Published! Live on the website." });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Publish failed." });
   };
 
   // ----- inserted-container helpers (page-builder; save-gated, publish to go live) -----

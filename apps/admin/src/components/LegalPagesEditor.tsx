@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LegalDoc, LegalPages } from "@jhb/shared/content";
 import { saveLegalDraft, publishLegal } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import RichText from "./RichText";
 import ImagePicker from "./ImagePicker";
@@ -21,18 +22,30 @@ export default function LegalPagesEditor({ initial }: { initial: LegalPages }) {
     setData((d) => ({ ...d, [which]: { ...d[which], ...patch } }));
 
   const saveDraft = async () => {
+    if (busy) return;
     setBusy("save");
-    const res = await saveLegalDraft(data as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) { flash({ type: "success", msg: "Draft saved — not live yet." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveLegalDraft(data as unknown as Record<string, unknown>));
+      if (res.ok) { flash({ type: "success", msg: "Draft saved — not live yet." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
   const publish = async () => {
+    if (busy) return;
     setBusy("publish");
-    const res = await publishLegal(data as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) { flash({ type: "success", msg: "Published — live on the site." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Publish failed." });
+    try {
+      const res = await withTimeout(publishLegal(data as unknown as Record<string, unknown>));
+      if (res.ok) { flash({ type: "success", msg: "Published — live on the site." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Publish failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Publish failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   return (

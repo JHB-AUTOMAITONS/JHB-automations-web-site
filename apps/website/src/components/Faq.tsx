@@ -74,7 +74,7 @@ export default function Faq({
   };
 
   return (
-    <section id="faq" className="relative py-12 sm:py-16">
+    <section id="faq" className="relative py-8 sm:py-10 lg:py-12">
       {/* FAQ schema for SEO (rendered in SSR output) */}
       <script
         type="application/ld+json"

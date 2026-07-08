@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { SiteSettings, LogoSettings } from "@jhb/shared/content";
 import { saveBranding } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import ImagePicker from "./ImagePicker";
 
@@ -33,11 +34,17 @@ export default function LogoManager({ settings }: { settings: SiteSettings }) {
   const flash = (t: Toast) => { setToast(t); setTimeout(() => setToast(null), 3500); };
 
   const save = async () => {
+    if (busy) return;
     setBusy("publish");
-    const res = await saveBranding({ ...settings, branding: b } as unknown as Record<string, unknown>);
-    setBusy("");
-    if (res.ok) { flash({ type: "success", msg: "Logos saved — live on the site & admin." }); router.refresh(); }
-    else flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveBranding({ ...settings, branding: b } as unknown as Record<string, unknown>));
+      if (res.ok) { flash({ type: "success", msg: "Logos saved — live on the site & admin." }); router.refresh(); }
+      else flash({ type: "error", msg: res.error || "Save failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
+    }
   };
 
   const headerSrc = (device === "mobile" && b.mobileLogo) ? b.mobileLogo : (b.headerLogo || "/logo.png");

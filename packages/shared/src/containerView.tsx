@@ -44,7 +44,13 @@ function Reveal({ children, className }: { children: ReactNode; delay?: number; 
   return <div className={className}>{children}</div>;
 }
 
-const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-8 sm:py-10", md: "py-12 sm:py-14", lg: "py-16 sm:py-20" };
+// Vertical rhythm for builder sections. Kept modest and shared with the site's
+// native sections (py-8 sm:py-10 lg:py-12) so an inserted container spaces exactly
+// like a hand-built section — no oversized gap. Because every section pads BOTH
+// sides, the visual gap between two stacked sections is the SUM of their adjacent
+// paddings; these values keep that sum in the 64/80/96px (mobile/tablet/desktop)
+// range instead of the old 128–160px. `none` (py-0) lets media/banners butt flush.
+const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-4 sm:py-6", md: "py-6 sm:py-8 lg:py-10", lg: "py-8 sm:py-10 lg:py-12" };
 const ALIGN: Record<ContainerStyle["align"], string> = { left: "text-left", center: "text-center", right: "text-right" };
 const COLS: Record<2 | 3 | 4, string> = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" };
 

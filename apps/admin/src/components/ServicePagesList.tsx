@@ -8,6 +8,7 @@ import {
   duplicateServicePage,
   resetServicePage,
 } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import LocalDateTime from "./LocalDateTime";
 
 type Toast = { type: "success" | "error"; msg: string } | null;
@@ -28,13 +29,19 @@ export default function ServicePagesList({ items }: { items: ServicePageSummary[
   };
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) => {
+    if (busy) return;
     setBusy(true);
-    const res = await fn();
-    setBusy(false);
-    if (res.ok) {
-      flash({ type: "success", msg: ok });
-      router.refresh();
-    } else flash({ type: "error", msg: res.error || "Action failed." });
+    try {
+      const res = await withTimeout(fn());
+      if (res.ok) {
+        flash({ type: "success", msg: ok });
+        router.refresh();
+      } else flash({ type: "error", msg: res.error || "Action failed." });
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Action failed. Please try again.") });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const doDuplicate = async () => {

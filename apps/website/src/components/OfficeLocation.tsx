@@ -77,7 +77,7 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
   return (
     <section
       id="office-location"
-      className="relative py-12 sm:py-14"
+      className="relative py-8 sm:py-10 lg:py-12"
       aria-labelledby="office-heading"
     >
       <script

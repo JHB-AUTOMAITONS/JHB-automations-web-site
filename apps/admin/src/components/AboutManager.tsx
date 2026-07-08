@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { saveAboutDraft, publishAbout } from "@/app/actions";
 import { ABOUT_DEFAULT, type AboutDoc, type AboutValue } from "@jhb/shared/about";
 import { usePageContainers } from "@/lib/usePageContainers";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import AboutPreview from "./AboutPreview";
 
@@ -47,26 +48,38 @@ export default function AboutManager({
     setD((p) => ({ ...p, values: p.values.filter((_, idx) => idx !== i) }));
 
   const saveDraft = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("save");
-    const res = await saveAboutDraft(assemble());
-    setBusy("");
-    if (res.ok) {
-      setStatus("draft");
-      flash({ type: "success", msg: "Draft saved." });
-    } else {
-      flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(saveAboutDraft(assemble()));
+      if (res.ok) {
+        setStatus("draft");
+        flash({ type: "success", msg: "Draft saved." });
+      } else {
+        flash({ type: "error", msg: res.error || "Save failed." });
+      }
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Save failed. Please try again.") });
+    } finally {
+      setBusy("");
     }
   };
 
   const publish = async () => {
+    if (busy) return; // ignore double-clicks / duplicate requests
     setBusy("publish");
-    const res = await publishAbout(assemble());
-    setBusy("");
-    if (res.ok) {
-      setStatus("published");
-      flash({ type: "success", msg: "Published! Live on the website." });
-    } else {
-      flash({ type: "error", msg: res.error || "Publish failed." });
+    try {
+      const res = await withTimeout(publishAbout(assemble()));
+      if (res.ok) {
+        setStatus("published");
+        flash({ type: "success", msg: "Published! Live on the website." });
+      } else {
+        flash({ type: "error", msg: res.error || "Publish failed." });
+      }
+    } catch (e) {
+      flash({ type: "error", msg: actionErrorMessage(e, "Publish failed. Please try again.") });
+    } finally {
+      setBusy("");
     }
   };
 

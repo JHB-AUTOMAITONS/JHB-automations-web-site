@@ -25,7 +25,7 @@ type RelatedLink = { title: string; slug: string; icon: string };
 
 // "What's Included" styling maps — mirror the page-builder container styles so
 // the section matches the rest of the site when its background/spacing changes.
-const WI_PAD = { none: "py-0", sm: "py-8 sm:py-10", md: "py-12 sm:py-14", lg: "py-16 sm:py-20" } as const;
+const WI_PAD = { none: "py-0", sm: "py-4 sm:py-6", md: "py-6 sm:py-8 lg:py-10", lg: "py-8 sm:py-10 lg:py-12" } as const;
 const WI_COLS = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3" } as const;
 function wiBgClass(bg: ContainerBg): string {
   return bg === "subtle"

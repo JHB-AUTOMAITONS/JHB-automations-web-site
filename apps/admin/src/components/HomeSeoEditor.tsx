@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { saveHomeSeo } from "@/app/actions";
+import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import ImagePicker from "./ImagePicker";
 import RichText from "./RichText";
 import EditorHeader from "./EditorHeader";
@@ -95,30 +96,44 @@ export default function HomeSeoEditor({
     "Grow your business online with AI automation, web development and digital marketing.";
 
   const save = async (mode: "save" | "publish") => {
+    if (busy) return;
     if (!jsonOk) {
       flash({ type: "error", msg: "Structured Data must be valid JSON-LD." });
       return;
     }
     setBusy(mode);
-    const res = await saveHomeSeo({
-      title,
-      meta_title: metaTitle,
-      description,
-      keywords,
-      canonical,
-      og_title: ogTitle,
-      og_description: ogDescription,
-      og_image: ogImage ?? "",
-      robots,
-      structured_data: structuredData,
-      seo_content: seoContent,
-      slug,
-    });
-    setBusy("");
-    if (res.ok) {
-      flash({ type: "success", msg: mode === "publish" ? "Published live ✓" : "Saved ✓" });
-    } else {
-      flash({ type: "error", msg: res.error || "Save failed." });
+    try {
+      const res = await withTimeout(
+        saveHomeSeo({
+          title,
+          meta_title: metaTitle,
+          description,
+          keywords,
+          canonical,
+          og_title: ogTitle,
+          og_description: ogDescription,
+          og_image: ogImage ?? "",
+          robots,
+          structured_data: structuredData,
+          seo_content: seoContent,
+          slug,
+        }),
+      );
+      if (res.ok) {
+        flash({ type: "success", msg: mode === "publish" ? "Published live ✓" : "Saved ✓" });
+      } else {
+        flash({ type: "error", msg: res.error || "Save failed." });
+      }
+    } catch (e) {
+      flash({
+        type: "error",
+        msg: actionErrorMessage(
+          e,
+          mode === "publish" ? "Publish failed. Please try again." : "Save failed. Please try again.",
+        ),
+      });
+    } finally {
+      setBusy("");
     }
   };
 
