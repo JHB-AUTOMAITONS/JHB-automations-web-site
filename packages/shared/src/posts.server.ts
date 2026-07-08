@@ -4,9 +4,12 @@ import type { BlogFaq, Post, PostCard } from "./posts";
 const CARD_COLS =
   "id, slug, title, excerpt, cover_image, category, author, published_at";
 
-// Normalize a raw jhb_posts row into a fully-shaped Post. The faqs columns are
-// added by a later migration, so `select("*")` may not return them on older
-// databases — default them here so reads never break before the migration runs.
+// Normalize a raw jhb_posts row into a fully-shaped Post. The faqs/containers
+// columns are added by later migrations, so `select("*")` may not return them on
+// older databases — default them here so reads never break before the migration
+// runs. `containers` MUST be defaulted: the blog article page feeds it straight
+// into PageContainersView → mergeHeroContainers, which reads `.length` and throws
+// on null/undefined (500-crashing the page / failing the static build).
 function normalizePost(row: unknown): Post {
   const r = row as Post & { likes?: number; faqs?: BlogFaq[]; faqs_enabled?: boolean };
   return {
@@ -14,6 +17,7 @@ function normalizePost(row: unknown): Post {
     likes: r.likes ?? 0,
     faqs: Array.isArray(r.faqs) ? r.faqs : [],
     faqs_enabled: r.faqs_enabled !== false,
+    containers: Array.isArray(r.containers) ? r.containers : [],
   };
 }
 

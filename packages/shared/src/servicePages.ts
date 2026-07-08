@@ -1,6 +1,7 @@
 // Service Page Editor types — client-safe.
 
 import type { ContainerAlign, ContainerBg, ContainerPad, ImageSettings, PageContainer } from "./containers";
+import type { HeadingTag } from "./heading";
 
 export type ServiceFeature = {
   title: string;
@@ -30,6 +31,9 @@ export type WhatsIncludedContent = {
   bg: ContainerBg;
   padding: ContainerPad;
   align: ContainerAlign;
+  // Semantic heading level for SEO. Absent → "h2" (a section heading under the
+  // hero H1). The visual style never changes; only the rendered element does.
+  headingTag?: HeadingTag;
 };
 
 // Defaults mirror the original hardcoded section so unedited pages look identical.
@@ -115,6 +119,8 @@ export type ServiceCta = {
   text: string;
   button_label: string;
   button_href: string;
+  // Semantic heading level for SEO. Absent → "h2".
+  headingTag?: HeadingTag;
 };
 
 // "Explore Related Services" — fully editable section (header + cards). Stored
@@ -168,6 +174,9 @@ export type ServiceChrome = {
   // Horizontal alignment of the hero eyebrow + H1 only. "left" matches the
   // original design, so existing pages render unchanged until edited.
   heroHeadingAlign?: "left" | "center" | "right";
+  // Semantic tag for the hero heading. Absent → "h1" (the page's single main
+  // heading, correct for SEO). Change only if another element already owns the H1.
+  heroHeadingTag?: HeadingTag;
   // Hero image layout (see ServiceHeroImage). Absent → legacy icon tile.
   heroImage?: ServiceHeroImage;
   // Legacy heading fields — kept for back-compat / fallback. The editable

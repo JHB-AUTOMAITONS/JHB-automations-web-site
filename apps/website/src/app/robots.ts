@@ -10,7 +10,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/admin/", "/dashboard", "/login", "/api", "/_next/"],
+      // Note: do NOT disallow /_next/ — it holds the site's CSS/JS bundles, and
+      // blocking them stops Googlebot from rendering pages (Google explicitly
+      // advises keeping render-critical resources crawlable).
+      disallow: ["/admin", "/admin/", "/dashboard", "/login", "/api"],
     },
     sitemap: `${BASE}/sitemap.xml`,
     host: BASE,

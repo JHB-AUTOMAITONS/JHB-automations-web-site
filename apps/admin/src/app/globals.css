@@ -218,6 +218,49 @@ body {
   font-weight: 600;
 }
 
+/* Centered / right-aligned rich-text lists — keep the bullet glued to its text.
+ * Mirrors apps/website/src/app/globals.css so the admin live preview AND the Rich
+ * Text Editor's contenteditable center lists exactly like the published site.
+ * With `list-style-position: outside` the marker sits in the left gutter, so a
+ * centered list leaves the bullet pinned far-left while the text moves to the
+ * middle. For centered/right lists ONLY, move the marker inside the inline flow
+ * and drop the gutter padding so marker + text align together. Covers a Tailwind
+ * `.text-center`/`.text-right` ancestor/self and inline `text-align` from the
+ * editor's align buttons. `.rt-checklist` (absolute ☐/☑ markers) is excluded. */
+.text-center .prose-jhb ul:not(.rt-checklist),
+.text-center .prose-jhb ol,
+.text-right .prose-jhb ul:not(.rt-checklist),
+.text-right .prose-jhb ol,
+.prose-jhb.text-center ul:not(.rt-checklist),
+.prose-jhb.text-center ol,
+.prose-jhb.text-right ul:not(.rt-checklist),
+.prose-jhb.text-right ol,
+.prose-jhb ul[style*="text-align: center"]:not(.rt-checklist),
+.prose-jhb ul[style*="text-align:center"]:not(.rt-checklist),
+.prose-jhb ol[style*="text-align: center"],
+.prose-jhb ol[style*="text-align:center"],
+.prose-jhb ul[style*="text-align: right"]:not(.rt-checklist),
+.prose-jhb ul[style*="text-align:right"]:not(.rt-checklist),
+.prose-jhb ol[style*="text-align: right"],
+.prose-jhb ol[style*="text-align:right"],
+.prose-jhb ul:has(> li[style*="text-align: center"]):not(.rt-checklist),
+.prose-jhb ul:has(> li[style*="text-align:center"]):not(.rt-checklist),
+.prose-jhb ol:has(> li[style*="text-align: center"]),
+.prose-jhb ol:has(> li[style*="text-align:center"]),
+.prose-jhb ul:has(> li[style*="text-align: right"]):not(.rt-checklist),
+.prose-jhb ul:has(> li[style*="text-align:right"]):not(.rt-checklist),
+.prose-jhb ol:has(> li[style*="text-align: right"]),
+.prose-jhb ol:has(> li[style*="text-align:right"]) {
+  list-style-position: inside;
+  padding-left: 0;
+}
+.prose-jhb li[style*="text-align: center"],
+.prose-jhb li[style*="text-align:center"],
+.prose-jhb li[style*="text-align: right"],
+.prose-jhb li[style*="text-align:right"] {
+  list-style-position: inside;
+}
+
 /* Universal image controls — mirror apps/website/src/app/globals.css so the admin
  * preview sizes images identically to production. Vars are set by smartImgAttrs(). */
 .smart-img {

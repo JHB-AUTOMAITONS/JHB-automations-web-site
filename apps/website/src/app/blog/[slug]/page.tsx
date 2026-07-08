@@ -176,7 +176,7 @@ export default async function BlogPostPage({
       <div className={`relative ${articleHero.enabled ? "pt-12" : "pt-24"}`}>
         <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
 
-        <PageContainers containers={post.containers} zone="top" />
+        <PageContainers containers={post.containers ?? []} zone="top" />
 
         {/* Wider reading container — blog detail only (~1200px content, up to 1320px
             frame; 16/24/40px responsive padding). Does not touch the shared
@@ -267,7 +267,7 @@ export default async function BlogPostPage({
         )}
         </article>
 
-        <PageContainers containers={post.containers} zone="bottom" />
+        <PageContainers containers={post.containers ?? []} zone="bottom" />
       </div>
     </main>
   );

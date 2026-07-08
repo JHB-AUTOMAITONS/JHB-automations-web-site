@@ -33,6 +33,8 @@ export default function Contact({
     {}
   );
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Derive all micro-copy from settings with inline defaults as safety net.
   const formName    = settings.contactFormName    || "Full Name";
@@ -69,7 +71,9 @@ export default function Contact({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    setSent(true);
+    if (sending) return; // guard against double-submit
+    setSubmitError(null);
+    setSending(true);
     const payload = {
       name: fields.name,
       company: fields.company || null,
@@ -78,15 +82,27 @@ export default function Contact({
       message: fields.details,
       source: "contact",
     };
-    setFields(empty);
-    setTimeout(() => setSent(false), 6000);
-    // Persist the lead directly from the browser (static site, no server).
-    // Requires an RLS INSERT policy on jhb_leads for the anon role.
+    // Persist the lead directly from the browser (no server). Requires an RLS
+    // INSERT policy on jhb_leads for the anon role. supabase-js RESOLVES with
+    // { error } on RLS/constraint/network failures (it does not throw), so we
+    // MUST inspect `error` — otherwise a failed insert would show a false
+    // "Message Sent!" and the lead would be silently lost.
     try {
       const supabase = createClient();
-      await supabase.from("jhb_leads").insert(payload);
-    } catch {
-      // Swallow — the visitor already saw the success state; we don't block on it.
+      const { error } = await supabase.from("jhb_leads").insert(payload);
+      if (error) throw error;
+      // Only now — after a confirmed successful write — show success + reset.
+      setSent(true);
+      setFields(empty);
+      setErrors({});
+      setTimeout(() => setSent(false), 6000);
+    } catch (err) {
+      console.error("Contact lead submission failed:", err);
+      setSubmitError(
+        "Sorry — we couldn't send your message. Please try again, or email us directly."
+      );
+    } finally {
+      setSending(false);
     }
   };
 
@@ -210,9 +226,12 @@ export default function Contact({
                   error={errors.details}
                 />
 
+                {submitError && (
+                  <p className="pl-1 text-sm text-red-400" role="alert">{submitError}</p>
+                )}
                 <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-                  <button type="submit" className="btn btn-primary flex-1">
-                    {formSubmit}
+                  <button type="submit" disabled={sending} className="btn btn-primary flex-1 disabled:opacity-60">
+                    {sending ? "Sending…" : formSubmit}
                   </button>
                   <a
                     href={`tel:${settings.phone.replace(/\s+/g, "")}`}

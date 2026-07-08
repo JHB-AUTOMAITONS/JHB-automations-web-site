@@ -20,6 +20,14 @@ import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
 import PageContainers from "./PageContainers";
 import { RelatedServicesView } from "@jhb/shared/related-services-view";
+import { Heading } from "@jhb/shared/heading";
+
+// Map a heading tag to the matching framer-motion element so the hero can honor
+// the admin-selected tag (H1–H6 / P) while keeping its entrance animation. The
+// hero defaults to H1 — the page's single main heading.
+const MOTION_HEADINGS = {
+  h1: motion.h1, h2: motion.h2, h3: motion.h3, h4: motion.h4, h5: motion.h5, h6: motion.h6, p: motion.p,
+} as const;
 
 type RelatedLink = { title: string; slug: string; icon: string };
 
@@ -136,6 +144,8 @@ export default function ServiceDetail({
   ) : (
     <span className="grad-text">{heroLead || data.title}</span>
   );
+  // Semantic element for the hero heading — admin-selectable (SEO), defaults to H1.
+  const HeroHeading = MOTION_HEADINGS[db?.chrome?.heroHeadingTag ?? "h1"];
 
   // Hero CTA button chrome — CMS values fall back to the original hardcoded defaults.
   const heroPrimaryText = db?.chrome?.heroPrimaryText || "Contact Us";
@@ -232,7 +242,7 @@ export default function ServiceDetail({
                 {data.tagline}
               </motion.span>
             </div>
-            <motion.h1
+            <HeroHeading
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -251,7 +261,7 @@ export default function ServiceDetail({
               ) : (
                 heroHeadingNode
               )}
-            </motion.h1>
+            </HeroHeading>
             {db?.heroDescriptionHtml ? (
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -364,7 +374,9 @@ export default function ServiceDetail({
             <Reveal>
               <div className={wiAlignCenter ? "text-center" : wiAlignRight ? "text-right" : ""}>
                 {wiBadge && <span className="eyebrow">{wiBadge}</span>}
-                <h2
+                <Heading
+                  tag={wi?.headingTag}
+                  fallback="h2"
                   className={`font-display text-3xl font-bold sm:text-4xl ${wiBadge ? "mt-5" : ""}`}
                 >
                   {wiHeading}
@@ -374,7 +386,7 @@ export default function ServiceDetail({
                       <span className="grad-text">{wiHighlight}</span>
                     </>
                   ) : null}
-                </h2>
+                </Heading>
                 {wiDescription && (
                   // Rich HTML (admin RichEditor) — like the feature cards. Plain-text
                   // values from older pages render unchanged. Manual word-links replace
@@ -605,9 +617,9 @@ export default function ServiceDetail({
       {/* CTA */}
       <section className="container-x pb-20">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
-          <h2 className="break-words font-display text-3xl font-bold sm:text-4xl">
+          <Heading tag={db?.cta?.headingTag} fallback="h2" className="break-words font-display text-3xl font-bold sm:text-4xl">
             <span className="grad-text">{ctaHeading}</span>
-          </h2>
+          </Heading>
           <p className="mx-auto mt-4 max-w-xl text-muted">{ctaText}</p>
           <Link href={ctaButtonHref} className="btn btn-primary mt-8">
             {ctaButtonLabel} →

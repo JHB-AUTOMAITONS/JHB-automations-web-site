@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import type { InternalPage, ServiceFeature, WhatsIncludedContent } from "@jhb/shared/service-pages";
 import type { ContainerAlign, ContainerBg, ContainerPad } from "@jhb/shared/containers";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
+import HeadingTagPicker from "./HeadingTagPicker";
 
 const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -45,7 +45,7 @@ const ALIGN_OPTIONS: { value: ContainerAlign; label: string }[] = [
  * lives in `value`; the cards are the page's `features` array, passed as
  * `items`. Both are owned by the parent (ServicePageEditor) so autosave + live
  * preview pick up every change instantly. Supports add / edit / delete /
- * duplicate / drag-reorder of items.
+ * duplicate / reorder of items.
  */
 export default function WhatsIncludedEditor({
   value,
@@ -60,8 +60,6 @@ export default function WhatsIncludedEditor({
   onChangeItems: (v: ServiceFeature[]) => void;
   internalPages: InternalPage[];
 }) {
-  const [drag, setDrag] = useState<number | null>(null);
-
   const set = (patch: Partial<WhatsIncludedContent>) => onChange({ ...value, ...patch });
 
   // ----- item helpers -----
@@ -79,11 +77,6 @@ export default function WhatsIncludedEditor({
     const [m] = n.splice(from, 1);
     n.splice(to, 0, m);
     onChangeItems(n);
-  };
-  const dropItem = (target: number) => {
-    if (drag === null || drag === target) return setDrag(null);
-    moveItem(drag, target);
-    setDrag(null);
   };
 
   return (
@@ -132,6 +125,12 @@ export default function WhatsIncludedEditor({
           <span className="mb-1 block text-[11px] font-medium text-muted">Highlight (gradient)</span>
           <input value={value.highlight} onChange={(e) => set({ highlight: e.target.value })} className="input" placeholder="Included" />
         </label>
+        <HeadingTagPicker
+          label="Heading tag (SEO)"
+          value={value.headingTag}
+          fallback="h2"
+          onChange={(headingTag) => set({ headingTag })}
+        />
       </div>
       <div className="block">
         <span className="mb-1 block text-[11px] font-medium text-muted">Description (rich text — select a word, click 🔗 to link)</span>
@@ -180,21 +179,16 @@ export default function WhatsIncludedEditor({
           </span>
           <button type="button" onClick={addItem} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-medium hover:bg-ink/[0.04]">+ Add item</button>
         </div>
-        <p className="mt-1 text-[11px] text-muted">Drag ⠿ to reorder. Each item shows an icon/image, title, description and an optional link.</p>
+        <p className="mt-1 text-[11px] text-muted">Use ↑ ↓ to reorder. Each item shows an icon/image, title, description and an optional link.</p>
 
         <div className="mt-3 space-y-3">
           {items.map((it, i) => (
             <div
               key={it.id ?? i}
-              draggable
-              onDragStart={() => setDrag(i)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => dropItem(i)}
-              className={`rounded-xl border bg-surface p-3 ${drag === i ? "border-primary opacity-60" : "border-ink/10"}`}
+              className="rounded-xl border border-ink/10 bg-surface p-3"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
-                  <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
                   <span className="text-xs font-semibold text-muted">Item {i + 1}</span>
                 </span>
                 <div className="flex items-center gap-1">

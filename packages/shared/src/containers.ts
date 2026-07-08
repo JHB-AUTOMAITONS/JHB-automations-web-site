@@ -513,6 +513,9 @@ export function cloneContainer(c: PageContainer): PageContainer {
  * pages show one unified Hero Section and saving persists the merge. Idempotent.
  */
 export function mergeHeroContainers(cs: PageContainer[]): PageContainer[] {
+  // Defensive: a null/undefined containers value (e.g. a DB row missing the
+  // column) would otherwise throw on `.length` below and 500-crash the page.
+  if (!Array.isArray(cs)) return [];
   const out: PageContainer[] = [];
   for (let i = 0; i < cs.length; i++) {
     const c = cs[i];

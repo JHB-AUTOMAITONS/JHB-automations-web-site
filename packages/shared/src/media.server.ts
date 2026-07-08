@@ -74,7 +74,7 @@ export async function getMediaLibrary(): Promise<MediaLibraryItem[]> {
       supabase.from("jhb_content").select("key, data"),
       supabase.from("jhb_services").select("*"),
       supabase.from("jhb_testimonials").select("photo_url"),
-      supabase.from("jhb_client_logos").select("data"),
+      supabase.from("jhb_client_logos").select("logo_url"),
       supabase.from("jhb_settings").select("key, data"),
     ]);
 
@@ -105,7 +105,7 @@ export async function getMediaLibrary(): Promise<MediaLibraryItem[]> {
     }
     push("Services", services.data);
     for (const t of (tts.data ?? []) as { photo_url: string | null }[]) push("Testimonials", t.photo_url);
-    for (const l of (logos.data ?? []) as { data: unknown }[]) push("Logos", l.data);
+    for (const l of (logos.data ?? []) as { logo_url: string | null }[]) push("Logos", l.logo_url);
     for (const s of (settings.data ?? []) as { data: unknown }[]) push("Logos", s.data); // branding logos / favicon
 
     return ((media.data as MediaImage[]) ?? []).map((m) => {

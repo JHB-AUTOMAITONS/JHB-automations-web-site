@@ -3,6 +3,7 @@ import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { getAbout } from "@jhb/shared/about-server";
+import { getStats } from "@jhb/shared/content-server";
 import { AboutView } from "@jhb/shared/about-view";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,7 +21,10 @@ export default async function AboutPage() {
   // <AboutView>, which the admin editor's live preview renders too — so the
   // preview always matches this page. The website injects its animated Reveal,
   // Stats and Breadcrumbs; the admin preview renders them statically.
-  const about = await getAbout();
+  // Fetch the CMS-editable stats too, so the About page's Stats section reflects
+  // admin edits (previously it rendered <Stats /> with no items → always the
+  // hardcoded defaults, diverging from the home page).
+  const [about, stats] = await Promise.all([getAbout(), getStats()]);
 
   return (
     <AboutView
@@ -34,7 +38,7 @@ export default async function AboutPage() {
           ]}
         />
       }
-      stats={<Stats />}
+      stats={<Stats items={stats.items} />}
     />
   );
 }

@@ -1149,37 +1149,52 @@ export async function duplicateServicePage(fromKey: string, toKey: string) {
   if (fromKey === toKey) return { ok: false, error: "Choose a different target service." };
   const { supabase, user } = ctx;
 
+  // Copy the SOURCE's full editable content (all content columns, draft-first so an
+  // unsaved draft is copied too), then land it in the TARGET's DRAFT — NOT its live
+  // columns. The previous version overwrote the target's LIVE content and flipped it
+  // to draft, silently destroying a published target's page and copying only a
+  // subset of fields. Writing to `draft` mirrors the Save Draft → Publish model:
+  // the copy is a reviewable draft, and the target stays live/untouched until the
+  // admin publishes.
+  const CONTENT_COLS =
+    "slug, meta_title, meta_description, meta_keywords, hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, faq, why_choose, cta, image_url, image_alt, image_title, containers, chrome";
   const { data: src } = await supabase
     .from("jhb_services")
-    .select("hero_heading, hero_highlight, hero_tail, hero_description, hero_link, features, whats_included, faq, cta, image_url, image_alt")
+    .select(`${CONTENT_COLS}, draft`)
     .eq("key", fromKey)
     .maybeSingle();
   if (!src) return { ok: false, error: "Source has no saved content to copy." };
 
+  const { draft: srcDraftRaw, ...srcLive } = src as Record<string, unknown>;
+  const srcDraft =
+    srcDraftRaw && typeof srcDraftRaw === "object" ? (srcDraftRaw as Record<string, unknown>) : {};
+  // Editor-visible content = live columns overlaid by any saved draft.
+  const effective = { ...srcLive, ...srcDraft };
+
+  // Preserve the TARGET's own slug so its public URL never collides with the source
+  // (key === slug by default for a target that has no row yet).
+  const { data: tgt } = await supabase
+    .from("jhb_services")
+    .select("slug")
+    .eq("key", toKey)
+    .maybeSingle();
+  const targetSlug = (tgt?.slug as string | undefined) ?? toKey;
+  const targetDraft = { ...effective, slug: targetSlug };
+
   const now = new Date().toISOString();
+  // upsert (not update): if the target has no row yet, insert one — slug satisfies
+  // the NOT NULL constraint and status defaults to 'draft'. On an existing row only
+  // draft/slug/timestamps are set, so live columns and published status are untouched.
   const { error } = await supabase
     .from("jhb_services")
-    .update({
-      hero_heading: src.hero_heading,
-      hero_highlight: src.hero_highlight,
-      hero_tail: src.hero_tail,
-      hero_description: src.hero_description,
-      hero_link: src.hero_link,
-      features: src.features ?? [],
-      whats_included: src.whats_included ?? {},
-      faq: src.faq ?? [],
-      cta: src.cta ?? null,
-      image_url: src.image_url,
-      image_alt: src.image_alt,
-      status: "draft",
-      content_updated_at: now,
-      updated_at: now,
-      updated_by: user.id,
-    })
-    .eq("key", toKey);
+    .upsert(
+      { key: toKey, slug: targetSlug, draft: targetDraft, draft_updated_at: now, updated_at: now, updated_by: user.id },
+      { onConflict: "key" },
+    );
   if (error) return { ok: false, error: error.message };
-  await log("service.page.duplicate", `Copied content "${fromKey}" → "${toKey}"`);
+  await log("service.page.duplicate", `Copied content "${fromKey}" → "${toKey}" (as a draft)`);
   revalidatePath("/service-pages");
+  revalidatePath(`/service-pages/${toKey}`);
   return { ok: true };
 }
 
@@ -1199,9 +1214,22 @@ export async function resetServicePage(key: string) {
       features: [],
       whats_included: {},
       faq: [],
+      why_choose: [],
       cta: null,
       image_url: null,
       image_alt: null,
+      image_title: null,
+      meta_title: null,
+      meta_description: null,
+      meta_keywords: null,
+      containers: [],
+      chrome: {},
+      // Reset must also clear the DRAFT — getServicePage overlays `draft` over the
+      // live columns, so a leftover draft would mask the reset in the editor AND
+      // resurface the old content on the next Publish (buildServiceContent reads
+      // the draft). Nulling it makes Reset revert to code defaults everywhere.
+      draft: null,
+      draft_updated_at: null,
       status: "draft",
       content_updated_at: new Date().toISOString(),
       updated_by: user.id,

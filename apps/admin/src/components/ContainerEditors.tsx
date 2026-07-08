@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import HeadingTagSelect from "./HeadingTagSelect";
@@ -343,7 +342,6 @@ function HeroDescEditor({ c, onChange }: { c: HeroDescContainer; onChange: (c: H
 
 function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsContainer) => void }) {
   const p = c.props;
-  const [dragId, setDragId] = useState<string | null>(null);
   const set = (patch: Partial<CardsContainer["props"]>) => onChange({ ...c, props: { ...p, ...patch } });
   const setCard = (id: string, patch: Partial<CardsContainer["props"]["items"][number]>) =>
     set({ items: p.items.map((it) => (it.id === id ? { ...it, ...patch } : it)) });
@@ -362,14 +360,6 @@ function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsCo
     n.splice(to, 0, m);
     set({ items: n });
   };
-  const drop = (targetId: string) => {
-    if (!dragId || dragId === targetId) return setDragId(null);
-    const from = p.items.findIndex((x) => x.id === dragId);
-    const to = p.items.findIndex((x) => x.id === targetId);
-    setDragId(null);
-    if (from === -1 || to === -1) return;
-    move(from, to);
-  };
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -387,16 +377,10 @@ function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsCo
         {p.items.map((card, i) => (
           <div
             key={card.id}
-            draggable
-            onDragStart={() => setDragId(card.id)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => drop(card.id)}
-            onDragEnd={() => setDragId(null)}
-            className={`rounded-xl border border-ink/10 bg-base p-3 ${dragId === card.id ? "opacity-60" : ""}`}
+            className="rounded-xl border border-ink/10 bg-base p-3"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
-                <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
                 <span className="text-[11px] font-semibold text-muted">Card {i + 1}</span>
               </span>
               <div className="flex items-center gap-1">
@@ -729,7 +713,6 @@ function AdvantageEditor({ c, onChange }: { c: AdvantageContainer; onChange: (c:
 
 function WorkflowEditor({ c, onChange }: { c: WorkflowContainer; onChange: (c: WorkflowContainer) => void }) {
   const p = c.props;
-  const [dragId, setDragId] = useState<string | null>(null);
   const set = (patch: Partial<WorkflowContainer["props"]>) => onChange({ ...c, props: { ...p, ...patch } });
   const setStep = (id: string, patch: Partial<WorkflowContainer["props"]["steps"][number]>) =>
     set({ steps: p.steps.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
@@ -747,14 +730,6 @@ function WorkflowEditor({ c, onChange }: { c: WorkflowContainer; onChange: (c: W
     const [m] = n.splice(from, 1);
     n.splice(to, 0, m);
     set({ steps: n });
-  };
-  const drop = (targetId: string) => {
-    if (!dragId || dragId === targetId) return setDragId(null);
-    const from = p.steps.findIndex((x) => x.id === dragId);
-    const to = p.steps.findIndex((x) => x.id === targetId);
-    setDragId(null);
-    if (from === -1 || to === -1) return;
-    move(from, to);
   };
   const colorField = (label: string, value: string, onColor: (v: string) => void) => (
     <span className="flex items-center gap-1.5">
@@ -800,16 +775,10 @@ function WorkflowEditor({ c, onChange }: { c: WorkflowContainer; onChange: (c: W
         {p.steps.map((s, i) => (
           <div
             key={s.id}
-            draggable
-            onDragStart={() => setDragId(s.id)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => drop(s.id)}
-            onDragEnd={() => setDragId(null)}
-            className={`rounded-xl border border-ink/10 bg-base p-3 ${dragId === s.id ? "opacity-60" : ""} ${!s.enabled ? "opacity-50" : ""}`}
+            className={`rounded-xl border border-ink/10 bg-base p-3 ${!s.enabled ? "opacity-50" : ""}`}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
-                <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
                 <span className="text-[11px] font-semibold text-muted">Step {i + 1}</span>
               </span>
               <div className="flex items-center gap-1">

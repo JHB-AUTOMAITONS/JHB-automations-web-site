@@ -275,6 +275,53 @@ label[for] {
   margin-top: 0.35rem;
 }
 
+/* Centered / right-aligned rich-text lists — keep the bullet glued to its text.
+ * Bug: with `list-style-position: outside` (set above) the marker lives in the
+ * left gutter, so when a list is centered the marker stays pinned far-left while
+ * the text shifts to the middle — a detached, unprofessional bullet. Fix: for
+ * centered/right lists ONLY, move the marker inside the inline flow and drop the
+ * gutter padding, so marker + text align (and wrap) together as one unit. Left/
+ * default lists are untouched and keep the hanging indent from the rules above.
+ * Two centering sources are covered: a Tailwind `.text-center`/`.text-right`
+ * ancestor or the prose element itself (section/container alignment), and inline
+ * `text-align` written by the editor's align buttons onto the <ul>/<ol> or its
+ * <li>s. `.rt-checklist` is excluded — its ☐/☑ markers are positioned absolutely. */
+.text-center .prose-jhb ul:not(.rt-checklist),
+.text-center .prose-jhb ol,
+.text-right .prose-jhb ul:not(.rt-checklist),
+.text-right .prose-jhb ol,
+.prose-jhb.text-center ul:not(.rt-checklist),
+.prose-jhb.text-center ol,
+.prose-jhb.text-right ul:not(.rt-checklist),
+.prose-jhb.text-right ol,
+.prose-jhb ul[style*="text-align: center"]:not(.rt-checklist),
+.prose-jhb ul[style*="text-align:center"]:not(.rt-checklist),
+.prose-jhb ol[style*="text-align: center"],
+.prose-jhb ol[style*="text-align:center"],
+.prose-jhb ul[style*="text-align: right"]:not(.rt-checklist),
+.prose-jhb ul[style*="text-align:right"]:not(.rt-checklist),
+.prose-jhb ol[style*="text-align: right"],
+.prose-jhb ol[style*="text-align:right"],
+.prose-jhb ul:has(> li[style*="text-align: center"]):not(.rt-checklist),
+.prose-jhb ul:has(> li[style*="text-align:center"]):not(.rt-checklist),
+.prose-jhb ol:has(> li[style*="text-align: center"]),
+.prose-jhb ol:has(> li[style*="text-align:center"]),
+.prose-jhb ul:has(> li[style*="text-align: right"]):not(.rt-checklist),
+.prose-jhb ul:has(> li[style*="text-align:right"]):not(.rt-checklist),
+.prose-jhb ol:has(> li[style*="text-align: right"]),
+.prose-jhb ol:has(> li[style*="text-align:right"]) {
+  list-style-position: inside;
+  padding-left: 0;
+}
+/* Per-item fallback where :has() is unavailable — at least glue the marker to a
+ * centered/right item's text (any residual gutter is cosmetic, not detached). */
+.prose-jhb li[style*="text-align: center"],
+.prose-jhb li[style*="text-align:center"],
+.prose-jhb li[style*="text-align: right"],
+.prose-jhb li[style*="text-align:right"] {
+  list-style-position: inside;
+}
+
 /* Checklist lists created in the Rich Text Editor (☐ / ☑ markers). */
 .prose-jhb .rt-checklist {
   list-style: none;

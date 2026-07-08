@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   type WhyChooseBenefit,
   type WhyChooseContainer,
@@ -40,8 +39,6 @@ export default function WhyChooseEditor({
   value: WhyChooseContainer[];
   onChange: (v: WhyChooseContainer[]) => void;
 }) {
-  const [dragC, setDragC] = useState<number | null>(null);
-
   const setContainer = (ci: number, patch: Partial<WhyChooseContainer>) =>
     onChange(value.map((c, i) => (i === ci ? { ...c, ...patch } : c)));
 
@@ -62,11 +59,6 @@ export default function WhyChooseEditor({
     const [m] = n.splice(from, 1);
     n.splice(to, 0, m);
     onChange(n);
-  };
-  const dropContainer = (target: number) => {
-    if (dragC === null || dragC === target) return setDragC(null);
-    moveContainer(dragC, target);
-    setDragC(null);
   };
 
   // ----- benefit helpers (scoped to a container) -----
@@ -111,18 +103,11 @@ export default function WhyChooseEditor({
       {value.map((c, ci) => (
         <div
           key={c.id}
-          draggable
-          onDragStart={() => setDragC(ci)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={() => dropContainer(ci)}
-          className={`rounded-2xl border bg-base p-4 ${
-            dragC === ci ? "border-primary opacity-60" : "border-ink/10"
-          } ${!c.enabled ? "opacity-70" : ""}`}
+          className={`rounded-2xl border border-ink/10 bg-base p-4 ${!c.enabled ? "opacity-70" : ""}`}
         >
           {/* container toolbar */}
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2">
-              <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Container {ci + 1}
               </span>

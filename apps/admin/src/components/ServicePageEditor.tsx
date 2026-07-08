@@ -19,6 +19,8 @@ import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import AlignPicker from "./AlignPicker";
+import HeadingTagPicker from "./HeadingTagPicker";
+import { Heading, type HeadingTag } from "@jhb/shared/heading";
 import LocalDateTime from "./LocalDateTime";
 import WhatsIncludedEditor from "./WhatsIncludedEditor";
 import WhyChooseEditor from "./WhyChooseEditor";
@@ -239,6 +241,14 @@ export default function ServicePageEditor({
     <span className="grad-text">{form.hero_heading || page.title}</span>
   );
 
+  // Effective semantic tags for the native section headings (hero defaults to the
+  // page's single H1; sections default to H2). Used for the live render, the
+  // preview, and the one-H1 SEO validation below.
+  const heroTag: HeadingTag = form.chrome.heroHeadingTag ?? "h1";
+  const wiTag: HeadingTag = form.whats_included.headingTag ?? "h2";
+  const ctaTag: HeadingTag = form.cta.headingTag ?? "h2";
+  const h1Count = [heroTag, wiTag, ctaTag].filter((t) => t === "h1").length;
+
   return (
     // On xl, fill <main>'s height and let the two columns scroll independently
     // (top bar fixed, grid flex-1). Below xl it's a normal block that flows.
@@ -255,6 +265,13 @@ export default function ServicePageEditor({
         publishDisabled={!dirty}
         extra={<span className="text-xs text-muted">{savedLabel}</span>}
       />
+
+      {h1Count > 1 && (
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800">
+          ⚠ This page has {h1Count} headings set to <strong>H1</strong>. A page should have exactly one H1
+          (usually the hero) — use H2–H6 for the other sections for better SEO. Saving is not blocked.
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_440px] xl:overflow-hidden">
         {/* ---- form (own scroll) ---- */}
@@ -324,11 +341,19 @@ export default function ServicePageEditor({
             <p className="-mt-1 text-[11px] text-muted">
               The <span className="grad-text font-semibold">Highlight</span> word automatically uses the brand gradient — no formatting needed. Leave Highlight empty to keep the whole heading gradient (legacy style).
             </p>
-            <AlignPicker
-              label="Heading alignment"
-              value={form.chrome.heroHeadingAlign ?? "left"}
-              onChange={(v) => set("chrome", { ...form.chrome, heroHeadingAlign: v })}
-            />
+            <div className="flex flex-wrap items-end gap-4">
+              <AlignPicker
+                label="Heading alignment"
+                value={form.chrome.heroHeadingAlign ?? "left"}
+                onChange={(v) => set("chrome", { ...form.chrome, heroHeadingAlign: v })}
+              />
+              <HeadingTagPicker
+                label="Heading tag (SEO)"
+                value={form.chrome.heroHeadingTag}
+                fallback="h1"
+                onChange={(v) => set("chrome", { ...form.chrome, heroHeadingTag: v })}
+              />
+            </div>
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Hero description</span>
               <RichEditor
@@ -481,6 +506,12 @@ export default function ServicePageEditor({
                 <input value={form.cta.button_href} onChange={(e) => set("cta", { ...form.cta, button_href: e.target.value })} className="input" placeholder="/#contact" />
               </Field>
             </div>
+            <HeadingTagPicker
+              label="CTA heading tag (SEO)"
+              value={form.cta.headingTag}
+              fallback="h2"
+              onChange={(v) => set("cta", { ...form.cta, headingTag: v })}
+            />
           </Section>
 
           {cb.slot("bottom")}
@@ -555,13 +586,13 @@ export default function ServicePageEditor({
                       />
                     );
                   })()}
-                  <h2 className={`font-display text-2xl font-bold ${form.chrome.heroHeadingAlign === "center" ? "text-center" : form.chrome.heroHeadingAlign === "right" ? "text-right" : ""}`}>
+                  <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${form.chrome.heroHeadingAlign === "center" ? "text-center" : form.chrome.heroHeadingAlign === "right" ? "text-right" : ""}`}>
                     {form.hero_link ? (
                       <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
                     ) : (
                       heroPreviewNode
                     )}
-                  </h2>
+                  </Heading>
                   {form.hero_description && (
                     <div
                       className="prose-jhb mt-2 text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
@@ -583,10 +614,10 @@ export default function ServicePageEditor({
                       {form.whats_included.badge && (
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{form.whats_included.badge}</span>
                       )}
-                      <p className={`font-display text-lg font-bold ${form.whats_included.badge ? "mt-1" : ""}`}>
+                      <Heading tag={wiTag} fallback="h2" className={`font-display text-lg font-bold ${form.whats_included.badge ? "mt-1" : ""}`}>
                         {form.whats_included.heading}{" "}
                         {form.whats_included.highlight && <span className="grad-text">{form.whats_included.highlight}</span>}
-                      </p>
+                      </Heading>
                       {form.whats_included.description && (
                         <p className="mt-1 text-xs text-muted">{form.whats_included.description}</p>
                       )}
@@ -641,7 +672,7 @@ export default function ServicePageEditor({
                   <PageContainersView containers={cb.containers} zone="after-features" />
                   {(form.cta.heading || form.cta.button_label) && (
                     <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
-                      <p className="font-display text-lg font-bold">{form.cta.heading}</p>
+                      <Heading tag={ctaTag} fallback="h2" className="font-display text-lg font-bold">{form.cta.heading}</Heading>
                       <p className="mt-1 text-xs text-muted">{form.cta.text}</p>
                       {form.cta.button_label && <span className="btn btn-primary mt-3 !py-2 !text-xs">{form.cta.button_label}</span>}
                     </div>

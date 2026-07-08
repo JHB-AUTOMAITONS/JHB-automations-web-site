@@ -36,8 +36,20 @@ export default function ClientLogoManager({ initial }: { initial: ClientLogo[] }
   const [dragOver, setDragOver] = useState(false);
   const addRef = useRef<HTMLInputElement>(null);
 
+  // Re-sync from the server prop after a router.refresh(), but MERGE by id and keep
+  // any row whose alt_text/active the user is still editing (unsaved) — otherwise a
+  // sibling action's refresh silently discarded the in-progress edit. Clean rows
+  // still take fresh server values.
   useEffect(() => {
-    if (!orderDirty) setRows(initial.map(toRow));
+    if (orderDirty) return;
+    setRows((prev) =>
+      initial.map((c) => {
+        const server = toRow(c);
+        const local = prev.find((r) => r.id === server.id);
+        const dirty = local && ((local.alt_text ?? "") !== (server.alt_text ?? "") || local.active !== server.active);
+        return dirty ? local! : server;
+      }),
+    );
   }, [initial, orderDirty]);
 
   const flash = (t: Toast) => {

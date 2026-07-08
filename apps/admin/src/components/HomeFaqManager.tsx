@@ -41,8 +41,19 @@ export default function HomeFaqManager({
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ question: "", answer: "", active: true });
 
+  // Re-sync from the server prop after a router.refresh(), but MERGE by id and keep
+  // any row the user is still editing (unsaved). Previously this blindly replaced
+  // all rows, so a sibling action's refresh silently discarded an in-progress FAQ
+  // answer. Clean rows still take fresh server values (e.g. a publish toggle).
   useEffect(() => {
-    if (!orderDirty) setRows(initial.map((f) => ({ id: f.id, question: f.question, answer: f.answer, active: f.active })));
+    if (orderDirty) return;
+    setRows((prev) =>
+      initial.map((f) => {
+        const local = prev.find((r) => r.id === f.id);
+        const dirty = local && (local.question !== f.question || local.answer !== f.answer);
+        return dirty ? local! : { id: f.id, question: f.question, answer: f.answer, active: f.active };
+      }),
+    );
   }, [initial, orderDirty]);
 
   // Keep the page's live preview in sync with in-progress edits.

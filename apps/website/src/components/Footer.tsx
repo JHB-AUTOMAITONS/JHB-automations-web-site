@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SETTINGS_DEFAULT, type SiteSettings } from "@jhb/shared/content";
+import { createClient } from "@jhb/shared/supabase/client";
 
 type ServiceLink = { label: string; href: string; icon: string };
 
@@ -17,18 +18,40 @@ export default function Footer({
 }) {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const socials = [
     { label: "in", href: settings.linkedin },
     { label: "f", href: settings.facebook },
     { label: "ig", href: settings.instagram },
   ];
 
-  const subscribe = (e: React.FormEvent) => {
+  const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
-    setDone(true);
-    setEmail("");
-    setTimeout(() => setDone(false), 4000);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErr("Please enter a valid email address.");
+      return;
+    }
+    if (busy) return;
+    setErr(null);
+    setBusy(true);
+    // Persist the signup before confirming — previously it showed "subscribed"
+    // and cleared the field WITHOUT storing anything, silently dropping every
+    // signup. Stored in jhb_leads with source "newsletter" (all columns nullable
+    // except source/status). Requires the anon INSERT RLS policy, like the contact form.
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("jhb_leads").insert({ email, source: "newsletter" });
+      if (error) throw error;
+      setDone(true);
+      setEmail("");
+      setTimeout(() => setDone(false), 4000);
+    } catch (e) {
+      console.error("Newsletter signup failed:", e);
+      setErr("Couldn't subscribe — please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -107,9 +130,10 @@ export default function Footer({
               />
               <button
                 type="submit"
-                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-105"
+                disabled={busy}
+                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-105 disabled:opacity-60"
               >
-                →
+                {busy ? "…" : "→"}
               </button>
             </form>
             {done && (
@@ -117,6 +141,7 @@ export default function Footer({
                 ✓ You&apos;re subscribed. Welcome aboard!
               </p>
             )}
+            {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
           </div>
         </div>
 

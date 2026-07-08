@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Icon, { ICON_NAMES } from "@jhb/shared/icon";
 import { cid } from "@jhb/shared/containers";
 import type {
@@ -28,7 +27,6 @@ export default function RelatedServicesEditor({
   services: ServiceSummary[];
   internalPages?: InternalPage[];
 }) {
-  const [dragId, setDragId] = useState<string | null>(null);
   const set = (patch: Partial<RelatedServicesContent>) => onChange({ ...value, ...patch });
   const setCard = (id: string, patch: Partial<RelatedServiceCard>) =>
     set({ cards: value.cards.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
@@ -51,14 +49,6 @@ export default function RelatedServicesEditor({
     const [m] = n.splice(from, 1);
     n.splice(to, 0, m);
     set({ cards: n });
-  };
-  const drop = (targetId: string) => {
-    if (!dragId || dragId === targetId) return setDragId(null);
-    const from = value.cards.findIndex((c) => c.id === dragId);
-    const to = value.cards.findIndex((c) => c.id === targetId);
-    setDragId(null);
-    if (from === -1 || to === -1) return;
-    move(from, to);
   };
   // Auto-link: picking a Target Service fills the card name + icon (both stay editable).
   const onTarget = (id: string, key: string) => {
@@ -93,16 +83,10 @@ export default function RelatedServicesEditor({
         {value.cards.map((card, i) => (
           <div
             key={card.id}
-            draggable
-            onDragStart={() => setDragId(card.id)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => drop(card.id)}
-            onDragEnd={() => setDragId(null)}
-            className={`rounded-xl border border-ink/10 bg-base p-3 ${dragId === card.id ? "opacity-60" : ""} ${!card.enabled ? "opacity-50" : ""}`}
+            className={`rounded-xl border border-ink/10 bg-base p-3 ${!card.enabled ? "opacity-50" : ""}`}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
-                <span className="cursor-grab select-none text-muted active:cursor-grabbing" title="Drag to reorder">⠿</span>
                 <span className="text-[11px] font-semibold text-muted">Card {i + 1}</span>
               </span>
               <div className="flex items-center gap-1">
