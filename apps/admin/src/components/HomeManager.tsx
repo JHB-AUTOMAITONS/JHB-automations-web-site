@@ -16,6 +16,7 @@ import type {
 } from "@jhb/shared/home";
 import { composeHeroHeading } from "@jhb/shared/home";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import { saveHomeDraft, publishHome } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
@@ -828,11 +829,11 @@ function Preview({
         <span className="eyebrow !text-[10px]">{hero.badge}</span>
         <h3
           className="mt-3 font-display text-lg font-bold leading-tight [&_p]:m-0 [&_p]:inline [&>div]:inline"
-          dangerouslySetInnerHTML={{ __html: stripHeadingTags(composeHeroHeading(hero.title, hero.highlight)) }}
+          dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(composeHeroHeading(hero.title, hero.highlight))) }}
         />
         <div
           className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
-          dangerouslySetInnerHTML={{ __html: hero.subtitle }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(hero.subtitle) }}
         />
         <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hero.buttonText}</span>
         {hero.image && (
@@ -860,8 +861,8 @@ function Preview({
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
-          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(about.title) }} />
-          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.descriptionHtml }} />
+          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }} />
+          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }} />
           {about.image && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={about.image} alt="" className="mt-2 aspect-[4/3] w-full rounded-lg object-cover" />
@@ -871,8 +872,8 @@ function Preview({
       <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
       <div className="border-t border-ink/10 p-5 text-center">
-        <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: stripHeadingTags(servicesSection.title) }} />
-        <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
+        <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(servicesSection.title)) }} />
+        <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(servicesSection.subtitle) }} />
         {serviceCards.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-2 text-left">
             {serviceCards.slice(0, 6).map((c) => (
@@ -915,7 +916,7 @@ function Preview({
               {founder.heading} <span className="grad-text">{founder.highlight}</span>
             </div>
           </div>
-          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: founder.descriptionHtml }} />
+          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(founder.descriptionHtml) }} />
           {(founder.name || founder.company) && (
             <p className="mt-2 text-[11px] font-semibold">
               {founder.name}{founder.name && founder.company ? " · " : ""}{founder.company}
@@ -953,7 +954,7 @@ function Preview({
       {cta.enabled && (
         <div className="border-t border-ink/10 bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
           <h4 className="font-display text-base font-bold">{cta.title}</h4>
-          <div className="prose-jhb mt-1 text-xs text-muted" dangerouslySetInnerHTML={{ __html: cta.textHtml }} />
+          <div className="prose-jhb mt-1 text-xs text-muted" dangerouslySetInnerHTML={{ __html: sanitizeRichText(cta.textHtml) }} />
           <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{cta.buttonText}</span>
         </div>
       )}

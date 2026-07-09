@@ -14,6 +14,7 @@ import {
   type ServiceStatus,
 } from "@jhb/shared/service-pages";
 import { smartImgAttrs, stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichEditor from "./RichEditor";
@@ -603,7 +604,7 @@ export default function ServicePageEditor({
                   {form.hero_description && (
                     <div
                       className={`prose-jhb mt-2 max-w-md ${heroAlignBlock} ${heroAlignText} text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
-                      dangerouslySetInnerHTML={{ __html: form.hero_description }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.hero_description) }}
                     />
                   )}
                   <PageContainersView containers={cb.containers} zone="after-hero" />
@@ -652,11 +653,11 @@ export default function ServicePageEditor({
                                 <div className="min-w-0">
                                   <div
                                     className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary"
-                                    dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
+                                    dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
                                   />
                                   <div
                                     className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-                                    dangerouslySetInnerHTML={{ __html: f.desc }}
+                                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
                                   />
                                   {f.link && (
                                     <span className="mt-1 inline-block text-xs font-medium text-primary">

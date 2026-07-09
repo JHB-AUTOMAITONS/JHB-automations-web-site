@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { InternalPage } from "@jhb/shared/service-pages";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import ColorEditor from "./ColorEditor";
 import FontSizeControl, { wrapSelectionFontSize } from "./FontSizeControl";
 import { EDITOR_FONTS, matchFont } from "./editorFonts";
@@ -97,27 +98,16 @@ function buildRel(d: LinkDraft): string {
   return rel.join(" ");
 }
 
-// Strip scripts/dangerous attributes from pasted HTML while KEEPING inline
-// formatting (font, size, colour, bold…) so "paste with formatting" is faithful.
+// Clean pasted HTML with the shared sanitizer (strips Word/Docs/Outlook/Office
+// markup, conditional comments, XML, scripts and unsafe tags/attrs while keeping
+// real formatting). Then strip block-level backgrounds Word/Docs carry — they
+// render as a light box on the dark site — but keep span-level highlights. DOM
+// work is safe here since paste only runs in the browser.
 function sanitizePastedHtml(html: string): string {
   const tpl = document.createElement("template");
-  tpl.innerHTML = html;
-  tpl.content
-    .querySelectorAll("script,style,meta,link,title,head,noscript,iframe,object,embed")
-    .forEach((n) => n.remove());
+  tpl.innerHTML = sanitizeRichText(html);
   const BG_BLOCKS = /^(P|DIV|H[1-6]|UL|OL|LI|SECTION|ARTICLE|BLOCKQUOTE|FONT)$/;
   tpl.content.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    Array.from(el.attributes).forEach((a) => {
-      const n = a.name.toLowerCase();
-      if (n.startsWith("on")) el.removeAttribute(a.name);
-      if ((n === "href" || n === "src") && /^\s*javascript:/i.test(a.value)) {
-        el.removeAttribute(a.name);
-      }
-    });
-    // Word / Google Docs paste carries block-level backgrounds (e.g.
-    // "background: rgb(244,244,244)") that render as a light box on the dark
-    // website. Strip them from block elements; span-level backgrounds are kept
-    // so intentional text highlights survive.
     if (BG_BLOCKS.test(el.tagName)) {
       el.style.removeProperty("background");
       el.style.removeProperty("background-color");

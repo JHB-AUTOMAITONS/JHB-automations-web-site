@@ -2,6 +2,7 @@ import Image from "next/image";
 import Reveal from "./Reveal";
 import type { AboutBlock } from "@jhb/shared/home";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // Server component: copy + image are static; only their entrance is animated.
 export default function AboutSection({
@@ -25,11 +26,11 @@ export default function AboutSection({
               className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl [&_p]:m-0 [&_a]:text-primary"
               // This element IS the H2 (role/aria-level); unwrap any <hN> in the
               // value so it doesn't render a second, nested heading.
-              dangerouslySetInnerHTML={{ __html: stripHeadingTags(about.title) }}
+              dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }}
             />
             <div
               className="prose-jhb mt-5 space-y-4 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-              dangerouslySetInnerHTML={{ __html: about.descriptionHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }}
             />
           </Reveal>
 

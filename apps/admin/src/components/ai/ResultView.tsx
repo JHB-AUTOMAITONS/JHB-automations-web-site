@@ -1,6 +1,7 @@
 "use client";
 
 import CopyButton from "./CopyButton";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // Generic, recursive renderer for AI tool results. Handles strings (with copy),
 // HTML/JSON blobs (copyable code box), string lists, FAQ lists, nested objects
@@ -59,7 +60,7 @@ function FaqList({ items }: { items: { question: string; answer: string }[] }) {
       {items.map((f, i) => (
         <li key={i} className="rounded-lg border border-ink/10 bg-base p-3">
           <p className="text-sm font-semibold">{f.question}</p>
-          <div className="prose-jhb mt-1 text-sm text-muted" dangerouslySetInnerHTML={{ __html: f.answer }} />
+          <div className="prose-jhb mt-1 text-sm text-muted" dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.answer) }} />
         </li>
       ))}
     </ul>

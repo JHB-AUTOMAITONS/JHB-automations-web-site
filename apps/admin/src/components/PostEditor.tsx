@@ -15,6 +15,7 @@ import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import type { PageContainer } from "@jhb/shared/containers";
 import EditorHeader from "./EditorHeader";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 const faqUid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -423,7 +424,7 @@ function BlogPreview({
         {content.trim() ? (
           <div
             className="prose-jhb mt-4 text-sm leading-relaxed text-ink/80 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4 [&_li]:my-1 [&_ul_ul]:list-[circle] [&_ul_ul_ul]:list-[square] [&_ol_ol]:list-[lower-alpha] [&_ol_ol_ol]:list-[lower-roman] [&_.rt-checklist]:list-none"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(content) }}
           />
         ) : (
           <p className="mt-4 text-xs italic text-muted">Start writing content to see it render here…</p>

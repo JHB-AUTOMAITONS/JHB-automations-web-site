@@ -29,6 +29,7 @@ import type {
   ContainerStyle,
 } from "./containers";
 import { smartImgAttrs, mergeHeroContainers, stripHeadingTags } from "./containers";
+import { sanitizeRichText } from "./richText";
 
 /**
  * SINGLE source of truth for rendering page-builder containers. Used by the
@@ -130,7 +131,7 @@ function Hero({ c }: { c: HeroContainer }) {
                   role="heading"
                   aria-level={c.headingTag ? Number(c.headingTag.slice(1)) : 2}
                   className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text"
-                  dangerouslySetInnerHTML={{ __html: headingHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(headingHtml) }}
                 />
               ) : (
                 <Heading tag={c.headingTag} fallback="h2" className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
@@ -141,7 +142,7 @@ function Hero({ c }: { c: HeroContainer }) {
             <Reveal delay={0.16}>
               <div
                 className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
-                dangerouslySetInnerHTML={{ __html: subtitleHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(subtitleHtml) }}
               />
             </Reveal>
           ) : null}
@@ -317,7 +318,7 @@ function RichTextBlock({ c }: { c: RichTextContainer }) {
         <Reveal>
           <div
             className={`prose-jhb leading-relaxed ${ALIGN[c.style.align]} ${c.props.width === "narrow" ? "mx-auto max-w-2xl" : `max-w-4xl ${c.style.align === "center" ? "mx-auto" : ""}`}`}
-            dangerouslySetInnerHTML={{ __html: c.props.html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }}
           />
         </Reveal>
       </div>
@@ -347,7 +348,7 @@ function HeroDesc({ c }: { c: HeroDescContainer }) {
         <Reveal>
           <div
             className={`prose-jhb text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}`}
-            dangerouslySetInnerHTML={{ __html: c.props.html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }}
           />
         </Reveal>
       </div>
@@ -395,8 +396,8 @@ function Cards({ c }: { c: CardsContainer }) {
                   ) : card.icon ? (
                     <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.06] text-2xl ring-1 ring-ink/10">{card.icon}</span>
                   ) : null}
-                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(card.title) }} /> : null}
-                  {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: card.description }} /> : null}
+                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(card.title)) }} /> : null}
+                  {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(card.description) }} /> : null}
                   {card.button.label ? (
                     <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-3 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
                   ) : null}
@@ -462,7 +463,7 @@ function AboutBlock({ c }: { c: AboutContainer }) {
             <div className={p.imagePosition === "left" && p.image ? "lg:order-2" : ""}>
               {p.eyebrow ? <span className="eyebrow">{p.eyebrow}</span> : null}
               <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-              <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
+              <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.bodyHtml) }} />
             </div>
           </Reveal>
           {p.image ? (
@@ -523,10 +524,10 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
     <div className={`min-w-0 ${contentOrder}`}>
       {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
       {p.heading ? (
-        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: stripHeadingTags(p.heading) }} />
+        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(p.heading)) }} />
       ) : null}
       {p.description ? (
-        <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.description }} />
+        <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }} />
       ) : null}
       {p.bullets.length > 0 && (
         <ul className="mt-5 space-y-2.5">
@@ -843,7 +844,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
             ) : null}
             {p.subtitle ? (
               <Reveal delay={0.12}>
-                <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: p.subtitle }} />
+                <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.subtitle) }} />
               </Reveal>
             ) : null}
           </div>
@@ -857,7 +858,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
 function CustomBlock({ c }: { c: CustomContainer }) {
   return (
     <section className={shell(c.style)}>
-      <div className="container-x overflow-x-auto [&_img]:h-auto [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: c.props.html }} />
+      <div className="container-x overflow-x-auto [&_img]:h-auto [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }} />
     </section>
   );
 }

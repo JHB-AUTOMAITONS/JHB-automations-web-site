@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
 import { PARTNERS_DEFAULT } from "@jhb/shared/partners";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import SmartLink from "./SmartLink";
 
 const MARQUEE_DEFAULT = PARTNERS_DEFAULT.items.map((p) => p.name);
@@ -52,16 +53,16 @@ export default function Hero({
   return (
     <section
       id="home"
-      className="relative flex min-h-screen items-center overflow-hidden pt-20"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden pb-16 pt-28"
     >
       {/* ambient blobs */}
       <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 -z-10 h-[420px] w-[420px] rounded-full bg-secondary/20 blur-[130px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grid-faint [background-size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
 
-      <div className="container-x grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        {/* Left copy */}
-        <div className="min-w-0">
+      <div className="container-x flex flex-col items-center gap-14">
+        {/* Centered content group: badge, heading, description, buttons, marquee */}
+        <div className="hero-content">
           <motion.span
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -82,22 +83,22 @@ export default function Hero({
             className="mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl [&_p]:m-0 [&_p]:inline [&>div]:inline"
             // Unwrap any <hN> in the title so this <h1> is the ONLY heading (the
             // rich field can carry its own <h1> → nested/duplicate H1 otherwise).
-            dangerouslySetInnerHTML={{ __html: stripHeadingTags(content.title) }}
+            dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(content.title)) }}
           />
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="prose-jhb mt-6 max-w-full break-words text-base leading-relaxed text-muted sm:max-w-xl sm:text-lg [&_a]:break-words [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: content.subtitle }}
+            className="hero-desc prose-jhb break-words text-base text-muted sm:text-lg [&_a]:break-words [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(content.subtitle) }}
           />
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"
+            className="mt-8 flex w-full flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap"
           >
             <SmartLink
               href={content.ctaPrimaryHref}
@@ -121,7 +122,7 @@ export default function Hero({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-10 max-w-md"
+            className="mt-10 w-full max-w-md"
           >
             {marqueeLabel && (
               <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted/70">

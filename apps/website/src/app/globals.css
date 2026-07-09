@@ -81,6 +81,19 @@ label[for] {
     @apply mx-auto w-full max-w-7xl px-6 md:px-10;
   }
 
+  /* Shared centred hero content column — EVERY hero uses this so the badge,
+     heading, description and buttons share one centre axis site-wide (no
+     page-specific overrides). flex-column + items-center keeps them on a single
+     vertical axis; max-w caps the measure and mx-auto centres the whole group. */
+  .hero-content {
+    @apply mx-auto flex w-full max-w-[900px] flex-col items-center justify-center text-center;
+  }
+  /* Hero description — centred under the heading with a comfortable measure. */
+  .hero-desc {
+    @apply mx-auto mt-6 w-full max-w-[800px] text-center;
+    line-height: 1.7;
+  }
+
   .grad-text {
     @apply bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent;
   }

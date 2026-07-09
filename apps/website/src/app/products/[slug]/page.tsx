@@ -6,6 +6,7 @@ import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-ser
 import { getSettings } from "@jhb/shared/content-server";
 import { faqPlainText } from "@jhb/shared/faqs";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageContainers from "@/components/PageContainers";
@@ -112,8 +113,8 @@ export default async function ProductPage({
             <span className="text-ink">{p.title}</span>
           </nav>
 
-          <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
-            <div>
+          <div className="mt-8 flex flex-col items-center gap-10">
+            <div className="hero-content">
               <Reveal>
                 <span className="eyebrow">JHB Product</span>
               </Reveal>
@@ -126,13 +127,13 @@ export default async function ProductPage({
               {p.description && (
                 <Reveal delay={0.12}>
                   <div
-                    className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: p.description }}
+                    className="hero-desc prose-jhb text-lg text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }}
                   />
                 </Reveal>
               )}
               <Reveal delay={0.18}>
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-8 flex flex-wrap justify-center gap-3">
                   <Link href="/#contact" className="btn btn-primary !px-7 !py-3.5">
                     Book a Free Demo
                     <span aria-hidden>→</span>
@@ -146,8 +147,8 @@ export default async function ProductPage({
 
             {p.image && (
               <Reveal delay={0.1}>
-                <div className="glass-strong relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-glow">
-                  <Image src={p.image} alt={p.imageAlt || p.title} fill priority sizes="(max-width: 1024px) 100vw, 560px" className="object-cover" />
+                <div className="glass-strong relative mx-auto aspect-[4/3] w-full max-w-2xl overflow-hidden rounded-3xl shadow-glow">
+                  <Image src={p.image} alt={p.imageAlt || p.title} fill priority sizes="(max-width: 1024px) 100vw, 672px" className="object-cover" />
                 </div>
               </Reveal>
             )}
@@ -171,7 +172,7 @@ export default async function ProductPage({
               <Reveal delay={0.14}>
                 <div
                   className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-                  dangerouslySetInnerHTML={{ __html: p.overview }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.overview) }}
                 />
               </Reveal>
             </div>
@@ -207,11 +208,11 @@ export default async function ProductPage({
                         role="heading"
                         aria-level={3}
                         className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(it.title) }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(it.title)) }}
                       />
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: it.desc }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }}
                       />
                     </div>
                   </div>

@@ -15,6 +15,7 @@ import type {
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
 import { smartImgAttrs, stripHeadingTags, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
@@ -274,7 +275,7 @@ export default function ServiceDetail({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className={`prose-jhb mt-6 max-w-xl ${heroBlockAlignClass} ${heroHeadingAlignClass} text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
-                dangerouslySetInnerHTML={{ __html: db.heroDescriptionHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(db.heroDescriptionHtml) }}
               />
             ) : (
               <motion.p
@@ -399,7 +400,7 @@ export default function ServiceDetail({
                   // the previous auto-linkify here.
                   <div
                     className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${wiAlignCenter ? "mx-auto" : ""}`}
-                    dangerouslySetInnerHTML={{ __html: wiDescription }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(wiDescription) }}
                   />
                 )}
               </div>
@@ -449,11 +450,11 @@ export default function ServiceDetail({
                         role="heading"
                         aria-level={3}
                         className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:transition-colors"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
                       />
                       <div
                         className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: f.desc }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
                       />
                       {f.link && (
                         <Link

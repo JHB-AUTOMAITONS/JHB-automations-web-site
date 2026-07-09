@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { HOME_FAQ_DEFAULTS, type HomeFaqItem } from "@jhb/shared/home-faqs";
 import { faqPlainText } from "@jhb/shared/faqs";
 import { smartImgAttrs, type ImageSettings } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "./Reveal";
 import SmartLink from "./SmartLink";
 
@@ -197,7 +198,7 @@ export default function Faq({
                           >
                             <div
                               className={FAQ_ANSWER_CLASS}
-                              dangerouslySetInnerHTML={{ __html: f.a }}
+                              dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.a) }}
                             />
                           </motion.div>
                         )}

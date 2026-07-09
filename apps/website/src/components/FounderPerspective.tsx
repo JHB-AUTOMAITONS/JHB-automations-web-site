@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { FounderBlock } from "@jhb/shared/home";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "./Reveal";
 
 // Server component: all entrances run through <Reveal>, so nothing here ships
@@ -28,7 +29,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
             <Reveal delay={0.16}>
               <div
                 className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:text-primary"
-                dangerouslySetInnerHTML={{ __html: founder.descriptionHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(founder.descriptionHtml) }}
               />
             </Reveal>
 

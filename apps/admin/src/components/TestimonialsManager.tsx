@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import EditorHeader from "./EditorHeader";
 import type { TestimonialRow } from "@jhb/shared/testimonials";
 import RichEditor from "./RichEditor";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import {
   createTestimonial,
   updateTestimonial,
@@ -346,7 +347,7 @@ export default function TestimonialsManager({
 
               <div
                 className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink/80 [&_a]:text-primary"
-                dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
+                dangerouslySetInnerHTML={{ __html: `&ldquo;${sanitizeRichText(t.quote)}&rdquo;` }}
               />
 
               <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-ink/[0.06] pt-3">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BlogFaq } from "@jhb/shared/posts";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // Modern single-open accordion for a blog post's FAQ section. One item is open
 // at a time; the first is expanded by default. Rich-text answers render as HTML.
@@ -55,7 +56,7 @@ export default function BlogFaq({ faqs, showNumbers = true }: { faqs: BlogFaq[];
                 <div className="overflow-hidden">
                   <div
                     className="prose-jhb px-5 pb-5 text-sm leading-relaxed text-ink/80 [&_a]:text-primary"
-                    dangerouslySetInnerHTML={{ __html: f.answer || "" }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.answer || "") }}
                   />
                 </div>
               </div>

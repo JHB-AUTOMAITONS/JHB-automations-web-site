@@ -14,6 +14,7 @@ import ImagePicker from "./ImagePicker";
 import { usePageContainers } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // The tools-hub page's native sections in live-render order, each paired with
 // the zone that sits AFTER it (matches the <PageContainersView zone> points in
@@ -410,7 +411,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         </h3>
         <div
           className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
-          dangerouslySetInnerHTML={{ __html: hub.hero.description }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(hub.hero.description) }}
         />
         {hub.hero.ctaLabel && <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hub.hero.ctaLabel}</span>}
         {hub.hero.image && (
@@ -449,7 +450,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         <h4 className="mt-1 text-center font-display text-base font-bold grad-text">{hub.crm.heading}</h4>
         <div
           className="prose-jhb mt-1 text-center text-[11px] text-muted [&_a]:text-primary"
-          dangerouslySetInnerHTML={{ __html: hub.crm.overviewHtml }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(hub.crm.overviewHtml) }}
         />
 
         {/* CRM features — ALL items, no slice */}

@@ -14,6 +14,7 @@ import { useContainerSlots } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // Native sections of the live product detail page, in order (zone after each).
 const PRODUCT_SECTIONS = [
@@ -336,7 +337,7 @@ function ProductPreview({ product: p }: { product: Product }) {
         {p.description && (
           <div
             className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: p.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }}
           />
         )}
         <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">Book a Free Demo</span>
@@ -356,7 +357,7 @@ function ProductPreview({ product: p }: { product: Product }) {
           </h4>
           <div
             className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: p.overview }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.overview) }}
           />
         </div>
       )}
@@ -371,8 +372,8 @@ function ProductPreview({ product: p }: { product: Product }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {sec.items.map((it, ii) => (
                 <div key={ii} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(it.title) }} />
-                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: it.desc }} />
+                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(it.title)) }} />
+                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }} />
                 </div>
               ))}
             </div>
@@ -448,7 +449,7 @@ function AboutPreview({ product: p }: { product: Product }) {
         {a.heroDescription && (
           <div
             className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: a.heroDescription }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(a.heroDescription) }}
           />
         )}
         {a.image && (
@@ -464,7 +465,7 @@ function AboutPreview({ product: p }: { product: Product }) {
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Our Story</p>
           <div
             className="prose-jhb mt-1 text-[11px] text-muted [&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: a.overview }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(a.overview) }}
           />
         </div>
       )}
@@ -492,8 +493,8 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.features.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }} />
-                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: f.desc }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }} />
+                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }} />
               </div>
             ))}
           </div>
@@ -508,8 +509,8 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.benefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(b.title) }} />
-                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: b.desc }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(b.title)) }} />
+                <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.desc) }} />
               </div>
             ))}
           </div>

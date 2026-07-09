@@ -6,6 +6,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "@/components/Reveal";
 import PageContainers from "@/components/PageContainers";
 import SmartLink from "@/components/SmartLink";
@@ -144,7 +145,7 @@ export default async function AboutProductPage({
                 <Reveal delay={0.12}>
                   <div
                     className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: a.heroDescription }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(a.heroDescription) }}
                   />
                 </Reveal>
               )}
@@ -167,7 +168,7 @@ export default async function AboutProductPage({
               <Reveal delay={0.08}>
                 <div
                   className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-                  dangerouslySetInnerHTML={{ __html: a.overview }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(a.overview) }}
                 />
               </Reveal>
             </div>
@@ -210,11 +211,11 @@ export default async function AboutProductPage({
                         role="heading"
                         aria-level={3}
                         className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
                       />
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: f.desc }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
                       />
                     </div>
                   </div>
@@ -240,11 +241,11 @@ export default async function AboutProductPage({
                       role="heading"
                       aria-level={3}
                       className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                      dangerouslySetInnerHTML={{ __html: stripHeadingTags(b.title) }}
+                      dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(b.title)) }}
                     />
                     <div
                       className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                      dangerouslySetInnerHTML={{ __html: b.desc }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.desc) }}
                     />
                   </div>
                 </Reveal>

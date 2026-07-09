@@ -7,6 +7,7 @@ import { PageContainersView } from "@jhb/shared/container-view";
 import Icon from "./Icon";
 import FaqAccordion from "./FaqAccordion";
 import SmartLink from "./SmartLink";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 const fade = {
   initial: { opacity: 0, y: 24 },
@@ -43,7 +44,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
             {...fade}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: hub.hero.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(hub.hero.description) }}
           />
           {hub.hero.ctaLabel && (
             <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15 }} className="mt-8">
@@ -102,7 +103,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           </h2>
           <div
             className="prose-jhb mt-4 text-muted [&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: hub.crm.overviewHtml }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(hub.crm.overviewHtml) }}
           />
         </motion.div>
 

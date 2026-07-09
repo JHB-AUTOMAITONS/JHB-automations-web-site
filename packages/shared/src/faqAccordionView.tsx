@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sanitizeRichText } from "./richText";
 
 /**
  * SINGLE source of truth for the FAQ accordion shown in every admin editor
@@ -83,7 +84,7 @@ export default function FaqAccordionView({
               <div className="overflow-hidden">
                 <div
                   className={FAQ_ANSWER_CLASS}
-                  dangerouslySetInnerHTML={{ __html: f.answer || "" }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.answer || "") }}
                 />
               </div>
             </div>

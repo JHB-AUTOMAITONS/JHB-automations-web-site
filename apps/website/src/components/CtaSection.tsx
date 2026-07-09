@@ -1,6 +1,7 @@
 import Reveal from "./Reveal";
 import type { CtaBlock } from "@jhb/shared/home";
 import SmartLink from "./SmartLink";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 // Server component: the card's entrance is the only animated part (<Reveal>).
 export default function CtaSection({ cta }: { cta: CtaBlock }) {
@@ -20,7 +21,7 @@ export default function CtaSection({ cta }: { cta: CtaBlock }) {
           </h2>
           <div
             className="relative mx-auto mt-4 max-w-xl text-muted"
-            dangerouslySetInnerHTML={{ __html: cta.textHtml }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(cta.textHtml) }}
           />
           {cta.buttonText && (
             <SmartLink href={cta.buttonHref} className="btn btn-primary relative mt-8">

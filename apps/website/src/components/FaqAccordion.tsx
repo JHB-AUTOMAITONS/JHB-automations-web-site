@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { faqPlainText, type FaqItem } from "@jhb/shared/faqs";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import SmartLink from "./SmartLink";
 
 // Shared rich-text styling for FAQ answers (lists, headings, links, etc.).
@@ -115,7 +116,7 @@ export default function FaqAccordion({
                     >
                       <div
                         className={FAQ_ANSWER_CLASS}
-                        dangerouslySetInnerHTML={{ __html: f.answer }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.answer) }}
                       />
                     </motion.div>
                   )}

@@ -1,4 +1,5 @@
 import Reveal from "./Reveal";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 type Props = {
   eyebrow: string;
@@ -23,7 +24,7 @@ export default function SectionHeading({ eyebrow, title, desc, descHtml }: Props
         <Reveal delay={0.16}>
           <div
             className="prose-jhb mx-auto mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: descHtml }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(descHtml) }}
           />
         </Reveal>
       ) : desc ? (

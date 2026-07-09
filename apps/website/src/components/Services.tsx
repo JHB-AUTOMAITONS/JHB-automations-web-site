@@ -5,6 +5,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { services as defaultServices } from "@jhb/shared/data";
 import { stripHeadingTags } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Icon from "./Icon";
 import SectionHeading from "./SectionHeading";
 
@@ -30,7 +31,7 @@ export default function Services({
       <div className="container-x">
         <SectionHeading
           eyebrow={eyebrow}
-          title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: stripHeadingTags(heading) }} />}
+          title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(heading)) }} />}
           descHtml={subheading}
         />
 
@@ -137,11 +138,11 @@ function ServiceCard({
             role="heading"
             aria-level={3}
             className={`mt-5 font-display text-lg font-semibold leading-tight ${richText}`}
-            dangerouslySetInnerHTML={{ __html: title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(title) }}
           />
           <div
             className={`mt-2 text-sm leading-relaxed text-muted ${richText}`}
-            dangerouslySetInnerHTML={{ __html: desc }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(desc) }}
           />
           <span className="pointer-events-none mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
             {learnMoreText} <span aria-hidden>→</span>

@@ -7,6 +7,7 @@ import {
   type TestimonialRow,
 } from "@jhb/shared/testimonials";
 import SectionHeading from "./SectionHeading";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 const accents: Record<
   Card["accent"],
@@ -244,7 +245,7 @@ function TestimonialCard({ t }: { t: Card }) {
       {/* quote — rich HTML (supports font size, bold, links, colour from the editor) */}
       <div
         className="mt-3 break-words text-sm leading-relaxed text-ink/80 [&_a]:text-primary"
-        dangerouslySetInnerHTML={{ __html: `&ldquo;${t.quote}&rdquo;` }}
+        dangerouslySetInnerHTML={{ __html: `&ldquo;${sanitizeRichText(t.quote)}&rdquo;` }}
       />
 
       {/* result */}

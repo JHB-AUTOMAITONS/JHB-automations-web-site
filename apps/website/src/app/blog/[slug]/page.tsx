@@ -16,6 +16,7 @@ import { formatDate, readingTimeMinutes } from "@jhb/shared/posts";
 import { getEffectiveAuthorPublisher, getSettings, getBlogArticleHero } from "@jhb/shared/content-server";
 import BlogArticleHeroBanner from "@jhb/shared/blog-article-hero-view";
 import { eeatSchemaFields } from "@jhb/shared/seo-schema";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -223,7 +224,7 @@ export default async function BlogPostPage({
           {/* article body */}
           <div
             className="prose-jhb mt-10 text-lg leading-relaxed text-ink/80 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl [&_pre]:overflow-x-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_iframe]:max-w-full [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4 [&_li]:my-1 [&_ul_ul]:list-[circle] [&_ul_ul_ul]:list-[square] [&_ol_ol]:list-[lower-alpha] [&_ol_ol_ol]:list-[lower-roman] [&_.rt-checklist]:list-none"
-            dangerouslySetInnerHTML={{ __html: post.content_html || "" }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(post.content_html || "") }}
           />
 
           {/* tags */}
