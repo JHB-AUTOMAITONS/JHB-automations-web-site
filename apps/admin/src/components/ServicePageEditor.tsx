@@ -249,6 +249,13 @@ export default function ServicePageEditor({
   const ctaTag: HeadingTag = form.cta.headingTag ?? "h2";
   const h1Count = [heroTag, wiTag, ctaTag].filter((t) => t === "h1").length;
 
+  // Hero alignment for the preview — mirrors ServiceDetail EXACTLY so the preview
+  // matches the live page: the selected alignment controls the heading AND the
+  // description together (previously only the heading followed it).
+  const heroAlign = form.chrome.heroHeadingAlign ?? "left";
+  const heroAlignText = heroAlign === "center" ? "text-center" : heroAlign === "right" ? "text-right" : "";
+  const heroAlignBlock = heroAlign === "center" ? "mx-auto" : heroAlign === "right" ? "ml-auto" : "";
+
   return (
     // On xl, fill <main>'s height and let the two columns scroll independently
     // (top bar fixed, grid flex-1). Below xl it's a normal block that flows.
@@ -586,7 +593,7 @@ export default function ServicePageEditor({
                       />
                     );
                   })()}
-                  <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${form.chrome.heroHeadingAlign === "center" ? "text-center" : form.chrome.heroHeadingAlign === "right" ? "text-right" : ""}`}>
+                  <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${heroAlignText}`}>
                     {form.hero_link ? (
                       <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
                     ) : (
@@ -595,7 +602,7 @@ export default function ServicePageEditor({
                   </Heading>
                   {form.hero_description && (
                     <div
-                      className="prose-jhb mt-2 text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                      className={`prose-jhb mt-2 max-w-md ${heroAlignBlock} ${heroAlignText} text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
                       dangerouslySetInnerHTML={{ __html: form.hero_description }}
                     />
                   )}

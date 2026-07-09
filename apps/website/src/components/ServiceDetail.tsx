@@ -184,14 +184,20 @@ export default function ServiceDetail({
   // Enabled "Why Choose Us" containers (admin-managed). Falls back to the
   // original static section below when none are configured.
   const whyChoose = (db?.whyChoose ?? []).filter((c) => c.enabled);
-  // Hero heading alignment (chrome.heroHeadingAlign) — eyebrow + H1 only;
-  // "left"/unset keeps the original design.
+  // Hero alignment (chrome.heroHeadingAlign) controls the WHOLE hero content group
+  // — eyebrow, heading, description AND buttons — so a "center" selection centres
+  // everything together (not just the heading). "left"/unset keeps the original
+  // design. The admin preview (ServicePageEditor) mirrors this exact logic.
+  const heroAlign = db?.chrome?.heroHeadingAlign ?? "left";
   const heroHeadingAlignClass =
-    db?.chrome?.heroHeadingAlign === "center"
-      ? "text-center"
-      : db?.chrome?.heroHeadingAlign === "right"
-        ? "text-right"
-        : "";
+    heroAlign === "center" ? "text-center" : heroAlign === "right" ? "text-right" : "";
+  // Centre/right the constrained-width blocks (heading + description) as a whole,
+  // since text-align alone can't move a block that has its own max-width.
+  const heroBlockAlignClass =
+    heroAlign === "center" ? "mx-auto" : heroAlign === "right" ? "ml-auto" : "";
+  // Button row justification follows the same alignment.
+  const heroBtnAlignClass =
+    heroAlign === "center" ? "justify-center" : heroAlign === "right" ? "justify-end" : "";
   // Hero image layout (chrome.heroImage) — absent/tile renders the legacy icon
   // tile unchanged; "image" renders the uploaded image with the universal size
   // panel applied; "hidden" removes the column so content spans full width.
@@ -231,7 +237,7 @@ export default function ServiceDetail({
             showHeroVisual ? (heroImgLeft ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.1fr_0.9fr]") : ""
           }`}
         >
-          <div className={`min-w-0 ${heroImgLeft ? "lg:order-2" : ""}`}>
+          <div className={`min-w-0 ${heroHeadingAlignClass} ${!showHeroVisual && heroAlign === "center" ? "mx-auto max-w-3xl" : ""} ${heroImgLeft ? "lg:order-2" : ""}`}>
             <div className={heroHeadingAlignClass}>
               <motion.span
                 initial={{ opacity: 0, y: 16 }}
@@ -267,7 +273,7 @@ export default function ServiceDetail({
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="prose-jhb mt-6 max-w-xl text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                className={`prose-jhb mt-6 max-w-xl ${heroBlockAlignClass} ${heroHeadingAlignClass} text-lg leading-relaxed text-muted [&_a]:font-medium [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
                 dangerouslySetInnerHTML={{ __html: db.heroDescriptionHtml }}
               />
             ) : (
@@ -275,7 +281,7 @@ export default function ServiceDetail({
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
+                className={`mt-6 max-w-xl ${heroBlockAlignClass} ${heroHeadingAlignClass} text-lg leading-relaxed text-muted`}
               >
                 {linkify(data.intro, links, used)}
               </motion.p>
@@ -284,7 +290,7 @@ export default function ServiceDetail({
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-8 flex flex-wrap gap-4"
+              className={`mt-8 flex flex-wrap gap-4 ${heroBtnAlignClass}`}
             >
               <Link href={heroPrimaryHref} className="btn btn-primary">
                 {heroPrimaryText} →
