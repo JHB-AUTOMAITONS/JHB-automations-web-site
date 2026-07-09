@@ -28,7 +28,7 @@ import type {
   WorkflowWidth,
   ContainerStyle,
 } from "./containers";
-import { smartImgAttrs, mergeHeroContainers } from "./containers";
+import { smartImgAttrs, mergeHeroContainers, stripHeadingTags } from "./containers";
 
 /**
  * SINGLE source of truth for rendering page-builder containers. Used by the
@@ -113,10 +113,10 @@ function Hero({ c }: { c: HeroContainer }) {
   // onto the dark theme (the heading strips ALL backgrounds; the description only
   // block-level ones, keeping the editor's intentional word highlights).
   const headingIsRich = /<[a-z][\s\S]*?>/i.test(p.heading || "");
-  const headingHtml = stripBgStyles(
+  const headingHtml = stripHeadingTags(stripBgStyles(
     `${p.heading || ""}${p.highlight ? ` <span class="grad-text">${p.highlight}</span>` : ""}`,
     true,
-  );
+  ));
   const subtitleHtml = stripBgStyles(p.subtitle || "");
   return (
     <section className={sectionClass} style={sectionStyle}>
@@ -395,7 +395,7 @@ function Cards({ c }: { c: CardsContainer }) {
                   ) : card.icon ? (
                     <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.06] text-2xl ring-1 ring-ink/10">{card.icon}</span>
                   ) : null}
-                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: card.title }} /> : null}
+                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(card.title) }} /> : null}
                   {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: card.description }} /> : null}
                   {card.button.label ? (
                     <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-3 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
@@ -523,7 +523,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
     <div className={`min-w-0 ${contentOrder}`}>
       {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
       {p.heading ? (
-        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: p.heading }} />
+        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: stripHeadingTags(p.heading) }} />
       ) : null}
       {p.description ? (
         <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: p.description }} />

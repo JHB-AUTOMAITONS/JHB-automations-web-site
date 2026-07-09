@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import { services as defaultServices } from "@jhb/shared/data";
+import { stripHeadingTags } from "@jhb/shared/containers";
 import Icon from "./Icon";
 import SectionHeading from "./SectionHeading";
 
@@ -29,7 +30,7 @@ export default function Services({
       <div className="container-x">
         <SectionHeading
           eyebrow={eyebrow}
-          title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: heading }} />}
+          title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: stripHeadingTags(heading) }} />}
           descHtml={subheading}
         />
 

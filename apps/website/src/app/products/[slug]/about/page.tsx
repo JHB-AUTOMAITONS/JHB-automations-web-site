@@ -5,6 +5,7 @@ import Image from "next/image";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
+import { stripHeadingTags } from "@jhb/shared/containers";
 import Reveal from "@/components/Reveal";
 import PageContainers from "@/components/PageContainers";
 import SmartLink from "@/components/SmartLink";
@@ -209,7 +210,7 @@ export default async function AboutProductPage({
                         role="heading"
                         aria-level={3}
                         className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: f.title }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
                       />
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
@@ -239,7 +240,7 @@ export default async function AboutProductPage({
                       role="heading"
                       aria-level={3}
                       className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                      dangerouslySetInnerHTML={{ __html: b.title }}
+                      dangerouslySetInnerHTML={{ __html: stripHeadingTags(b.title) }}
                     />
                     <div
                       className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"

@@ -413,6 +413,20 @@ export const cid = (): string =>
     ? crypto.randomUUID()
     : `c-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 
+// Unwrap block heading tags (<h1>–<h6>) from admin-authored rich HEADING HTML,
+// keeping the inner content. These fields are injected INTO a heading element
+// (a real <hN> or an element with role="heading") by the rendering component, so
+// a heading tag left inside the value produces a NESTED / duplicate heading in the
+// DOM — e.g. <h1><h1>…</h1></h1> or <div role="heading"><h2>…</h2></div> — which
+// SEO tools report as multiple H1s / duplicate H2s. Inline markup (gradient
+// <span class="grad-text">, colours, etc.) is preserved; only the heading tags
+// themselves are removed. Use ONLY for heading fields, never for body/description
+// HTML (which may legitimately contain headings).
+export function stripHeadingTags(html: string | null | undefined): string {
+  if (!html) return "";
+  return html.replace(/<\/?h[1-6]\b[^>]*>/gi, "");
+}
+
 const DS: ContainerStyle = { bg: "none", padding: "lg", align: "left" };
 
 /** New container of a type, assigned to a zone, with sensible starter content. */

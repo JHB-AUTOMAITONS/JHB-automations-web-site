@@ -5,6 +5,7 @@ import Image from "next/image";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import { getSettings } from "@jhb/shared/content-server";
 import { faqPlainText } from "@jhb/shared/faqs";
+import { stripHeadingTags } from "@jhb/shared/containers";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageContainers from "@/components/PageContainers";
@@ -206,7 +207,7 @@ export default async function ProductPage({
                         role="heading"
                         aria-level={3}
                         className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: it.title }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(it.title) }}
                       />
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"

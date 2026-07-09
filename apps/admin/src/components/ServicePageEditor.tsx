@@ -13,7 +13,7 @@ import {
   type ServicePagePayload,
   type ServiceStatus,
 } from "@jhb/shared/service-pages";
-import { smartImgAttrs } from "@jhb/shared/containers";
+import { smartImgAttrs, stripHeadingTags } from "@jhb/shared/containers";
 import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichEditor from "./RichEditor";
@@ -645,7 +645,7 @@ export default function ServicePageEditor({
                                 <div className="min-w-0">
                                   <div
                                     className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary"
-                                    dangerouslySetInnerHTML={{ __html: f.title }}
+                                    dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
                                   />
                                   <div
                                     className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"

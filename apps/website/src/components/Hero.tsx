@@ -5,6 +5,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
 import { PARTNERS_DEFAULT } from "@jhb/shared/partners";
+import { stripHeadingTags } from "@jhb/shared/containers";
 import SmartLink from "./SmartLink";
 
 const MARQUEE_DEFAULT = PARTNERS_DEFAULT.items.map((p) => p.name);
@@ -79,7 +80,9 @@ export default function Hero({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
             className="mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl [&_p]:m-0 [&_p]:inline [&>div]:inline"
-            dangerouslySetInnerHTML={{ __html: content.title }}
+            // Unwrap any <hN> in the title so this <h1> is the ONLY heading (the
+            // rich field can carry its own <h1> → nested/duplicate H1 otherwise).
+            dangerouslySetInnerHTML={{ __html: stripHeadingTags(content.title) }}
           />
 
           <motion.div

@@ -13,6 +13,7 @@ import EditorHeader from "./EditorHeader";
 import { useContainerSlots } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
+import { stripHeadingTags } from "@jhb/shared/containers";
 
 // Native sections of the live product detail page, in order (zone after each).
 const PRODUCT_SECTIONS = [
@@ -370,7 +371,7 @@ function ProductPreview({ product: p }: { product: Product }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {sec.items.map((it, ii) => (
                 <div key={ii} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: it.title }} />
+                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(it.title) }} />
                   <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: it.desc }} />
                 </div>
               ))}
@@ -491,7 +492,7 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.features.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: f.title }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }} />
                 <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: f.desc }} />
               </div>
             ))}
@@ -507,7 +508,7 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.benefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: b.title }} />
+                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(b.title) }} />
                 <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: b.desc }} />
               </div>
             ))}

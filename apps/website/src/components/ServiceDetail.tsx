@@ -14,7 +14,7 @@ import type {
 } from "@jhb/shared/service-pages";
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
-import { smartImgAttrs, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
+import { smartImgAttrs, stripHeadingTags, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
@@ -443,7 +443,7 @@ export default function ServiceDetail({
                         role="heading"
                         aria-level={3}
                         className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:transition-colors"
-                        dangerouslySetInnerHTML={{ __html: f.title }}
+                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(f.title) }}
                       />
                       <div
                         className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"

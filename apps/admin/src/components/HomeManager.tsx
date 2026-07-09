@@ -15,6 +15,7 @@ import type {
   FounderBlock,
 } from "@jhb/shared/home";
 import { composeHeroHeading } from "@jhb/shared/home";
+import { stripHeadingTags } from "@jhb/shared/containers";
 import { saveHomeDraft, publishHome } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
@@ -827,7 +828,7 @@ function Preview({
         <span className="eyebrow !text-[10px]">{hero.badge}</span>
         <h3
           className="mt-3 font-display text-lg font-bold leading-tight [&_p]:m-0 [&_p]:inline [&>div]:inline"
-          dangerouslySetInnerHTML={{ __html: composeHeroHeading(hero.title, hero.highlight) }}
+          dangerouslySetInnerHTML={{ __html: stripHeadingTags(composeHeroHeading(hero.title, hero.highlight)) }}
         />
         <div
           className="prose-jhb mt-2 text-xs text-muted [&_a]:text-primary"
@@ -859,7 +860,7 @@ function Preview({
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
-          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.title }} />
+          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(about.title) }} />
           <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: about.descriptionHtml }} />
           {about.image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -870,7 +871,7 @@ function Preview({
       <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
       <div className="border-t border-ink/10 p-5 text-center">
-        <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: servicesSection.title }} />
+        <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: stripHeadingTags(servicesSection.title) }} />
         <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: servicesSection.subtitle }} />
         {serviceCards.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-2 text-left">
