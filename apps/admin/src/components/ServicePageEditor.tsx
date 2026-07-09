@@ -31,6 +31,7 @@ import { PageContainersView } from "@jhb/shared/container-view";
 import { RelatedServicesView } from "@jhb/shared/related-services-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import EditorHeader from "./EditorHeader";
+import LivePreviewShell from "./LivePreviewShell";
 import AiSeoPanel from "./ai/AiSeoPanel";
 import AuthorPublisherEditor from "./AuthorPublisherEditor";
 
@@ -44,10 +45,7 @@ const SERVICE_SECTIONS = [
 ];
 
 type Toast = { type: "success" | "error"; msg: string } | null;
-type Device = "desktop" | "tablet" | "mobile";
 type LinkResult = { href: string; type: string; ok: boolean; reason: string };
-
-const DEVICE_W: Record<Device, number> = { desktop: 1100, tablet: 768, mobile: 390 };
 
 // If a full URL/path is pasted, keep only the last segment (the slug):
 // "https://jhbautomations.com/services/influencer-marketing/" -> "influencer-marketing".
@@ -110,7 +108,6 @@ export default function ServicePageEditor({
   const [dirty, setDirty] = useState<boolean>(page.pending_changes ?? page.status !== "published");
   const [savedAt, setSavedAt] = useState<string | null>(page.draft_updated_at ?? page.content_updated_at);
   const [toast, setToast] = useState<Toast>(null);
-  const [device, setDevice] = useState<Device>("desktop");
   const [linkResults, setLinkResults] = useState<LinkResult[] | null>(null);
   const [checking, setChecking] = useState(false);
   const firstRender = useRef(true);
@@ -558,23 +555,7 @@ export default function ServicePageEditor({
 
         {/* ---- preview + SEO (own scroll) ---- */}
         <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Preview</span>
-              <div className="flex gap-1">
-                {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDevice(d)}
-                    className={`rounded-md px-2 py-1 text-[11px] font-medium ${device === d ? "bg-primary/10 text-primary" : "text-muted hover:text-ink"}`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="overflow-auto rounded-2xl border border-ink/10 bg-base p-3">
-              <div className="mx-auto bg-surface shadow-soft transition-all" style={{ width: DEVICE_W[device], maxWidth: "100%" }}>
+          <LivePreviewShell label="Preview">
                 <div className="p-5">
                   <PageContainersView containers={cb.containers} zone="top" />
                   {form.image_url && (form.chrome.heroImage?.mode ?? "tile") !== "hidden" && (() => {
@@ -627,7 +608,13 @@ export default function ServicePageEditor({
                         {form.whats_included.highlight && <span className="grad-text">{form.whats_included.highlight}</span>}
                       </Heading>
                       {form.whats_included.description && (
-                        <p className="mt-1 text-xs text-muted">{form.whats_included.description}</p>
+                        // Rich HTML — render the SAME sanitized way as the live site
+                        // (ServiceDetail), not as a raw string, so pasted Word/Docs
+                        // markup never shows through in the preview.
+                        <div
+                          className="prose-jhb mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                          dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.whats_included.description) }}
+                        />
                       )}
                       {form.features.length > 0 && (
                         <div
@@ -736,9 +723,7 @@ export default function ServicePageEditor({
                   )}
                   <PageContainersView containers={cb.containers} zone="bottom" />
                 </div>
-              </div>
-            </div>
-          </div>
+          </LivePreviewShell>
 
           {/* SEO panel */}
           <div className="rounded-2xl border border-ink/10 bg-surface p-4 shadow-soft">
