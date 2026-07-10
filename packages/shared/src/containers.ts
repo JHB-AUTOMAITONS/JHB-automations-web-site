@@ -230,7 +230,11 @@ export function smartImgAttrs(
 // `headingTag` is the semantic element of the container's MAIN heading (the admin
 // picks it; defaults to h2 at render). Optional + on the shared base so every
 // container — present and future — supports it with no per-type churn.
-type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: HeadingTag };
+// `hidden` is a universal, OPTIONAL visibility flag on the shared base, so every
+// container — present and future — can be toggled off without per-type churn.
+// Absent/false = shown (backward compatible); true = hidden from the admin
+// preview AND the live site, while all its content stays saved in the DB.
+type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: HeadingTag; hidden?: boolean };
 
 // "Hero Section" — heading + rich description + buttons + image + background, all in
 // one container. `heading` and `subtitle` may be rich-text HTML (older plain values
@@ -297,7 +301,22 @@ export type CardItem = {
 };
 export type CardsContainer = Base & {
   type: "cards";
-  props: { heading: string; highlight: string; columns: 2 | 3 | 4; items: CardItem[] };
+  props: {
+    heading: string;
+    highlight: string;
+    columns: 2 | 3 | 4;
+    items: CardItem[];
+    // ── Optional, additive section-level fields (backward compatible) ──────────
+    // A section-wide rich-text description shown BETWEEN the heading and the card
+    // grid (distinct from each card's own `items[].description`). Empty/absent →
+    // nothing renders, exactly as before.
+    description?: string;
+    // Alignment of the section heading. Absent → falls back to the existing
+    // `style.align` so older Card Sections render identically.
+    headingAlignment?: ContainerAlign;
+    // Alignment of the section description. Absent → "left".
+    descriptionAlignment?: ContainerAlign;
+  };
 };
 
 // Services — a grid of service cards (icon/title/desc + optional link).
@@ -377,7 +396,17 @@ export type ContactFormContainer = Base & {
 export type AdvantageItem = { id: string; icon: string; image: string | null; title: string; desc: string };
 export type AdvantageContainer = Base & {
   type: "advantage";
-  props: { badge: string; heading: string; highlight: string; description: string; items: AdvantageItem[] };
+  props: {
+    badge: string;
+    heading: string;
+    highlight: string;
+    description: string;
+    items: AdvantageItem[];
+    // Optional, additive independent alignment. Absent → falls back to the
+    // existing style.align so older sections render identically.
+    headingAlignment?: ContainerAlign;
+    descriptionAlignment?: ContainerAlign;
+  };
 };
 
 // Workflow Process — a sequential process/timeline (Lead Capture → Qualification
@@ -519,7 +548,7 @@ export function createContainer(type: ContainerType, zone: string): PageContaine
     case "features":
       return { id, zone, type, style: { ...DS }, props: { heading: "Why", highlight: "choose us", subtitle: "", columns: 3, items: [ { id: cid(), icon: "⚡", title: "Fast", desc: "Describe this." }, { id: cid(), icon: "🔒", title: "Secure", desc: "Describe this." }, { id: cid(), icon: "✨", title: "Polished", desc: "Describe this." } ] } };
     case "cards":
-      return { id, zone, type, style: { ...DS }, props: { heading: "Featured", highlight: "", columns: 3, items: [ { id: cid(), title: "Card title", description: "Short description of this card.", icon: "✨", image: null, link: "", button: { label: "", href: "" }, bg: "", bgImage: null } ] } };
+      return { id, zone, type, style: { ...DS }, props: { heading: "Featured", highlight: "", columns: 3, description: "", items: [ { id: cid(), title: "Card title", description: "Short description of this card.", icon: "✨", image: null, link: "", button: { label: "", href: "" }, bg: "", bgImage: null } ] } };
     case "testimonials":
       return { id, zone, type, style: { ...DS, bg: "subtle" }, props: { heading: "What clients", highlight: "say", columns: 3, items: [ { id: cid(), quote: "They delivered exactly what we needed.", name: "Client Name", role: "CEO, Company", avatar: null } ] } };
     case "faq":

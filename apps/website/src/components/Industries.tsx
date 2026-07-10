@@ -6,7 +6,7 @@ import SectionHeading from "./SectionHeading";
 
 export default function Industries() {
   return (
-    <section id="industries" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="industries" className="relative section-y">
       <div className="container-x">
         <SectionHeading
           eyebrow="Industries We Serve"

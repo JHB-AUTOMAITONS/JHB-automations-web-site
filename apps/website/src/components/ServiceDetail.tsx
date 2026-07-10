@@ -34,8 +34,11 @@ const MOTION_HEADINGS = {
 type RelatedLink = { title: string; slug: string; icon: string };
 
 // "What's Included" styling maps — mirror the page-builder container styles so
-// the section matches the rest of the site when its background/spacing changes.
-const WI_PAD = { none: "py-0", sm: "py-4 sm:py-6", md: "py-6 sm:py-8 lg:py-10", lg: "py-8 sm:py-10 lg:py-12" } as const;
+// the section matches the rest of the site. Vertical spacing now comes from the
+// GLOBAL section-spacing system (`.section-y` + `.sec-bg-*`, see globals.css),
+// exactly like every container — so the old per-padding map is gone and this
+// marker map only tells the system which background (if any) the section has.
+const WI_SEC_BG: Record<ContainerBg, string> = { none: "", subtle: "sec-bg-subtle", gradient: "sec-bg-gradient", dark: "sec-bg-dark" };
 const WI_COLS = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3" } as const;
 function wiBgClass(bg: ContainerBg): string {
   return bg === "subtle"
@@ -186,7 +189,6 @@ export default function ServiceDetail({
   const wiColumns = wi ? wi.columns : 2;
   const wiButton = wi ? wi.button : { label: "", href: "" };
   const wiBg: ContainerBg = wi ? wi.bg : "none";
-  const wiPad = wi ? wi.padding : "md";
   // Single shared alignment system (see @jhb/shared/containers). left/center/right
   // → text-align + block-centering, identical here and in the admin preview.
   const wiAlign = toAlign(wi?.align);
@@ -222,9 +224,9 @@ export default function ServiceDetail({
 
       <PageContainers containers={db?.containers ?? []} zone="top" />
 
-      {/* Hero — carries its own bottom padding when the What's Included section
-          below is disabled (or padding-less) and so contributes no top gap. */}
-      <section className={`container-x ${!wiEnabled || wiPad === "none" ? "pb-12" : ""}`}>
+      {/* Hero — spacing to the next block is handled by the global section
+          rhythm (`.section-y`), so no per-case bottom padding is needed. */}
+      <section className="container-x section-y">
         {/* breadcrumb */}
         <nav className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
           <Link href="/#home" className="transition-colors hover:text-ink">
@@ -381,7 +383,7 @@ export default function ServiceDetail({
 
       {/* What's Included — fully editable section chrome + cards */}
       {wiEnabled && (
-        <section className={`${wiBgClass(wiBg)} ${WI_PAD[wiPad]}`.trim()}>
+        <section className={`section-y ${WI_SEC_BG[wiBg]} ${wiBgClass(wiBg)}`.trim()}>
           <div className="container-x">
             <Reveal>
               <div className={ALIGN_TEXT[wiAlign]}>
@@ -499,17 +501,17 @@ export default function ServiceDetail({
       {/* Benefits — admin-managed "Why Choose Us" containers, else the static one */}
       {whyChoose.length > 0
         ? whyChoose.map((c) => (
-            <section key={c.id} className="container-x pb-12">
+            <section key={c.id} className="container-x section-y">
               <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
                 <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
                 <div className="relative grid gap-8 lg:grid-cols-2">
                   <div>
                     {c.badge && <span className="eyebrow">{c.badge}</span>}
-                    <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+                    <h2 className={`mt-5 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[toAlign(c.headingAlign)]}`}>
                       {c.heading} <span className="grad-text">{c.highlight}</span>
                     </h2>
                     {c.description && (
-                      <p className="mt-4 break-words text-muted">{linkify(c.description, links, used)}</p>
+                      <p className={`mt-4 break-words text-muted ${ALIGN_TEXT[toAlign(c.descriptionAlign)]}`}>{linkify(c.description, links, used)}</p>
                     )}
                   </div>
                   <ul className="space-y-4">
@@ -548,7 +550,7 @@ export default function ServiceDetail({
             </section>
           ))
         : (
-          <section className="container-x pb-12">
+          <section className="container-x section-y">
             <div className="glass-strong glow-border relative overflow-hidden rounded-3xl p-8 sm:p-12">
               <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
               <div className="relative grid gap-8 lg:grid-cols-2">
@@ -596,7 +598,7 @@ export default function ServiceDetail({
       {db?.chrome?.related ? (
         <RelatedServicesView content={db.chrome.related} serviceUrlByKey={relatedUrlByKey} Reveal={Reveal} />
       ) : (
-        <section className="container-x pb-12">
+        <section className="container-x section-y">
           <Reveal>
             <h2 className="mb-8 font-display text-2xl font-bold sm:text-3xl">
               {relatedHeadingLead}{relatedHeadingLead && relatedHeadingHighlight ? " " : ""}
@@ -624,15 +626,15 @@ export default function ServiceDetail({
 
       {/* FAQ — near the bottom, just above the CTA */}
       {faqs.length > 0 && (
-        <div className="pb-12">
+        <section className="section-y">
           <FaqAccordion items={faqs} showNumbers={faqShowNumbers} />
-        </div>
+        </section>
       )}
 
       <PageContainers containers={db?.containers ?? []} zone="after-faq" />
 
       {/* CTA */}
-      <section className="container-x pb-20">
+      <section className="container-x section-y">
         <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
           <Heading tag={db?.cta?.headingTag} fallback="h2" className="break-words font-display text-3xl font-bold sm:text-4xl">
             <span className="grad-text">{ctaHeading}</span>

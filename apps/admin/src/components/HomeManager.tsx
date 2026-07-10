@@ -370,6 +370,10 @@ export default function HomeManager({
               <span className="mb-1 block text-xs font-medium text-muted">Heading (rich text — font size, colour, word links)</span>
               <RichEditor value={about.title} onChange={(html) => setAboutField("title", html)} internalPages={internalPages} />
             </div>
+            <div className="flex flex-wrap gap-4">
+              <AlignPicker label="Heading alignment" value={about.headingAlign ?? "left"} onChange={(v) => setAbout((p) => ({ ...p, headingAlign: v }))} />
+              <AlignPicker label="Description alignment" value={about.descriptionAlign ?? "left"} onChange={(v) => setAbout((p) => ({ ...p, descriptionAlign: v }))} />
+            </div>
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Description (rich text)</span>
               <RichEditor value={about.descriptionHtml} onChange={(html) => setAboutField("descriptionHtml", html)} internalPages={internalPages} />
@@ -381,6 +385,7 @@ export default function HomeManager({
 
           {/* Services section */}
           <Card title="Services Section">
+            <Toggle label="Show this section" checked={servicesSection.enabled !== false} onChange={(v) => setServicesSection((p) => ({ ...p, enabled: v }))} />
             <Field label="Eyebrow / badge" value={servicesSection.eyebrow} onChange={(v) => setServicesSection((p) => ({ ...p, eyebrow: v }))} />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Heading (rich text — font size, colour, word links)</span>
@@ -483,11 +488,18 @@ export default function HomeManager({
               <Field label="Heading" value={founder.heading} onChange={(v) => setF("heading", v)} />
               <Field label="Highlighted phrase" value={founder.highlight} onChange={(v) => setF("highlight", v)} />
             </div>
-            <AlignPicker
-              label="Heading alignment"
-              value={founder.headingAlign ?? "left"}
-              onChange={(v) => setF("headingAlign", v)}
-            />
+            <div className="flex flex-wrap gap-4">
+              <AlignPicker
+                label="Heading alignment"
+                value={founder.headingAlign ?? "left"}
+                onChange={(v) => setF("headingAlign", v)}
+              />
+              <AlignPicker
+                label="Description alignment"
+                value={founder.descriptionAlign ?? "left"}
+                onChange={(v) => setF("descriptionAlign", v)}
+              />
+            </div>
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Description</span>
               <RichText value={founder.descriptionHtml} onChange={(html) => setF("descriptionHtml", html)} />
@@ -545,6 +557,7 @@ export default function HomeManager({
             title="FAQ Section — Heading"
             hint="The eyebrow, heading and intro above the FAQ accordion. The questions are edited below."
             value={faqHeader}
+            defaultAlign="left"
             onChange={(patch) => setFaqHeader((p) => ({ ...p, ...patch }))}
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -629,6 +642,10 @@ export default function HomeManager({
               <span className="mb-1 block text-xs font-medium text-muted">Text</span>
               <RichText value={cta.textHtml} onChange={(html) => setCtaField("textHtml", html)} />
             </div>
+            <div className="flex flex-wrap gap-4">
+              <AlignPicker label="Heading alignment" value={cta.headingAlign ?? "center"} onChange={(v) => setCta((p) => ({ ...p, headingAlign: v }))} />
+              <AlignPicker label="Description alignment" value={cta.descriptionAlign ?? "center"} onChange={(v) => setCta((p) => ({ ...p, descriptionAlign: v }))} />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Button text" value={cta.buttonText} onChange={(v) => setCtaField("buttonText", v)} />
               <Field label="Button link" value={cta.buttonHref} onChange={(v) => setCtaField("buttonHref", v)} />
@@ -642,6 +659,7 @@ export default function HomeManager({
             title="Contact Section — Heading"
             hint="The eyebrow, heading and intro of the contact section. Phone, email and address come from Settings."
             value={contactHeader}
+            defaultAlign="left"
             onChange={(patch) => setContactHeader((p) => ({ ...p, ...patch }))}
           />
 
@@ -749,6 +767,7 @@ function HeaderCard({
   value,
   onChange,
   showDescription = true,
+  defaultAlign = "center",
   children,
 }: {
   title: string;
@@ -756,6 +775,10 @@ function HeaderCard({
   value: SectionHeader;
   onChange: (patch: Partial<SectionHeader>) => void;
   showDescription?: boolean;
+  // The section's natural alignment before an admin picks one, so the control
+  // reflects what the live page actually shows (most headers are centered; the
+  // FAQ and Contact headers sit in a left column).
+  defaultAlign?: "left" | "center" | "right";
   children?: React.ReactNode;
 }) {
   return (
@@ -769,6 +792,14 @@ function HeaderCard({
       {showDescription && (
         <Field label="Description" value={value.description} onChange={(v) => onChange({ description: v })} textarea />
       )}
+      {/* Independent heading / description alignment (default centered = the
+          original section-header design). */}
+      <div className="flex flex-wrap gap-4">
+        <AlignPicker label="Heading alignment" value={value.headingAlign ?? defaultAlign} onChange={(v) => onChange({ headingAlign: v })} />
+        {showDescription && (
+          <AlignPicker label="Description alignment" value={value.descriptionAlign ?? defaultAlign} onChange={(v) => onChange({ descriptionAlign: v })} />
+        )}
+      </div>
       {children}
     </Card>
   );
@@ -877,8 +908,8 @@ function Preview({
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
-          <div className={`mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary ${aboutTitleTA ? ALIGN_TEXT[aboutTitleTA] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }} />
-          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }} />
+          <div className={`mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary ${ALIGN_TEXT[aboutTitleTA ?? toAlign(about.headingAlign)]}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }} />
+          <div className={`prose-jhb mt-1 text-xs text-muted [&_a]:text-primary ${ALIGN_TEXT[toAlign(about.descriptionAlign)]}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }} />
           {about.image && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={about.image} alt="" className="mt-2 aspect-[4/3] w-full rounded-lg object-cover" />
@@ -887,6 +918,7 @@ function Preview({
       )}
       <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
+      {servicesSection.enabled !== false && (
       <div className={`border-t border-ink/10 p-5 ${servicesTitleTA ? ALIGN_TEXT[servicesTitleTA] : "text-center"}`}>
         <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(servicesSection.title)) }} />
         <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(servicesSection.subtitle) }} />
@@ -901,6 +933,7 @@ function Preview({
           </div>
         )}
       </div>
+      )}
       <PageContainersView containers={containers} zone="after-services" />
       {/* why choose us (stats) */}
       {stats.items.length > 0 && (
@@ -932,7 +965,7 @@ function Preview({
               {founder.heading} <span className="grad-text">{founder.highlight}</span>
             </div>
           </div>
-          <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(founder.descriptionHtml) }} />
+          <div className={`prose-jhb mt-1 text-xs text-muted [&_a]:text-primary ${ALIGN_TEXT[toAlign(founder.descriptionAlign)]}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(founder.descriptionHtml) }} />
           {(founder.name || founder.company) && (
             <p className="mt-2 text-[11px] font-semibold">
               {founder.name}{founder.name && founder.company ? " · " : ""}{founder.company}
@@ -969,8 +1002,8 @@ function Preview({
       {/* cta */}
       {cta.enabled && (
         <div className="border-t border-ink/10 bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
-          <h4 className="font-display text-base font-bold">{cta.title}</h4>
-          <div className="prose-jhb mt-1 text-xs text-muted" dangerouslySetInnerHTML={{ __html: sanitizeRichText(cta.textHtml) }} />
+          <h4 className={`font-display text-base font-bold ${ALIGN_TEXT[cta.headingAlign ?? "center"]}`}>{cta.title}</h4>
+          <div className={`prose-jhb mt-1 text-xs text-muted ${ALIGN_TEXT[cta.descriptionAlign ?? "center"]}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(cta.textHtml) }} />
           <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{cta.buttonText}</span>
         </div>
       )}

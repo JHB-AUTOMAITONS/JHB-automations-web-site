@@ -5,6 +5,7 @@ import {
   type WhyChooseContainer,
 } from "@jhb/shared/service-pages";
 import RichEditor from "./RichEditor";
+import AlignPicker from "./AlignPicker";
 
 const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -144,10 +145,24 @@ export default function WhyChooseEditor({
               </label>
             </div>
           </div>
+          <div className="mt-3">
+            <AlignPicker
+              label="Heading alignment"
+              value={c.headingAlign ?? "left"}
+              onChange={(v) => setContainer(ci, { headingAlign: v })}
+            />
+          </div>
           <label className="mt-3 block">
             <span className="mb-1 block text-[11px] font-medium text-muted">Description</span>
             <textarea value={c.description} onChange={(e) => setContainer(ci, { description: e.target.value })} rows={2} className="input resize-none" />
           </label>
+          <div className="mt-2">
+            <AlignPicker
+              label="Description alignment"
+              value={c.descriptionAlign ?? "left"}
+              onChange={(v) => setContainer(ci, { descriptionAlign: v })}
+            />
+          </div>
 
           {/* benefits */}
           <div className="mt-4">

@@ -26,6 +26,10 @@ export type AboutBlock = {
   eyebrow: string;
   title: string;
   descriptionHtml: string;
+  // Independent heading / description alignment. Absent → the original design
+  // (left), so existing pages render unchanged until an admin picks otherwise.
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
   image: string | null;
 };
 
@@ -35,6 +39,8 @@ export type ServicesSectionBlock = {
   subtitle: string;
   viewAllText: string; // "View All Services" button label
   learnMoreText: string; // per-card hover label
+  // Optional visibility. Absent → shown (backward compatible).
+  enabled?: boolean;
 };
 
 // Reusable "section header" chrome — the eyebrow + split heading + sub-text that
@@ -46,6 +52,10 @@ export type SectionHeader = {
   headingLead: string; // text before the gradient highlight
   headingHighlight: string; // gradient word(s)
   description: string;
+  // Independent heading / description alignment. Absent → the original design
+  // (centered), so existing pages render unchanged until an admin picks otherwise.
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 };
 
 export type TestimonialsHeader = SectionHeader & {
@@ -86,6 +96,10 @@ export type CtaBlock = {
   textHtml: string;
   buttonText: string;
   buttonHref: string;
+  // Independent heading / description alignment. Absent → the original design
+  // (centered), so existing pages render unchanged until an admin picks otherwise.
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 };
 
 export type FounderBlock = {
@@ -97,6 +111,7 @@ export type FounderBlock = {
   // their layout). "left" matches the original hardcoded design, so existing
   // pages render unchanged until an admin picks something else.
   headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
   descriptionHtml: string;
   focusTitle: string;
   focusPoints: string[];
@@ -151,6 +166,7 @@ export const HOME_DEFAULT: HomeContent = {
     image: null,
   },
   servicesSection: {
+    enabled: true,
     eyebrow: "What We Do",
     title: "Premium AI & Growth Services",
     subtitle:

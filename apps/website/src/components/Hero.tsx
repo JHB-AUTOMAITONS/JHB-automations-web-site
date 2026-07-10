@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { HERO_DEFAULT, type HeroContent } from "@jhb/shared/content";
 import { PARTNERS_DEFAULT } from "@jhb/shared/partners";
 import { stripHeadingTags, ALIGN_TEXT, ALIGN_JUSTIFY, ALIGN_BLOCK, toAlign } from "@jhb/shared/containers";
+import { richHeadingFontSize } from "@jhb/shared/heading";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
 import SmartLink from "./SmartLink";
 
@@ -38,6 +39,10 @@ export default function Hero({
   // override the section picker). We inline every wrapper below ([&_div]:inline)
   // so those embedded aligns don't render on their own, then lift this onto the <h1>.
   const titleHtml = content.title || "";
+  // If the heading sets its own font-size (editor control), mirror it onto the
+  // <h1> so the line-box strut matches the text — otherwise the h1's larger
+  // responsive size leaves big gaps between wrapped heading lines. Spacing-only.
+  const titleFontSize = richHeadingFontSize(titleHtml);
   const titleTA: "center" | "right" | null = /text-align\s*:\s*center/i.test(titleHtml)
     ? "center"
     : /text-align\s*:\s*right/i.test(titleHtml)
@@ -104,7 +109,11 @@ export default function Hero({
             // Embedded per-word aligns are neutralised ([&_div]:inline); alignment
             // comes from the section (copy column ALIGN_TEXT[a]) OR, when centred/
             // right-aligned via the rich-text toolbar, from titleTA lifted here.
-            className={`mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl [&_p]:m-0 [&_p]:inline [&_div]:inline ${titleTA ? ALIGN_TEXT[titleTA] : ""}`}
+            className={`mt-6 max-w-full break-words font-display text-[1.95rem] font-bold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05] lg:text-6xl [&_*]:m-0 [&_p]:inline [&_div]:inline ${titleTA ? ALIGN_TEXT[titleTA] : ""}`}
+            // Mirror any authored font-size onto the <h1> (see richHeadingFontSize)
+            // so wrapped lines sit tight; framer-motion merges its animated
+            // opacity/transform on top, and fontSize is left untouched by it.
+            style={titleFontSize ? { fontSize: titleFontSize } : undefined}
             // Unwrap any <hN> in the title so this <h1> is the ONLY heading (the
             // rich field can carry its own <h1> → nested/duplicate H1 otherwise).
             dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(content.title)) }}

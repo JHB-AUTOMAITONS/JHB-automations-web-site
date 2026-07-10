@@ -8,18 +8,23 @@ type Props = {
   desc?: string;
   /** Rich-text (HTML) description — takes precedence over `desc`. */
   descHtml?: string;
-  /** Horizontal alignment. Absent → the original centered design (unchanged). */
+  /** Legacy single alignment — fallback for both heading and description. */
   align?: ContainerAlign | null;
+  /** Independent alignment. Absent → the original centered design (unchanged). */
+  headingAlign?: ContainerAlign | null;
+  descriptionAlign?: ContainerAlign | null;
 };
 
-export default function SectionHeading({ eyebrow, title, desc, descHtml, align }: Props) {
-  // Default (no align) keeps the original centered header. When an alignment is
-  // provided it drives the text alignment AND the block position, so a left/right
-  // choice moves the whole header — not just the text inside a centered column.
-  const wrap = align ? `${ALIGN_TEXT[align]} ${ALIGN_BLOCK[align] || "mr-auto"}` : "mx-auto text-center";
-  const descBlock = align ? ALIGN_BLOCK[align] || "mr-auto" : "mx-auto";
+export default function SectionHeading({ eyebrow, title, desc, descHtml, align, headingAlign, descriptionAlign }: Props) {
+  // Default (nothing set) keeps the original centered header. The heading align
+  // drives the eyebrow + heading text AND the whole header block's position; the
+  // description aligns independently.
+  const set = headingAlign ?? descriptionAlign ?? align;
+  const ha = headingAlign ?? align ?? "center";
+  const da = descriptionAlign ?? align ?? "center";
+  const wrapBlock = set ? ALIGN_BLOCK[ha] || "mr-auto" : "mx-auto";
   return (
-    <div className={`mb-10 max-w-2xl ${wrap}`}>
+    <div className={`mb-10 max-w-2xl ${wrapBlock} ${ALIGN_TEXT[ha]}`}>
       <Reveal>
         <span className="eyebrow">{eyebrow}</span>
       </Reveal>
@@ -31,13 +36,13 @@ export default function SectionHeading({ eyebrow, title, desc, descHtml, align }
       {descHtml ? (
         <Reveal delay={0.16}>
           <div
-            className={`prose-jhb mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_p]:m-0 ${descBlock}`}
+            className={`prose-jhb mt-4 max-w-2xl text-lg text-muted [&_a]:text-primary [&_p]:m-0 ${ALIGN_TEXT[da]}`}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(descHtml) }}
           />
         </Reveal>
       ) : desc ? (
         <Reveal delay={0.16}>
-          <p className="mt-4 text-lg text-muted">{desc}</p>
+          <p className={`mt-4 text-lg text-muted ${ALIGN_TEXT[da]}`}>{desc}</p>
         </Reveal>
       ) : null}
     </div>

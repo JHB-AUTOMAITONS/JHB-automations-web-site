@@ -28,7 +28,7 @@ export default function Services({
   learnMoreText?: string;
 }) {
   return (
-    <section id="services" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="services" className="relative section-y">
       <div className="container-x">
         <SectionHeading
           eyebrow={eyebrow}

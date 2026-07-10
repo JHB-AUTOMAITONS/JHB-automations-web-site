@@ -3,15 +3,16 @@
 import RichEditor from "./RichEditor";
 import ImagePicker from "./ImagePicker";
 import HeadingTagSelect from "./HeadingTagSelect";
+import AlignPicker from "./AlignPicker";
 import {
   cid,
+  toAlign,
   type AboutContainer,
   type AdvantageContainer,
   type CardsContainer,
   type ContactFormContainer,
   type ContainerAlign,
   type ContainerBg,
-  type ContainerPad,
   type ContainerStyle,
   type CtaContainer,
   type CustomContainer,
@@ -37,7 +38,12 @@ const lbl = "mb-1 block text-[11px] font-medium text-muted";
 
 export function StyleControls({ style, onChange }: { style: ContainerStyle; onChange: (s: ContainerStyle) => void }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    // Vertical spacing is no longer a per-container control: every container now
+    // inherits the ONE global section rhythm automatically (see the .section-y
+    // system in globals.css), so the old "Spacing" selector was removed. Only the
+    // background (which the rhythm reads for internal padding + same-colour merge)
+    // and alignment remain adjustable.
+    <div className="grid grid-cols-2 gap-2">
       <label className="block">
         <span className={lbl}>Background</span>
         <select className={input} value={style.bg} onChange={(e) => onChange({ ...style, bg: e.target.value as ContainerBg })}>
@@ -45,15 +51,6 @@ export function StyleControls({ style, onChange }: { style: ContainerStyle; onCh
           <option value="subtle">Subtle</option>
           <option value="gradient">Gradient</option>
           <option value="dark">Dark</option>
-        </select>
-      </label>
-      <label className="block">
-        <span className={lbl}>Spacing</span>
-        <select className={input} value={style.padding} onChange={(e) => onChange({ ...style, padding: e.target.value as ContainerPad })}>
-          <option value="none">None</option>
-          <option value="sm">Small</option>
-          <option value="md">Medium</option>
-          <option value="lg">Large</option>
         </select>
       </label>
       <label className="block">
@@ -86,17 +83,9 @@ function HeroEditor({ c, onChange }: { c: HeroContainer; onChange: (c: HeroConta
   const set = (patch: Partial<HeroContainer["props"]>) => onChange({ ...c, props: { ...p, ...patch } });
   return (
     <div className="space-y-3">
-      {/* show / hide */}
-      <div className="flex items-center justify-between gap-2 rounded-lg border border-ink/10 bg-base p-2">
-        <span className="text-[11px] font-medium text-muted">Show this section</span>
-        <button type="button" onClick={() => set({ hidden: !p.hidden })} className="flex items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs">
-          <span className={`relative h-4 w-7 rounded-full transition-colors ${!p.hidden ? "bg-primary" : "bg-ink/20"}`}>
-            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${!p.hidden ? "left-[14px]" : "left-0.5"}`} />
-          </span>
-          {p.hidden ? "Hidden" : "Visible"}
-        </button>
-      </div>
-
+      {/* Visibility is handled by the universal "Show this section" toggle on the
+          container card (Base.hidden). The legacy props.hidden still hides on the
+          live site for any older Hero that used it. */}
       <label className="block"><span className={lbl}>Badge</span><input className={input} value={p.badge} onChange={(e) => set({ badge: e.target.value })} /></label>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -375,6 +364,24 @@ function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsCo
         <label className="block"><span className={lbl}>Highlight</span><input className={input} value={p.highlight} onChange={(e) => set({ highlight: e.target.value })} /></label>
         <label className="block"><span className={lbl}>Columns</span><select className={input} value={p.columns} onChange={(e) => set({ columns: Number(e.target.value) as 2 | 3 | 4 })}><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option></select></label>
       </div>
+      {/* Section heading alignment (falls back to the section's Style → Align for
+          older sections until an admin picks one here). */}
+      <AlignPicker
+        label="Section heading alignment"
+        value={p.headingAlignment ?? toAlign(c.style.align)}
+        onChange={(v) => set({ headingAlignment: v })}
+      />
+      {/* Section-wide description — shown between the heading and the card grid.
+          Separate from each card's own description. */}
+      <div>
+        <span className={lbl}>Section description (shown between the heading and the cards)</span>
+        <RichEditor value={p.description ?? ""} onChange={(html) => set({ description: html })} minHeight={120} />
+      </div>
+      <AlignPicker
+        label="Description alignment"
+        value={p.descriptionAlignment ?? "left"}
+        onChange={(v) => set({ descriptionAlignment: v })}
+      />
       <div className="space-y-2">
         {p.items.map((card, i) => (
           <div
@@ -695,7 +702,17 @@ function AdvantageEditor({ c, onChange }: { c: AdvantageContainer; onChange: (c:
         </div>
         <label className="block"><span className={lbl}>Highlight</span><input className={input} value={p.highlight} onChange={(e) => set({ highlight: e.target.value })} /></label>
       </div>
+      <AlignPicker
+        label="Heading alignment"
+        value={p.headingAlignment ?? toAlign(c.style.align)}
+        onChange={(v) => set({ headingAlignment: v })}
+      />
       <label className="block"><span className={lbl}>Description</span><textarea rows={2} className={`${input} resize-none`} value={p.description} onChange={(e) => set({ description: e.target.value })} /></label>
+      <AlignPicker
+        label="Description alignment"
+        value={p.descriptionAlignment ?? toAlign(c.style.align)}
+        onChange={(v) => set({ descriptionAlignment: v })}
+      />
       <div className="space-y-2">
         <span className={lbl}>Checklist items</span>
         {p.items.map((it, i) => (

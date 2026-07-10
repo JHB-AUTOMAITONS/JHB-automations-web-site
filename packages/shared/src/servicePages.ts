@@ -71,6 +71,10 @@ export type WhyChooseContainer = {
   heading: string; // e.g. "The JHB"
   highlight: string; // gradient text, e.g. "Advantage"
   description: string;
+  // Independent horizontal alignment for the heading and the description.
+  // Absent → "left" (the original design), so existing pages render unchanged.
+  headingAlign?: ContainerAlign;
+  descriptionAlign?: ContainerAlign;
   benefits: WhyChooseBenefit[];
 };
 

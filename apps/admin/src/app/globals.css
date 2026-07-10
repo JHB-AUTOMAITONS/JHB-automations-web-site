@@ -9,6 +9,35 @@
   --primary: #2563eb;
   --secondary: #7c3aed;
   --accent: #ff2e7e;
+
+  /* ── Global section-spacing system — the ONE source of truth ─────────────
+   * MUST stay identical to apps/website/src/app/globals.css so the admin
+   * live-preview (which mirrors THIS stylesheet into its iframe) renders every
+   * page-builder container with exactly the same vertical rhythm as the live
+   * site. See that file for the full explanation of each token. */
+  --section-gap: clamp(2.5rem, 1.5rem + 4.4vw, 5rem);
+  --section-gap-tight: clamp(1.25rem, 0.9rem + 1.6vw, 2.25rem);
+  --section-pad-y: clamp(2.5rem, 1.5rem + 4.4vw, 5rem);
+}
+
+/* ── Global section-spacing system — rules (keep identical to the website) ── */
+section + .section-y,
+main + .section-y {
+  margin-top: var(--section-gap);
+}
+
+.section-y.sec-bg-subtle,
+.section-y.sec-bg-gradient,
+.section-y.sec-bg-dark,
+.section-y.sec-bg-custom {
+  padding-top: var(--section-pad-y);
+  padding-bottom: var(--section-pad-y);
+}
+
+.section-y.sec-bg-subtle + .section-y.sec-bg-subtle,
+.section-y.sec-bg-gradient + .section-y.sec-bg-gradient,
+.section-y.sec-bg-dark + .section-y.sec-bg-dark {
+  margin-top: var(--section-gap-tight);
 }
 
 * {

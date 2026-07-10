@@ -94,20 +94,23 @@ export default async function Home() {
       <PageContainers containers={home.containers} zone="after-partners" />
       <AboutSection about={home.about} imageAlt={altFor(home.about.image, altMap, home.about.title)} />
       <PageContainers containers={home.containers} zone="after-about" />
-      <Services
-        items={serviceCards}
-        eyebrow={home.servicesSection.eyebrow}
-        heading={home.servicesSection.title}
-        subheading={home.servicesSection.subtitle}
-        viewAllText={home.servicesSection.viewAllText}
-        learnMoreText={home.servicesSection.learnMoreText}
-      />
+      {home.servicesSection.enabled !== false && (
+        <Services
+          items={serviceCards}
+          eyebrow={home.servicesSection.eyebrow}
+          heading={home.servicesSection.title}
+          subheading={home.servicesSection.subtitle}
+          viewAllText={home.servicesSection.viewAllText}
+          learnMoreText={home.servicesSection.learnMoreText}
+        />
+      )}
       <PageContainers containers={home.containers} zone="after-services" />
       <Stats
         items={stats.items}
         eyebrow={home.statsHeader.eyebrow}
         headingLead={home.statsHeader.headingLead}
         headingHighlight={home.statsHeader.headingHighlight}
+        headingAlign={home.statsHeader.headingAlign}
       />
       <PageContainers containers={home.containers} zone="after-stats" />
       <Testimonials
@@ -118,6 +121,8 @@ export default async function Home() {
         description={home.testimonialsHeader.description}
         ratingValue={home.testimonialsHeader.ratingValue}
         ratingText={home.testimonialsHeader.ratingText}
+        headingAlign={home.testimonialsHeader.headingAlign}
+        descriptionAlign={home.testimonialsHeader.descriptionAlign}
       />
       <PageContainers containers={home.containers} zone="after-testimonials" />
       <FounderPerspective founder={home.founder} />
@@ -128,6 +133,8 @@ export default async function Home() {
         headingLead={home.clientLogosHeader.headingLead}
         headingHighlight={home.clientLogosHeader.headingHighlight}
         description={home.clientLogosHeader.description}
+        headingAlign={home.clientLogosHeader.headingAlign}
+        descriptionAlign={home.clientLogosHeader.descriptionAlign}
       />
       <PageContainers containers={home.containers} zone="after-clients" />
       <Faq
@@ -147,6 +154,8 @@ export default async function Home() {
         imageSide={home.faqHeader.imageSide ?? "left"}
         imageSettings={home.faqHeader.imageSettings}
         showIllustration={home.faqHeader.showIllustration !== false}
+        headingAlign={home.faqHeader.headingAlign}
+        descriptionAlign={home.faqHeader.descriptionAlign}
       />
       <PageContainers containers={home.containers} zone="after-faq" />
       <BlogPreview
@@ -155,12 +164,14 @@ export default async function Home() {
         headingHighlight={home.blogHeader.headingHighlight}
         description={home.blogHeader.description}
         viewAllText={home.blogHeader.viewAllText}
+        headingAlign={home.blogHeader.headingAlign}
+        descriptionAlign={home.blogHeader.descriptionAlign}
       />
       <PageContainers containers={home.containers} zone="after-blog" />
       <CtaSection cta={home.cta} />
       <PageContainers containers={home.containers} zone="after-cta" />
       {seo?.seo_content && (
-        <section className="container-x py-8 sm:py-10 lg:py-12">
+        <section className="container-x section-y">
           <div
             className="prose-jhb mx-auto max-w-3xl text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(seo.seo_content) }}
@@ -173,6 +184,8 @@ export default async function Home() {
         headingLead={home.contactHeader.headingLead}
         headingHighlight={home.contactHeader.headingHighlight}
         description={home.contactHeader.description}
+        headingAlign={home.contactHeader.headingAlign}
+        descriptionAlign={home.contactHeader.descriptionAlign}
       />
       <PageContainers containers={home.containers} zone="bottom" />
     </main>

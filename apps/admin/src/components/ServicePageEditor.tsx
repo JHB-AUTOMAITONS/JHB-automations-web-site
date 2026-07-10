@@ -705,10 +705,10 @@ export default function ServicePageEditor({
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           {c.badge && <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{c.badge}</span>}
-                          <p className="mt-1 font-display text-base font-bold">
+                          <p className={`mt-1 font-display text-base font-bold ${ALIGN_TEXT[toAlign(c.headingAlign)]}`}>
                             {c.heading} <span className="grad-text">{c.highlight}</span>
                           </p>
-                          {c.description && <p className="mt-1 text-xs text-muted">{c.description}</p>}
+                          {c.description && <p className={`mt-1 text-xs text-muted ${ALIGN_TEXT[toAlign(c.descriptionAlign)]}`}>{c.description}</p>}
                         </div>
                         <ul className="space-y-2">
                           {c.benefits.filter((b) => b.enabled && (b.title || b.image)).map((b) => (

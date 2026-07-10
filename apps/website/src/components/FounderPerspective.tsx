@@ -15,7 +15,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
   const headingAlign = ALIGN_TEXT[toAlign(founder.headingAlign)];
 
   return (
-    <section id="founder" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="founder" className="relative section-y">
       <div className="container-x">
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left: copy */}
@@ -30,7 +30,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
             </Reveal>
             <Reveal delay={0.16}>
               <div
-                className="prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:text-primary"
+                className={`prose-jhb mt-5 text-lg leading-relaxed text-muted [&_a]:text-primary ${ALIGN_TEXT[toAlign(founder.descriptionAlign)]}`}
                 dangerouslySetInnerHTML={{ __html: sanitizeRichText(founder.descriptionHtml) }}
               />
             </Reveal>

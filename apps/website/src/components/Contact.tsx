@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { SETTINGS_DEFAULT, type SiteSettings } from "@jhb/shared/content";
 import { createClient } from "@jhb/shared/supabase/client";
+import { ALIGN_TEXT } from "@jhb/shared/containers";
 
 type Fields = {
   name: string;
@@ -21,12 +22,16 @@ export default function Contact({
   headingLead = "Get in",
   headingHighlight = "Touch",
   description = "Tell us about your goals and we'll map the fastest path to automated, predictable growth — no obligation.",
+  headingAlign,
+  descriptionAlign,
 }: {
   settings?: SiteSettings;
   eyebrow?: string;
   headingLead?: string;
   headingHighlight?: string;
   description?: string;
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 }) {
   const [fields, setFields] = useState<Fields>(empty);
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>(
@@ -107,7 +112,7 @@ export default function Contact({
   };
 
   return (
-    <section id="contact" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="contact" className="relative section-y">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl">
           <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
@@ -116,12 +121,14 @@ export default function Contact({
           <div className="relative grid gap-8 p-8 sm:p-12 lg:grid-cols-2">
             {/* left */}
             <div>
-              {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-              <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
-                {headingLead}{headingLead && headingHighlight ? " " : ""}
-                {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
-              </h2>
-              {description && <p className="mt-4 text-muted">{description}</p>}
+              <div className={ALIGN_TEXT[headingAlign ?? "left"]}>
+                {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+                <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+                  {headingLead}{headingLead && headingHighlight ? " " : ""}
+                  {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
+                </h2>
+              </div>
+              {description && <p className={`mt-4 text-muted ${ALIGN_TEXT[descriptionAlign ?? "left"]}`}>{description}</p>}
 
               <ul className="mt-8 space-y-4 text-sm">
                 <li className="flex items-center gap-3">

@@ -3,26 +3,29 @@
 import { animate, motion, useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { STATS_DEFAULT, type StatItem as StatItemType } from "@jhb/shared/content";
+import { ALIGN_TEXT } from "@jhb/shared/containers";
 
 export default function Stats({
   items = STATS_DEFAULT.items,
   eyebrow = "Why Choose Us",
   headingLead = "Numbers That",
   headingHighlight = "Speak",
+  headingAlign,
 }: {
   items?: StatItemType[];
   eyebrow?: string;
   headingLead?: string;
   headingHighlight?: string;
+  headingAlign?: "left" | "center" | "right";
 }) {
   return (
-    <section id="stats" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="stats" className="relative section-y">
       <div className="container-x">
         <div className="glass-strong glow-border relative overflow-hidden rounded-3xl px-6 py-10 sm:px-12">
           <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
 
-          <div className="relative mb-10 text-center">
+          <div className={`relative mb-10 ${ALIGN_TEXT[headingAlign ?? "center"]}`}>
             {eyebrow && <span className="eyebrow">{eyebrow}</span>}
             <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
               {headingLead}{headingLead && headingHighlight ? " " : ""}

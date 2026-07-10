@@ -10,20 +10,26 @@ export default async function BlogPreview({
   headingHighlight = "Blog",
   description = "Practical tips on AI automation, marketing and growing your business.",
   viewAllText = "View All Blogs",
+  headingAlign,
+  descriptionAlign,
 }: {
   eyebrow?: string;
   headingLead?: string;
   headingHighlight?: string;
   description?: string;
   viewAllText?: string;
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 } = {}) {
   const posts = await getPublishedPosts(3);
   if (posts.length === 0) return null;
 
   return (
-    <section id="blog" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="blog" className="relative section-y">
       <div className="container-x">
         <SectionHeading
+          headingAlign={headingAlign}
+          descriptionAlign={descriptionAlign}
           eyebrow={eyebrow}
           title={
             <>

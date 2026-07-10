@@ -153,13 +153,17 @@ export function ContainerCard({
   onMoveToZone: (zone: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const visible = !container.hidden;
   return (
-    <div className="rounded-2xl border-2 border-dashed border-primary/40 bg-base p-4">
+    <div className={`rounded-2xl border-2 border-dashed border-primary/40 bg-base p-4 ${visible ? "" : "opacity-60"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2">
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
             {CONTAINER_LABELS[container.type]} · added
           </span>
+          {!visible && (
+            <span className="rounded-full bg-ink/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Hidden</span>
+          )}
         </span>
         <div className="flex items-center gap-1">
           <select
@@ -179,6 +183,23 @@ export function ContainerCard({
           <button type="button" onClick={() => setCollapsed((c) => !c)} className="rounded-lg border border-ink/10 px-2 py-1 text-xs">{collapsed ? "Expand" : "Collapse"}</button>
           <button type="button" onClick={() => { if (confirm("Delete this container?")) onDelete(); }} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500 hover:bg-red-50">Delete</button>
         </div>
+      </div>
+      {/* Universal visibility toggle — matches the "What's Included" control. */}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 bg-surface p-3">
+        <div>
+          <p className="text-xs font-semibold text-ink/90">Show this section</p>
+          <p className="text-[11px] text-muted">Turn off to hide this section on the live page.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange({ ...container, hidden: !container.hidden })}
+          className="flex items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+        >
+          <span className={`relative h-4 w-7 rounded-full transition-colors ${visible ? "bg-primary" : "bg-ink/20"}`}>
+            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${visible ? "left-[14px]" : "left-0.5"}`} />
+          </span>
+          {visible ? "On" : "Off"}
+        </button>
       </div>
       {!collapsed && (
         <div className="mt-3 space-y-3">

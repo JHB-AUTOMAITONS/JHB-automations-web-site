@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HOME_FAQ_DEFAULTS, type HomeFaqItem } from "@jhb/shared/home-faqs";
 import { faqPlainText } from "@jhb/shared/faqs";
-import { smartImgAttrs, type ImageSettings } from "@jhb/shared/containers";
+import { smartImgAttrs, ALIGN_TEXT, type ImageSettings } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "./Reveal";
 import SmartLink from "./SmartLink";
@@ -29,6 +29,8 @@ export default function Faq({
   imageSide = "left",
   imageSettings,
   showIllustration = true,
+  headingAlign,
+  descriptionAlign,
 }: {
   items?: HomeFaqItem[];
   eyebrow?: string;
@@ -46,6 +48,8 @@ export default function Faq({
   imageSide?: "left" | "right";
   imageSettings?: ImageSettings;
   showIllustration?: boolean;
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 }) {
   const [open, setOpen] = useState<number | null>(0);
 
@@ -75,7 +79,7 @@ export default function Faq({
   };
 
   return (
-    <section id="faq" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="faq" className="relative section-y">
       {/* FAQ schema for SEO (rendered in SSR output) */}
       <script
         type="application/ld+json"
@@ -124,10 +128,10 @@ export default function Faq({
 
           {/* Heading + accordion */}
           <div className={showArt ? `${hasImage ? "order-2" : "order-1"} ${artRight ? "lg:order-1" : "lg:order-2"}` : ""}>
-            <Reveal>
+            <Reveal className={ALIGN_TEXT[headingAlign ?? "left"]}>
               {eyebrow && <span className="eyebrow">{eyebrow}</span>}
             </Reveal>
-            <Reveal delay={0.08}>
+            <Reveal delay={0.08} className={ALIGN_TEXT[headingAlign ?? "left"]}>
               <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
                 {headingLead}{headingLead && headingHighlight ? " " : ""}
                 {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
@@ -135,7 +139,7 @@ export default function Faq({
             </Reveal>
             {(description || linkText) && (
               <Reveal delay={0.16}>
-                <p className="mt-3 text-muted">
+                <p className={`mt-3 text-muted ${ALIGN_TEXT[descriptionAlign ?? "left"]}`}>
                   {description}
                   {linkText && (
                     <>

@@ -1,5 +1,6 @@
 import Reveal from "./Reveal";
 import type { ClientLogo } from "@jhb/shared/client-logos";
+import { ALIGN_TEXT } from "@jhb/shared/containers";
 
 type Logo = { id: string; logo: string; alt?: string | null; title?: string | null };
 
@@ -11,12 +12,16 @@ export default function ClientLogos({
   headingLead = "Our Valuable",
   headingHighlight = "Clients",
   description = "Brands across industries trust JHB Automations to drive their growth.",
+  headingAlign,
+  descriptionAlign,
 }: {
   items?: ClientLogo[];
   eyebrow?: string;
   headingLead?: string;
   headingHighlight?: string;
   description?: string;
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 }) {
   // Logo-only, fully database-driven: render uploaded logos, no text names.
   const clients: Logo[] = (items ?? [])
@@ -26,7 +31,7 @@ export default function ClientLogos({
   return (
     <section
       id="clients"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] py-8 sm:py-10 lg:py-12"
+      className="relative overflow-hidden bg-gradient-to-br from-[#0A1230] via-[#0C1A3A] to-[#070B1F] section-y sec-bg-custom"
       aria-labelledby="clients-heading"
     >
       {/* ambient glow */}
@@ -35,7 +40,7 @@ export default function ClientLogos({
       <div className="pointer-events-none absolute inset-0 bg-grid-faint [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-40" />
 
       <div className="container-x relative">
-        <Reveal y={24} duration={0.6} className="mx-auto max-w-2xl text-center">
+        <Reveal y={24} duration={0.6} className={`mx-auto max-w-2xl ${ALIGN_TEXT[headingAlign ?? "center"]}`}>
           {eyebrow && (
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
               {eyebrow}
@@ -48,7 +53,7 @@ export default function ClientLogos({
             {headingLead}{headingLead && headingHighlight ? " " : ""}
             {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
           </h2>
-          {description && <p className="mt-3 text-white/60">{description}</p>}
+          {description && <p className={`mt-3 text-white/60 ${ALIGN_TEXT[descriptionAlign ?? "center"]}`}>{description}</p>}
         </Reveal>
 
         {/* Desktop / tablet: responsive grid */}

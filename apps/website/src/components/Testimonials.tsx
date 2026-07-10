@@ -63,6 +63,8 @@ export default function Testimonials({
   description = "Real businesses. Real automation. Real growth. Hover any card to pause and read.",
   ratingValue = "4.9/5",
   ratingText = "from 200+ happy clients",
+  headingAlign,
+  descriptionAlign,
 }: {
   items?: TestimonialRow[];
   eyebrow?: string;
@@ -71,6 +73,8 @@ export default function Testimonials({
   description?: string;
   ratingValue?: string;
   ratingText?: string;
+  headingAlign?: "left" | "center" | "right";
+  descriptionAlign?: "left" | "center" | "right";
 }) {
   // Use DB testimonials when available; otherwise the built-in fallback set.
   const cards: Card[] =
@@ -83,7 +87,7 @@ export default function Testimonials({
   return (
     <section
       id="testimonials"
-      className="relative overflow-hidden py-8 sm:py-10 lg:py-12"
+      className="relative overflow-hidden section-y"
     >
       {/* glowing background */}
       <div className="pointer-events-none absolute left-1/4 top-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[150px]" />
@@ -121,6 +125,8 @@ export default function Testimonials({
 
       <div className="container-x">
         <SectionHeading
+          headingAlign={headingAlign}
+          descriptionAlign={descriptionAlign}
           eyebrow={eyebrow}
           title={
             <>

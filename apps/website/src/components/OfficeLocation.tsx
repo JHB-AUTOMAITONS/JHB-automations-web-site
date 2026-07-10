@@ -77,7 +77,11 @@ export default function OfficeLocation({ settings }: { settings: SiteSettings })
   return (
     <section
       id="office-location"
-      className="relative py-8 sm:py-10 lg:py-12"
+      // Global chrome appended after every page's <main> (see SiteChrome), so its
+      // top gap can't depend on the section-adjacency rule (some page roots aren't
+      // a <section>). It carries the standard gap directly from the shared token,
+      // guaranteeing the same rhythm below any page's last section on every route.
+      className="relative mt-[var(--section-gap)]"
       aria-labelledby="office-heading"
     >
       <script

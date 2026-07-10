@@ -1,6 +1,6 @@
 import { Fragment, memo, type ReactNode } from "react";
 import Link from "next/link";
-import { Heading, subHeadingTag } from "./heading";
+import { Heading, subHeadingTag, richHeadingFontSize } from "./heading";
 import ContainerContactForm from "./containerContactForm";
 import type {
   AboutContainer,
@@ -66,21 +66,28 @@ function Reveal({ children, className }: { children: ReactNode; delay?: number; 
   return <div className={className}>{children}</div>;
 }
 
-// Vertical rhythm for builder sections. Kept modest and shared with the site's
-// native sections (py-8 sm:py-10 lg:py-12) so an inserted container spaces exactly
-// like a hand-built section — no oversized gap. Because every section pads BOTH
-// sides, the visual gap between two stacked sections is the SUM of their adjacent
-// paddings; these values keep that sum in the 64/80/96px (mobile/tablet/desktop)
-// range instead of the old 128–160px. `none` (py-0) lets media/banners butt flush.
-const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-4 sm:py-6", md: "py-6 sm:py-8 lg:py-10", lg: "py-8 sm:py-10 lg:py-12" };
+// Vertical rhythm for builder sections is NOT set here per-container anymore —
+// it comes from the GLOBAL section-spacing system (globals.css, mirrored in the
+// admin so previews match). Every container section carries `.section-y`, which
+// gives it the one shared gap below the previous section (never doubled) and, if
+// it has its own background, the shared internal padding. This is what makes any
+// newly-added container inherit perfect, consistent spacing automatically — the
+// per-container `padding` control no longer affects the section rhythm.
+//
+// `shellBg` returns ONLY the visual background classes plus the `.sec-bg-*`
+// marker the spacing system reads (to know a section has a background, and which
+// colour, for the same-colour merge). A transparent container returns "".
+const SEC_BG: Record<ContainerStyle["bg"], string> = {
+  none: "",
+  subtle: "sec-bg-subtle bg-base",
+  gradient: "sec-bg-gradient bg-gradient-to-br from-primary/10 via-surface to-secondary/10",
+  dark: "sec-bg-dark bg-ink text-white",
+};
 const COLS: Record<2 | 3 | 4, string> = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" };
 
+// Full section class for a container: the global rhythm marker + its background.
 function shell(style: ContainerStyle): string {
-  const bg =
-    style.bg === "subtle" ? "bg-base"
-      : style.bg === "gradient" ? "bg-gradient-to-br from-primary/10 via-surface to-secondary/10"
-        : style.bg === "dark" ? "bg-ink text-white" : "";
-  return `${bg} ${PAD[style.padding]}`.trim();
+  return `section-y ${SEC_BG[style.bg] ?? ""}`.trim();
 }
 
 function Head({ lead, highlight }: { lead: string; highlight: string }) {
@@ -121,8 +128,10 @@ function Hero({ c }: { c: HeroContainer }) {
   if (p.hidden) return null;
   const imgA = smartImgAttrs(p.imageSettings, { extraClass: "mt-10 rounded-3xl border border-ink/10 shadow-soft" });
   // Optional custom background (colour/gradient or image) overrides the shared style.bg.
+  // A custom background still opts into the global rhythm (.section-y) and gets the
+  // shared internal padding via `.sec-bg-custom`, so its content never touches the edge.
   const hasCustomBg = !!(p.bgImage || p.bgColor);
-  const sectionClass = hasCustomBg ? PAD[c.style.padding] : shell(c.style);
+  const sectionClass = hasCustomBg ? "section-y sec-bg-custom" : shell(c.style);
   const sectionStyle = p.bgImage
     ? { backgroundImage: `url(${p.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" as const }
     : p.bgColor
@@ -142,6 +151,10 @@ function Hero({ c }: { c: HeroContainer }) {
   const a = toAlign(c.style.align);
   // Per-field alignment authored in the rich heading overrides the section align.
   const headingTA = richTextAlign(p.heading);
+  // Mirror any authored font-size onto the heading element so wrapped lines sit
+  // tight (the element's larger responsive size would otherwise make the line-box
+  // strut taller than the text). Spacing-only; see richHeadingFontSize.
+  const headingFontSize = richHeadingFontSize(headingHtml);
   return (
     <section className={sectionClass} style={sectionStyle}>
       <div className={`container-x ${ALIGN_TEXT[a]}`}>
@@ -154,6 +167,7 @@ function Hero({ c }: { c: HeroContainer }) {
                   tag={c.headingTag}
                   fallback="h2"
                   className={`mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text ${headingTA ? ALIGN_TEXT[headingTA] : ""}`}
+                  style={headingFontSize ? { fontSize: headingFontSize } : undefined}
                   html={sanitizeRichText(headingHtml)}
                 />
               ) : (
@@ -206,7 +220,7 @@ function Features({ c }: { c: FeaturesContainer }) {
         {(p.heading || p.subtitle) && (
           <div className={`mb-10 max-w-2xl ${ALIGN_TEXT[a]} ${ALIGN_BLOCK[a]}`.trim()}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
-            {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
+            {p.subtitle ? <Reveal delay={0.08}><p className="mt-6 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
         )}
         <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
@@ -363,7 +377,7 @@ function Cta({ c }: { c: CtaContainer }) {
       <div className="container-x">
         <div className={`glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 sm:p-16 ${ALIGN_TEXT[a]}`}>
           <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
-          {p.subtitle ? <Reveal delay={0.08}><p className={`mt-4 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
+          {p.subtitle ? <Reveal delay={0.08}><p className={`mt-6 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
           {btn(p.button).label ? <Reveal delay={0.16}><Link href={btn(p.button).href || "#"} className="btn btn-primary mt-8">{btn(p.button).label}</Link></Reveal> : null}
         </div>
       </div>
@@ -389,17 +403,29 @@ function HeroDesc({ c }: { c: HeroDescContainer }) {
 
 function Cards({ c }: { c: CardsContainer }) {
   const p = c.props;
-  const a = toAlign(c.style.align);
+  // Section heading alignment: the new headingAlignment field wins; older Card
+  // Sections fall back to the existing style.align so they render identically.
+  const ha = toAlign(p.headingAlignment ?? c.style.align);
+  const da = toAlign(p.descriptionAlignment); // absent → "left"
+  const descHtml = (p.description || "").trim();
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.highlight) && (
           <Reveal>
-            <Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}>
+            <Heading tag={c.headingTag} fallback="h2" className={`${descHtml ? "mb-5" : "mb-10"} font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[ha]}`}>
               <Head lead={p.heading} highlight={p.highlight} />
             </Heading>
           </Reveal>
         )}
+        {descHtml ? (
+          <Reveal delay={0.06}>
+            <div
+              className={`prose-jhb mb-10 max-w-3xl leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${ALIGN_TEXT[da]} ${ALIGN_BLOCK[da] || "mr-auto"}`}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichText(descHtml) }}
+            />
+          </Reveal>
+        ) : null}
         <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
           {arr(p.items).map((card) => {
             const hasBgImage = !!card.bgImage;
@@ -468,7 +494,7 @@ function ServicesBlock({ c }: { c: ServicesContainer }) {
         {(p.heading || p.subtitle) && (
           <div className={`mb-10 max-w-2xl ${ALIGN_TEXT[a]} ${ALIGN_BLOCK[a]}`.trim()}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
-            {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
+            {p.subtitle ? <Reveal delay={0.08}><p className="mt-6 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
         )}
         <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
@@ -501,7 +527,7 @@ function AboutBlock({ c }: { c: AboutContainer }) {
             <div className={`${ALIGN_TEXT[a]} ${p.imagePosition === "left" && p.image ? "lg:order-2" : ""}`.trim()}>
               {p.eyebrow ? <span className="eyebrow">{p.eyebrow}</span> : null}
               <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-              <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.bodyHtml) }} />
+              <div className="prose-jhb mt-6 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.bodyHtml) }} />
             </div>
           </Reveal>
           {p.image ? (
@@ -545,8 +571,10 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
   const left = p.imagePosition === "left";
   const cols = (left ? SPLIT_COLS_LEFT[p.widthSplit] : SPLIT_COLS_RIGHT[p.widthSplit]) ?? "lg:grid-cols-2";
   // Background priority: image > solid colour > shared style.bg.
+  // A custom background still opts into the global rhythm (.section-y) + shared
+  // internal padding via `.sec-bg-custom` so its content never touches the edge.
   const hasCustomBg = !!p.bgImage || !!p.bgColor;
-  const sectionClass = hasCustomBg ? PAD[c.style.padding] : shell(c.style);
+  const sectionClass = hasCustomBg ? "section-y sec-bg-custom" : shell(c.style);
   const sectionStyle = p.bgImage
     ? { backgroundImage: `url(${p.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" }
     : p.bgColor
@@ -568,7 +596,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
         return <Heading tag={c.headingTag} fallback="h2" className={`mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text ${ta ? ALIGN_TEXT[ta] : ""}`} html={stripHeadingTags(s)} />;
       })() : null}
       {p.description ? (
-        <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }} />
+        <div className="prose-jhb mt-6 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }} />
       ) : null}
       {arr(p.bullets).length > 0 && (
         <ul className="mt-5 space-y-2.5">
@@ -581,7 +609,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
         </ul>
       )}
       {(btn(p.primary).label || btn(p.secondary).label) && (
-        <div className={`mt-7 flex flex-wrap gap-3 ${ALIGN_JUSTIFY[a]}`}>
+        <div className={`mt-8 flex flex-wrap gap-3 ${ALIGN_JUSTIFY[a]}`}>
           {btn(p.primary).label ? <Link href={btn(p.primary).href || "#"} className="btn btn-primary">{btn(p.primary).label}</Link> : null}
           {btn(p.secondary).label ? <Link href={btn(p.secondary).href || "#"} className="btn btn-ghost">{btn(p.secondary).label}</Link> : null}
         </div>
@@ -722,7 +750,7 @@ function ContactFormBlock({ c }: { c: ContactFormContainer }) {
         {(p.heading || p.highlight) && (
           <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         )}
-        {p.subtitle ? <Reveal delay={0.08}><p className={`mt-4 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
+        {p.subtitle ? <Reveal delay={0.08}><p className={`mt-6 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
         <div className="mt-8">
           <ContainerContactForm buttonLabel={p.buttonLabel} />
         </div>
@@ -733,7 +761,10 @@ function ContactFormBlock({ c }: { c: ContactFormContainer }) {
 
 function Advantage({ c }: { c: AdvantageContainer }) {
   const p = c.props;
-  const a = toAlign(c.style.align);
+  // Independent heading/description alignment; both fall back to the existing
+  // style.align so older sections render identically.
+  const ha = toAlign(p.headingAlignment ?? c.style.align);
+  const da = toAlign(p.descriptionAlignment ?? c.style.align);
   const items = arr(p.items).filter((b) => b.title || b.image);
   return (
     <section className={shell(c.style)}>
@@ -742,10 +773,10 @@ function Advantage({ c }: { c: AdvantageContainer }) {
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
           <div className="relative grid gap-10 lg:grid-cols-2">
             <Reveal>
-              <div className={ALIGN_TEXT[a]}>
+              <div className={ALIGN_TEXT[ha]}>
                 {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
                 <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-                {p.description ? <p className="mt-4 text-muted">{p.description}</p> : null}
+                {p.description ? <p className={`mt-6 text-muted ${ALIGN_TEXT[da]}`}>{p.description}</p> : null}
               </div>
             </Reveal>
             <ul className="space-y-4">
@@ -890,7 +921,7 @@ function Workflow({ c }: { c: WorkflowContainer }) {
             ) : null}
             {p.subtitle ? (
               <Reveal delay={0.12}>
-                <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.subtitle) }} />
+                <div className="prose-jhb mt-6 leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.subtitle) }} />
               </Reveal>
             ) : null}
           </div>
@@ -914,6 +945,9 @@ function CustomBlock({ c }: { c: CustomContainer }) {
 // every keystroke — only the container whose object identity changed (immutable
 // edits always produce a new object) actually re-renders. Inert on the server.
 const RenderContainer = memo(function RenderContainer({ c }: { c: PageContainer }) {
+  // Universal visibility: a hidden container renders nothing on the admin preview
+  // AND the live site (its data stays saved). Absent → shown (backward compatible).
+  if (c.hidden) return null;
   switch (c.type) {
     case "hero": return <Hero c={c} />;
     case "herodesc": return <HeroDesc c={c} />;

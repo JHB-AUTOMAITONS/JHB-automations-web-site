@@ -71,7 +71,7 @@ export function RelatedServicesView({
   const Wrap = Reveal ?? (({ children }: { children: ReactNode }) => <>{children}</>);
   const hasHeading = !!(content.headingLead || content.headingHighlight || content.headingTail);
   return (
-    <section className="container-x pb-12">
+    <section className="container-x section-y">
       <Wrap>
         <div className="mb-8 max-w-2xl">
           {content.eyebrow ? <span className="eyebrow">{content.eyebrow}</span> : null}

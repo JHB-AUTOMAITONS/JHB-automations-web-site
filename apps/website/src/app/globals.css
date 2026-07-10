@@ -15,6 +15,68 @@
   --primary: #2563eb;
   --secondary: #7c3aed;
   --accent: #ff2e7e;
+
+  /* ── Global section-spacing system — the ONE source of truth ─────────────
+   * Every stacked page section (native components AND page-builder containers)
+   * derives its vertical rhythm from these tokens, so spacing is identical
+   * everywhere and any newly-added container inherits it automatically. The
+   * SAME tokens exist in the admin globals.css, so the live site and the admin
+   * live-preview match exactly. Values scale smoothly (clamp, no breakpoint
+   * jumps) to the design spec: ~80px desktop / ~60px tablet / ~40px mobile.
+   *
+   *   --section-gap       the single gap BETWEEN two stacked sections. Applied
+   *                       as a top margin to each section that follows another,
+   *                       so it is applied exactly once — never doubled.
+   *   --section-gap-tight reduced gap for two sections that share the same
+   *                       background colour (they read as one continuous band).
+   *   --section-pad-y     internal top/bottom padding for a section that has its
+   *                       OWN full-bleed background, so its content never touches
+   *                       the colour edge. Transparent sections use the gap only
+   *                       (no vertical padding), which is what prevents doubling. */
+  --section-gap: clamp(2.5rem, 1.5rem + 4.4vw, 5rem);
+  --section-gap-tight: clamp(1.25rem, 0.9rem + 1.6vw, 2.25rem);
+  --section-pad-y: clamp(2.5rem, 1.5rem + 4.4vw, 5rem);
+}
+
+/* ── Global section-spacing system — rules ─────────────────────────────────
+ * A section opts in by carrying the `.section-y` class (added by the shared
+ * container renderer for every container, and by each native section wrapper).
+ * Optional `.sec-bg-*` marker classes tell the system a section has its own
+ * background so it needs internal padding, and which colour it is (for the
+ * same-colour merge). Nothing here is hardcoded per component — this block is
+ * the single place the rhythm is defined. */
+
+/* The gap between two stacked sections: one top margin, applied only when a
+ * section FOLLOWS another section (or the page <main>, e.g. the global office
+ * strip that sits after <main>). The very first section on a page has no
+ * preceding section, so it stays flush to the top — no stray gap under the nav.
+ * Because only the FOLLOWING section carries the gap, it is never doubled. */
+section + .section-y,
+main + .section-y {
+  margin-top: var(--section-gap);
+}
+
+/* A section with its OWN full-bleed background gets internal breathing room so
+ * its content never touches the colour edge. Transparent sections (no
+ * `.sec-bg-*`) get NO vertical padding and rely on the gap alone — this is what
+ * guarantees two stacked sections can never double their spacing. */
+.section-y.sec-bg-subtle,
+.section-y.sec-bg-gradient,
+.section-y.sec-bg-dark,
+.section-y.sec-bg-custom {
+  padding-top: var(--section-pad-y);
+  padding-bottom: var(--section-pad-y);
+}
+
+/* Smart spacing: two adjacent sections that share the SAME background colour
+ * read as one band, so the gap between them collapses to the tight value.
+ * Differing or transparent backgrounds keep the full gap for clear separation.
+ * `.sec-bg-custom` is intentionally excluded — two custom colours may differ,
+ * so their gap is never collapsed. */
+.section-y.sec-bg-subtle + .section-y.sec-bg-subtle,
+.section-y.sec-bg-gradient + .section-y.sec-bg-gradient,
+.section-y.sec-bg-dark + .section-y.sec-bg-dark {
+  margin-top: var(--section-gap-tight);
 }
 
 * {

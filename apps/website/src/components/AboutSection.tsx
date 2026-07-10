@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Reveal from "./Reveal";
 import type { AboutBlock } from "@jhb/shared/home";
-import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
+import { stripHeadingTags, ALIGN_TEXT, richTextAlign, toAlign } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
 import { Heading } from "@jhb/shared/heading";
 
@@ -16,7 +16,7 @@ export default function AboutSection({
   if (!about.enabled) return null;
 
   return (
-    <section id="about" className="relative py-8 sm:py-10 lg:py-12">
+    <section id="about" className="relative section-y">
       <div className="container-x">
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <Reveal x={-30} y={0}>
@@ -26,16 +26,17 @@ export default function AboutSection({
               const ta = richTextAlign(s);
               return (
                 // Real <h2> (was role="heading"); the value is unwrapped of any
-                // nested <hN> so no duplicate/nested heading is produced.
+                // nested <hN> so no duplicate/nested heading is produced. Alignment:
+                // an explicit rich-text align wins, else the section's headingAlign.
                 <Heading
                   tag="h2"
-                  className={`mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                  className={`mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl [&_p]:m-0 [&_a]:text-primary ${ALIGN_TEXT[ta ?? toAlign(about.headingAlign)]}`}
                   html={stripHeadingTags(s)}
                 />
               );
             })()}
             <div
-              className="prose-jhb mt-5 space-y-4 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+              className={`prose-jhb mt-5 space-y-4 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 ${ALIGN_TEXT[toAlign(about.descriptionAlign)]}`}
               dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }}
             />
           </Reveal>

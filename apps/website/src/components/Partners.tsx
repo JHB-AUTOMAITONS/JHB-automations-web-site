@@ -11,7 +11,7 @@ export default function Partners({
   items?: Partner[];
 }) {
   return (
-    <section className="relative py-8 sm:py-10 lg:py-12">
+    <section className="relative section-y">
       <div className="container-x">
         <p className="mb-10 text-center text-xs font-semibold uppercase tracking-[0.25em] text-muted">
           {heading}

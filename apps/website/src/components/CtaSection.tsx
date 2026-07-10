@@ -2,13 +2,18 @@ import Reveal from "./Reveal";
 import type { CtaBlock } from "@jhb/shared/home";
 import SmartLink from "./SmartLink";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { ALIGN_TEXT, ALIGN_BLOCK } from "@jhb/shared/containers";
 
 // Server component: the card's entrance is the only animated part (<Reveal>).
 export default function CtaSection({ cta }: { cta: CtaBlock }) {
   if (!cta.enabled) return null;
+  // Independent heading / description alignment — default "center" preserves the
+  // original centred CTA design.
+  const ha = cta.headingAlign ?? "center";
+  const da = cta.descriptionAlign ?? "center";
 
   return (
-    <section className="relative py-8 sm:py-10 lg:py-12">
+    <section className="relative section-y">
       <div className="container-x">
         <Reveal
           y={30}
@@ -16,11 +21,11 @@ export default function CtaSection({ cta }: { cta: CtaBlock }) {
         >
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
           <div className="pointer-events-none absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-          <h2 className="relative font-display text-3xl font-bold sm:text-4xl">
+          <h2 className={`relative font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[ha]}`}>
             {cta.title}
           </h2>
           <div
-            className="relative mx-auto mt-4 max-w-xl text-muted"
+            className={`relative mt-4 max-w-xl text-muted ${ALIGN_TEXT[da]} ${ALIGN_BLOCK[da] || "mr-auto"}`}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(cta.textHtml) }}
           />
           {cta.buttonText && (

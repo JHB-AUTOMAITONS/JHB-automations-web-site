@@ -1,4 +1,25 @@
-import type { ElementType, ReactNode } from "react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
+
+/**
+ * Hero/heading line-spacing fix. When a rich heading value carries its OWN inline
+ * font-size (set via the editor's font-size control), the heading ELEMENT still
+ * keeps its large responsive font-size (e.g. lg:text-6xl). The line box's
+ * invisible "strut" is sized from the ELEMENT's font-size, so it becomes much
+ * taller than the smaller authored text — leaving big empty gaps between wrapped
+ * heading lines. Mirroring the authored size back onto the heading element makes
+ * the strut match the text, so the lines sit tight. Returns the first authored
+ * size (px/rem/em/%) or undefined (then the element keeps its responsive size).
+ *
+ * Purely a spacing fix: the text, gradient highlight, weight, alignment, links,
+ * SEO tag and (for headings with no custom size) responsive sizing are untouched.
+ * An inline style set from this wins over the element's `text-*` class, and any
+ * un-sized fragment (e.g. an appended highlight) inherits the same size, staying
+ * visually consistent.
+ */
+export function richHeadingFontSize(html: string | null | undefined): string | undefined {
+  const m = (html || "").match(/font-size\s*:\s*([0-9.]+(?:px|rem|em|%))/i);
+  return m ? m[1] : undefined;
+}
 
 // The semantic tag a heading renders as. "p" = a paragraph (no heading weight in
 // the document outline), h1–h6 = the corresponding heading level. The VISUAL
@@ -43,6 +64,7 @@ export function Heading({
   fallback = "h2",
   className,
   id,
+  style,
   html,
   children,
 }: {
@@ -50,15 +72,16 @@ export function Heading({
   fallback?: HeadingTag;
   className?: string;
   id?: string;
+  style?: CSSProperties;
   html?: string;
   children?: ReactNode;
 }) {
   const Tag = (tag || fallback) as ElementType;
   if (html != null) {
-    return <Tag className={className} id={id} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <Tag className={className} id={id} style={style} dangerouslySetInnerHTML={{ __html: html }} />;
   }
   return (
-    <Tag className={className} id={id}>
+    <Tag className={className} id={id} style={style}>
       {children}
     </Tag>
   );
