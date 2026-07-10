@@ -5,7 +5,8 @@ import Image from "next/image";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
-import { stripHeadingTags } from "@jhb/shared/containers";
+import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
+import { Heading } from "@jhb/shared/heading";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
 import Reveal from "@/components/Reveal";
 import PageContainers from "@/components/PageContainers";
@@ -207,12 +208,17 @@ export default async function AboutProductPage({
                   <div className="glass glow-border flex h-full items-start gap-4 rounded-2xl p-6">
                     <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">{i + 1}</span>
                     <div className="min-w-0">
-                      <div
-                        role="heading"
-                        aria-level={3}
-                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
-                      />
+                      {(() => {
+                        const s = sanitizeRichText(f.title);
+                        const ta = richTextAlign(s);
+                        return (
+                          <Heading
+                            tag="h3"
+                            className={`font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                            html={stripHeadingTags(s)}
+                          />
+                        );
+                      })()}
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
                         dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
@@ -237,12 +243,17 @@ export default async function AboutProductPage({
               {a.benefits.map((b, i) => (
                 <Reveal key={b.title} delay={(i % 2) * 0.06}>
                   <div className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
-                    <div
-                      role="heading"
-                      aria-level={3}
-                      className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                      dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(b.title)) }}
-                    />
+                    {(() => {
+                      const s = sanitizeRichText(b.title);
+                      const ta = richTextAlign(s);
+                      return (
+                        <Heading
+                          tag="h3"
+                          className={`font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                          html={stripHeadingTags(s)}
+                        />
+                      );
+                    })()}
                     <div
                       className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
                       dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.desc) }}

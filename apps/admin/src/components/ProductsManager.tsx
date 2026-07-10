@@ -10,11 +10,13 @@ import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import ImagePicker from "./ImagePicker";
 import RichEditor from "./RichEditor";
 import EditorHeader from "./EditorHeader";
+import SplitPane from "./SplitPane";
 import { useContainerSlots } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
-import { stripHeadingTags } from "@jhb/shared/containers";
+import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { RichInline } from "@jhb/shared/rich-inline";
 
 // Native sections of the live product detail page, in order (zone after each).
 const PRODUCT_SECTIONS = [
@@ -134,8 +136,11 @@ export default function ProductsManager({
         onTogglePreview={() => setShowPreview((s) => !s)}
       />
 
-      <div className={`mt-6 grid gap-6 ${showSide ? "xl:grid-cols-[1fr_440px]" : ""}`}>
-        <div className="space-y-4">
+      <SplitPane
+        storageKey="cms-split:products"
+        className="mt-6"
+        left={
+          <div className="space-y-4">
         {items.map((p, i) => {
           if (focusSlug && p.slug !== focusSlug) return null;
           const open = focusSlug ? true : openId === p.id;
@@ -171,10 +176,11 @@ export default function ProductsManager({
         {!focusSlug && (
           <button onClick={add} className="rounded-lg border border-ink/10 px-4 py-2.5 text-sm font-medium text-muted hover:border-primary hover:text-primary">+ Add product</button>
         )}
-        </div>
-
-        {/* ---- Live preview ---- */}
-        {showSide && (
+          </div>
+        }
+        right={
+          showSide ? (
+          /* ---- Live preview ---- */
           <div className="xl:sticky xl:top-6 xl:h-fit">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
@@ -192,8 +198,9 @@ export default function ProductsManager({
               </div>
             )}
           </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
     </div>
   );
@@ -372,7 +379,9 @@ function ProductPreview({ product: p }: { product: Product }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {sec.items.map((it, ii) => (
                 <div key={ii} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                  <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(it.title)) }} />
+                  {(() => { const s = sanitizeRichText(it.title); const ta = richTextAlign(s); return (
+                  <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
+                  ); })()}
                   <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }} />
                 </div>
               ))}
@@ -394,9 +403,9 @@ function ProductPreview({ product: p }: { product: Product }) {
                 <p className="mt-0.5 font-display text-sm font-bold">{plan.price}<span className="text-[10px] font-normal text-muted">{plan.period}</span></p>
                 {plan.features.length > 0 && (
                   <ul className="mt-2 space-y-1 border-t border-ink/10 pt-2">
-                    {plan.features.map((f, fi) => (
+                    {plan.features.filter((f) => f && f.replace(/<[^>]*>/g, "").trim()).map((f, fi) => (
                       <li key={fi} className="flex items-start gap-1.5 text-[10px] text-muted">
-                        <span className="mt-0.5 shrink-0 text-primary">✓</span>{f}
+                        <span className="mt-0.5 shrink-0 text-primary">✓</span><RichInline html={f} />
                       </li>
                     ))}
                   </ul>
@@ -493,7 +502,9 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.features.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }} />
+                {(() => { const s = sanitizeRichText(f.title); const ta = richTextAlign(s); return (
+                <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
+                ); })()}
                 <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }} />
               </div>
             ))}
@@ -509,7 +520,9 @@ function AboutPreview({ product: p }: { product: Product }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {a.benefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                <div className="text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(b.title)) }} />
+                {(() => { const s = sanitizeRichText(b.title); const ta = richTextAlign(s); return (
+                <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
+                ); })()}
                 <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.desc) }} />
               </div>
             ))}
@@ -590,7 +603,19 @@ function PricingEditor({ plans, onChange }: { plans: PricingPlan[]; onChange: (p
               <input value={pl.ctaLabel} onChange={(e) => upd(i, { ctaLabel: e.target.value })} placeholder="CTA label" className="input" />
               <input value={pl.ctaHref} onChange={(e) => upd(i, { ctaHref: e.target.value })} placeholder="CTA link (e.g. /#contact)" className="input" />
             </div>
-            <textarea value={pl.features.join("\n")} onChange={(e) => upd(i, { features: e.target.value.split("\n").map((f) => f.trim()).filter(Boolean) })} placeholder="One feature per line" rows={4} className="input mt-2 resize-none" />
+            <div className="mt-2 space-y-1.5">
+              <span className="block text-[11px] font-medium text-muted">Features — select a word, click 🔗 to link</span>
+              {pl.features.map((f, fi) => (
+                <div key={fi} className="flex items-start gap-2">
+                  <span className="mt-2 shrink-0 text-primary">✓</span>
+                  <div className="min-w-0 flex-1">
+                    <RichEditor compact value={f} onChange={(html) => upd(i, { features: pl.features.map((x, idx) => (idx === fi ? html : x)) })} />
+                  </div>
+                  <button type="button" onClick={() => upd(i, { features: pl.features.filter((_, idx) => idx !== fi) })} className="grid h-9 w-9 shrink-0 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => upd(i, { features: [...pl.features, ""] })} className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-muted hover:border-primary hover:text-primary">+ Add feature</button>
+            </div>
             <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={pl.highlighted} onChange={(e) => upd(i, { highlighted: e.target.checked })} />Highlight as “Most Popular”</label>
           </div>
         ))}

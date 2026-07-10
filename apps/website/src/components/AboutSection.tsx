@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Reveal from "./Reveal";
 import type { AboutBlock } from "@jhb/shared/home";
-import { stripHeadingTags } from "@jhb/shared/containers";
+import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { Heading } from "@jhb/shared/heading";
 
 // Server component: copy + image are static; only their entrance is animated.
 export default function AboutSection({
@@ -20,14 +21,19 @@ export default function AboutSection({
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <Reveal x={-30} y={0}>
             {about.eyebrow && <span className="eyebrow">{about.eyebrow}</span>}
-            <div
-              role="heading"
-              aria-level={2}
-              className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl [&_p]:m-0 [&_a]:text-primary"
-              // This element IS the H2 (role/aria-level); unwrap any <hN> in the
-              // value so it doesn't render a second, nested heading.
-              dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }}
-            />
+            {(() => {
+              const s = sanitizeRichText(about.title);
+              const ta = richTextAlign(s);
+              return (
+                // Real <h2> (was role="heading"); the value is unwrapped of any
+                // nested <hN> so no duplicate/nested heading is produced.
+                <Heading
+                  tag="h2"
+                  className={`mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                  html={stripHeadingTags(s)}
+                />
+              );
+            })()}
             <div
               className="prose-jhb mt-5 space-y-4 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
               dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }}

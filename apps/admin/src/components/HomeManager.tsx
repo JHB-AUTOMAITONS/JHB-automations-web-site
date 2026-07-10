@@ -15,11 +15,12 @@ import type {
   FounderBlock,
 } from "@jhb/shared/home";
 import { composeHeroHeading } from "@jhb/shared/home";
-import { stripHeadingTags } from "@jhb/shared/containers";
-import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { stripHeadingTags, ALIGN_TEXT, toAlign, richTextAlign } from "@jhb/shared/containers";
+import { sanitizeRichText, stripToPlainText } from "@jhb/shared/rich-text";
 import { saveHomeDraft, publishHome } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
+import SplitPane from "./SplitPane";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { HomeFaq } from "@jhb/shared/home-faqs";
 import type { StatsContent } from "@jhb/shared/content";
@@ -275,13 +276,12 @@ export default function HomeManager({
         onTogglePreview={() => setShowPreview((s) => !s)}
       />
 
-      <div
-        className={`mt-8 grid gap-6 ${
-          showPreview ? "xl:grid-cols-[1fr_440px]" : ""
-        }`}
-      >
-        {/* ---- Editor ---- */}
-        <div className="space-y-6">
+      <SplitPane
+        storageKey="cms-split:home"
+        className="mt-8"
+        left={
+          /* ---- Editor ---- */
+          <div className="space-y-6">
           {renderSlot("top")}
 
           {/* Hero */}
@@ -296,8 +296,14 @@ export default function HomeManager({
                 value={composeHeroHeading(hero.title, hero.highlight)}
                 onChange={(html) => setHero((p) => ({ ...p, title: html, highlight: "" }))}
                 internalPages={internalPages}
+                align={toAlign(hero.headingAlign)}
               />
             </div>
+            <AlignPicker
+              label="Hero alignment (heading, description & buttons)"
+              value={hero.headingAlign ?? "left"}
+              onChange={(v) => setHero((p) => ({ ...p, headingAlign: v }))}
+            />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">
                 Hero Description
@@ -491,12 +497,15 @@ export default function HomeManager({
               <span className="mb-1 block text-xs font-medium text-muted">Focus points</span>
               <div className="space-y-2">
                 {founder.focusPoints.map((p, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input
-                      value={p}
-                      onChange={(e) => setF("focusPoints", founder.focusPoints.map((x, idx) => (idx === i ? e.target.value : x)))}
-                      className="input flex-1"
-                    />
+                  <div key={i} className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <RichEditor
+                        compact
+                        value={p}
+                        onChange={(html) => setF("focusPoints", founder.focusPoints.map((x, idx) => (idx === i ? html : x)))}
+                        internalPages={internalPages}
+                      />
+                    </div>
                     <button
                       onClick={() => setF("focusPoints", founder.focusPoints.filter((_, idx) => idx !== i))}
                       className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500"
@@ -642,10 +651,11 @@ export default function HomeManager({
           </p>
 
           {renderSlot("bottom")}
-        </div>
-
-        {/* ---- Live preview ---- */}
-        {showPreview && (
+          </div>
+        }
+        right={
+          showPreview ? (
+          /* ---- Live preview ---- */
           <div className="xl:sticky xl:top-6 xl:h-fit">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
@@ -668,8 +678,9 @@ export default function HomeManager({
               Published {published.hero.title === hero.title ? "matches" : "differs from"} this draft.
             </p>
           </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       {addZone !== null && (
         <AddContainerModal
@@ -819,16 +830,21 @@ function Preview({
 }) {
   // Only the active questions appear on the live site, so the preview matches.
   const activeFaqs = faqs.filter((f) => f.active && f.question.trim());
+  // Per-field alignment authored inside each rich heading (mirrors the live site):
+  // overrides the section alignment when present. See richTextAlign().
+  const heroTitleTA = richTextAlign(composeHeroHeading(hero.title, hero.highlight));
+  const aboutTitleTA = richTextAlign(about.title);
+  const servicesTitleTA = richTextAlign(servicesSection.title);
   return (
     // Fixed-height viewport that scrolls internally (Hero -> Footer), so the
     // preview stays put while the editor on the left scrolls independently.
     <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
       <PageContainersView containers={containers} zone="top" />
       {/* hero */}
-      <div className="bg-surface p-5">
+      <div className={`bg-surface p-5 ${ALIGN_TEXT[toAlign(hero.headingAlign)]}`}>
         <span className="eyebrow !text-[10px]">{hero.badge}</span>
         <h3
-          className="mt-3 font-display text-lg font-bold leading-tight [&_p]:m-0 [&_p]:inline [&>div]:inline"
+          className={`mt-3 font-display text-lg font-bold leading-tight [&_p]:m-0 [&_p]:inline [&_div]:inline ${heroTitleTA ? ALIGN_TEXT[heroTitleTA] : ""}`}
           dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(composeHeroHeading(hero.title, hero.highlight))) }}
         />
         <div
@@ -861,7 +877,7 @@ function Preview({
       {about.enabled && (
         <div className="border-t border-ink/10 p-5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{about.eyebrow}</span>
-          <div className="mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }} />
+          <div className={`mt-1 font-display text-base font-bold [&_p]:m-0 [&_a]:text-primary ${aboutTitleTA ? ALIGN_TEXT[aboutTitleTA] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(about.title)) }} />
           <div className="prose-jhb mt-1 text-xs text-muted [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(about.descriptionHtml) }} />
           {about.image && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -871,15 +887,15 @@ function Preview({
       )}
       <PageContainersView containers={containers} zone="after-about" />
       {/* services heading + cards */}
-      <div className="border-t border-ink/10 p-5 text-center">
+      <div className={`border-t border-ink/10 p-5 ${servicesTitleTA ? ALIGN_TEXT[servicesTitleTA] : "text-center"}`}>
         <div className="font-display text-base font-bold grad-text [&_p]:m-0" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(servicesSection.title)) }} />
         <div className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(servicesSection.subtitle) }} />
         {serviceCards.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-2 text-left">
             {serviceCards.slice(0, 6).map((c) => (
               <div key={c.slug} className="rounded-lg border border-ink/10 bg-surface p-3">
-                <p className="text-xs font-semibold leading-tight">{c.title}</p>
-                <p className="mt-1 text-[11px] text-muted">{c.short}</p>
+                <p className="text-xs font-semibold leading-tight">{stripToPlainText(c.title)}</p>
+                <p className="mt-1 text-[11px] text-muted">{stripToPlainText(c.short)}</p>
               </div>
             ))}
           </div>
@@ -910,7 +926,7 @@ function Preview({
       {/* founder */}
       {founder.enabled && (
         <div className="border-t border-ink/10 p-5">
-          <div className={founder.headingAlign === "center" ? "text-center" : founder.headingAlign === "right" ? "text-right" : ""}>
+          <div className={ALIGN_TEXT[toAlign(founder.headingAlign)]}>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{founder.eyebrow}</span>
             <div className="mt-1 font-display text-base font-bold">
               {founder.heading} <span className="grad-text">{founder.highlight}</span>

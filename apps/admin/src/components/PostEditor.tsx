@@ -15,6 +15,7 @@ import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import type { PageContainer } from "@jhb/shared/containers";
 import EditorHeader from "./EditorHeader";
+import SplitPane from "./SplitPane";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 const faqUid = () =>
@@ -159,9 +160,12 @@ export default function PostEditor({
         }
       />
 
-      <div className={`mt-8 grid gap-6 ${showPreview ? "xl:grid-cols-[1fr_440px]" : ""}`}>
-        {/* editor (left) */}
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <SplitPane
+        storageKey="cms-split:post"
+        className="mt-8"
+        left={
+          /* editor (left) */
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* main */}
           <div className="space-y-6">
           {cb.slot("top")}
@@ -179,7 +183,10 @@ export default function PostEditor({
             <Field label="Excerpt" value={excerpt} onChange={setExcerpt} textarea />
             <div>
               <span className="mb-1 block text-xs font-medium text-muted">Content</span>
-              <RichText value={content} onChange={setContent} />
+              {/* Blog Content only: fixed-height editor that scrolls internally
+                  (~640px) so editing a long article doesn't scroll the whole page.
+                  The toolbar stays above the scroll area. No other editor uses this. */}
+              <RichText value={content} onChange={setContent} maxHeight={640} />
             </div>
           </Card>
 
@@ -249,10 +256,11 @@ export default function PostEditor({
             <Field label="Author" value={author} onChange={setAuthor} />
           </Card>
           </div>
-        </div>
-
-        {/* live preview (right) */}
-        {showPreview && (
+          </div>
+        }
+        right={
+          showPreview ? (
+          /* live preview (right) */
           <div className="xl:sticky xl:top-6 xl:h-fit">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
@@ -275,8 +283,9 @@ export default function PostEditor({
               faqsEnabled={faqsEnabled}
             />
           </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       {cb.modal}
     </div>

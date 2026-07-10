@@ -4,6 +4,7 @@ import {
   type WhyChooseBenefit,
   type WhyChooseContainer,
 } from "@jhb/shared/service-pages";
+import RichEditor from "./RichEditor";
 
 const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -160,13 +161,16 @@ export default function WhyChooseEditor({
               {c.benefits.map((b, bi) => (
                 <div key={b.id} className={`rounded-xl border border-ink/10 bg-surface p-3 ${!b.enabled ? "opacity-70" : ""}`}>
                   <div className="flex flex-wrap items-center gap-2">
-                    <input value={b.title} onChange={(e) => setBenefit(ci, bi, { title: e.target.value })} placeholder="Benefit title" className="min-w-[10rem] flex-1 rounded-lg border border-ink/10 bg-base px-3 py-1.5 text-sm outline-none focus:border-primary" />
+                    <span className="min-w-0 flex-1 text-[11px] font-semibold text-muted">Benefit {bi + 1} — select a word, click 🔗 to link</span>
                     <div className="flex items-center gap-1">
                       <button type="button" onClick={() => setBenefit(ci, bi, { enabled: !b.enabled })} className="rounded-lg border border-ink/10 px-2 py-1 text-xs" title={b.enabled ? "Enabled" : "Disabled"}>{b.enabled ? "On" : "Off"}</button>
                       <button type="button" onClick={() => moveBenefit(ci, bi, bi - 1)} disabled={bi === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
                       <button type="button" onClick={() => moveBenefit(ci, bi, bi + 1)} disabled={bi === c.benefits.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
                       <button type="button" onClick={() => removeBenefit(ci, bi)} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500 hover:bg-red-50">✕</button>
                     </div>
+                  </div>
+                  <div className="mt-2">
+                    <RichEditor compact value={b.title} onChange={(html) => setBenefit(ci, bi, { title: html })} />
                   </div>
                 </div>
               ))}

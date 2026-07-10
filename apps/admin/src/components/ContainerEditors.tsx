@@ -162,12 +162,13 @@ function FeaturesEditor({ c, onChange }: { c: FeaturesContainer; onChange: (c: F
           <div key={it.id} className="rounded-xl border border-ink/10 bg-base p-3">
             <div className="flex items-center gap-2">
               <input className="w-14 rounded-lg border border-ink/10 bg-surface px-2 py-1.5 text-center text-sm" value={it.icon} onChange={(e) => setItem(it.id, { icon: e.target.value })} title="Icon (emoji)" />
-              <input className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-sm" value={it.title} onChange={(e) => setItem(it.id, { title: e.target.value })} placeholder="Title" />
+              <span className="min-w-0 flex-1 text-[11px] font-medium text-muted">Feature {i + 1}</span>
               <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
               <button type="button" onClick={() => move(i, i + 1)} disabled={i === p.items.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
               <button type="button" onClick={() => set({ items: p.items.filter((x) => x.id !== it.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
             </div>
-            <input className="mt-2 w-full rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-xs" value={it.desc} onChange={(e) => setItem(it.id, { desc: e.target.value })} placeholder="Description" />
+            <div className="mt-2"><span className={lbl}>Title — select a word, click 🔗 to link</span><RichEditor compact value={it.title} onChange={(html) => setItem(it.id, { title: html })} /></div>
+            <div className="mt-2"><span className={lbl}>Description</span><RichEditor compact value={it.desc} onChange={(html) => setItem(it.id, { desc: html })} /></div>
           </div>
         ))}
         <button type="button" onClick={() => set({ items: [...p.items, { id: cid(), icon: "✦", title: "New feature", desc: "" }] })} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-medium hover:bg-ink/[0.04]">+ Add item</button>
@@ -234,11 +235,12 @@ function FaqEditor({ c, onChange }: { c: FaqContainer; onChange: (c: FaqContaine
       <div className="space-y-2">
         {p.items.map((f) => (
           <div key={f.id} className="rounded-xl border border-ink/10 bg-base p-3">
-            <div className="flex items-center gap-2">
-              <input className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-sm font-medium" value={f.q} onChange={(e) => setItem(f.id, { q: e.target.value })} placeholder="Question" />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-muted">Q &amp; A — select a word, click 🔗 to link</span>
               <button type="button" onClick={() => set({ items: p.items.filter((x) => x.id !== f.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
             </div>
-            <textarea rows={2} className={`mt-2 ${input} resize-none`} value={f.a} onChange={(e) => setItem(f.id, { a: e.target.value })} placeholder="Answer" />
+            <div className="mt-2"><span className={lbl}>Question</span><RichEditor compact value={f.q} onChange={(html) => setItem(f.id, { q: html })} /></div>
+            <div className="mt-2"><span className={lbl}>Answer</span><RichEditor compact value={f.a} onChange={(html) => setItem(f.id, { a: html })} /></div>
           </div>
         ))}
         <button type="button" onClick={() => set({ items: [...p.items, { id: cid(), q: "", a: "" }] })} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-medium hover:bg-ink/[0.04]">+ Add question</button>
@@ -447,12 +449,13 @@ function ServicesEditor({ c, onChange }: { c: ServicesContainer; onChange: (c: S
           <div key={it.id} className="rounded-xl border border-ink/10 bg-base p-3">
             <div className="flex items-center gap-2">
               <input className="w-14 rounded-lg border border-ink/10 bg-surface px-2 py-1.5 text-center text-sm" value={it.icon} onChange={(e) => setItem(it.id, { icon: e.target.value })} title="Icon (emoji)" />
-              <input className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-sm" value={it.title} onChange={(e) => setItem(it.id, { title: e.target.value })} placeholder="Title" />
+              <span className="min-w-0 flex-1 text-[11px] font-medium text-muted">Service {i + 1}</span>
               <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
               <button type="button" onClick={() => move(i, i + 1)} disabled={i === p.items.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
               <button type="button" onClick={() => set({ items: p.items.filter((x) => x.id !== it.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
             </div>
-            <input className="mt-2 w-full rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-xs" value={it.desc} onChange={(e) => setItem(it.id, { desc: e.target.value })} placeholder="Description" />
+            <div className="mt-2"><span className={lbl}>Title — select a word, click 🔗 to link</span><RichEditor compact value={it.title} onChange={(html) => setItem(it.id, { title: html })} /></div>
+            <div className="mt-2"><span className={lbl}>Description</span><RichEditor compact value={it.desc} onChange={(html) => setItem(it.id, { desc: html })} /></div>
             <input className="mt-2 w-full rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-xs" value={it.href} onChange={(e) => setItem(it.id, { href: e.target.value })} placeholder="Link (optional)" />
           </div>
         ))}
@@ -533,12 +536,15 @@ function ImageContentEditor({ c, onChange }: { c: ImageContentContainer; onChang
       <div className="space-y-2">
         <span className={lbl}>Bullet list</span>
         {p.bullets.map((b, i) => (
-          <div key={b.id} className="flex items-center gap-2">
-            <span className="text-primary">✓</span>
-            <input className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-sm" value={b.text} onChange={(e) => setBullet(b.id, e.target.value)} placeholder="Bullet text" />
-            <button type="button" onClick={() => moveBullet(i, i - 1)} disabled={i === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
-            <button type="button" onClick={() => moveBullet(i, i + 1)} disabled={i === p.bullets.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
-            <button type="button" onClick={() => set({ bullets: p.bullets.filter((x) => x.id !== b.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
+          <div key={b.id} className="rounded-xl border border-ink/10 bg-base p-2">
+            <div className="flex items-center gap-2">
+              <span className="text-primary">✓</span>
+              <span className="min-w-0 flex-1 text-[11px] font-medium text-muted">Bullet {i + 1} — select a word, click 🔗 to link</span>
+              <button type="button" onClick={() => moveBullet(i, i - 1)} disabled={i === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
+              <button type="button" onClick={() => moveBullet(i, i + 1)} disabled={i === p.bullets.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
+              <button type="button" onClick={() => set({ bullets: p.bullets.filter((x) => x.id !== b.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
+            </div>
+            <div className="mt-2"><RichEditor compact value={b.text} onChange={(html) => setBullet(b.id, html)} /></div>
           </div>
         ))}
         <button type="button" onClick={() => set({ bullets: [...p.bullets, { id: cid(), text: "" }] })} className="rounded-lg border border-ink/10 px-2.5 py-1 text-xs font-medium hover:bg-ink/[0.04]">+ Add bullet</button>
@@ -696,12 +702,13 @@ function AdvantageEditor({ c, onChange }: { c: AdvantageContainer; onChange: (c:
           <div key={it.id} className="rounded-xl border border-ink/10 bg-base p-3">
             <div className="flex items-center gap-2">
               <input className="w-14 rounded-lg border border-ink/10 bg-surface px-2 py-1.5 text-center text-sm" value={it.icon} onChange={(e) => setItem(it.id, { icon: e.target.value })} title="Icon (emoji) — used when no image is set" />
-              <input className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-sm" value={it.title} onChange={(e) => setItem(it.id, { title: e.target.value })} placeholder="Checklist item" />
+              <span className="min-w-0 flex-1 text-[11px] font-medium text-muted">Benefit {i + 1}</span>
               <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↑</button>
               <button type="button" onClick={() => move(i, i + 1)} disabled={i === p.items.length - 1} className="rounded-lg border border-ink/10 px-2 py-1 text-xs disabled:opacity-40">↓</button>
               <button type="button" onClick={() => set({ items: p.items.filter((x) => x.id !== it.id) })} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
             </div>
-            <input className="mt-2 w-full rounded-lg border border-ink/10 bg-surface px-3 py-1.5 text-xs" value={it.desc} onChange={(e) => setItem(it.id, { desc: e.target.value })} placeholder="Sub-text (optional)" />
+            <div className="mt-2"><span className={lbl}>Checklist item — select a word, click 🔗 to link</span><RichEditor compact value={it.title} onChange={(html) => setItem(it.id, { title: html })} /></div>
+            <div className="mt-2"><span className={lbl}>Sub-text (optional)</span><RichEditor compact value={it.desc} onChange={(html) => setItem(it.id, { desc: html })} /></div>
             <div className="mt-2"><ImagePicker label="Icon image (optional — replaces the emoji icon)" value={it.image} onChange={(url) => setItem(it.id, { image: url })} alt={false} /></div>
           </div>
         ))}
@@ -791,11 +798,12 @@ function WorkflowEditor({ c, onChange }: { c: WorkflowContainer; onChange: (c: W
                 <button type="button" onClick={() => removeStep(s.id)} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
               </div>
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_5rem]">
-              <input className={input} value={s.title} onChange={(e) => setStep(s.id, { title: e.target.value })} placeholder="Step title" />
-              <input className={`${input} text-center`} value={s.icon} onChange={(e) => setStep(s.id, { icon: e.target.value })} placeholder="Icon" title="Icon (emoji) — used when no image is set" />
+            <div className="mt-2 flex items-center gap-2">
+              <span className="min-w-0 flex-1 text-[11px] font-medium text-muted">Title &amp; description support 🔗 word links</span>
+              <input className={`${input} w-20 text-center`} value={s.icon} onChange={(e) => setStep(s.id, { icon: e.target.value })} placeholder="Icon" title="Icon (emoji) — used when no image is set" />
             </div>
-            <input className={`mt-2 ${input}`} value={s.desc} onChange={(e) => setStep(s.id, { desc: e.target.value })} placeholder="Step description (optional)" />
+            <div className="mt-2"><span className={lbl}>Title</span><RichEditor compact value={s.title} onChange={(html) => setStep(s.id, { title: html })} /></div>
+            <div className="mt-2"><span className={lbl}>Description (optional)</span><RichEditor compact value={s.desc} onChange={(html) => setStep(s.id, { desc: html })} /></div>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
               {colorField("Background", s.bg, (bg) => setStep(s.id, { bg }))}
               {colorField("Border", s.border, (border) => setStep(s.id, { border }))}

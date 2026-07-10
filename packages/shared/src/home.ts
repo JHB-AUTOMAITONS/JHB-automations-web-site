@@ -7,6 +7,11 @@ export type HeroBlock = {
   title: string;
   highlight: string;
   subtitle: string; // rich HTML (formatting + links)
+  // Horizontal alignment of the whole hero copy group (badge + heading +
+  // description + buttons). "left" is the original 2-column design, so existing
+  // pages render unchanged until an admin picks something else. Uses the shared
+  // alignment system (@jhb/shared/containers) so website + preview always match.
+  headingAlign?: "left" | "center" | "right";
   buttonText: string;
   buttonHref: string;
   buttonSecondaryText: string; // secondary (ghost) CTA label; "" hides it
@@ -128,6 +133,7 @@ export const HOME_DEFAULT: HomeContent = {
     highlight: "Best Digital Marketing Salem",
     subtitle:
       "We help businesses of all sizes attract the right customers, build trust, and boost sales. With data-driven strategies, SEO, content, and digital solutions, we deliver the best digital marketing Salem—your growth is our mission every step of the way.",
+    headingAlign: "left",
     buttonText: "Contact Us",
     buttonHref: "/#contact",
     buttonSecondaryText: "Explore Services",

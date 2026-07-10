@@ -12,8 +12,26 @@ type Props = {
   value: string;
   onChange: (html: string) => void;
   internalPages?: InternalPage[];
-  // Minimum height of the editing surface in px (default 200).
+  // Minimum height of the editing surface in px (default 200, or 40 in compact mode).
   minHeight?: number;
+  // Compact mode: a slim single-row toolbar (bold / italic / underline /
+  // strike / highlight / gradient / 🔗 link / clear) and a short editing surface.
+  // For small inline "bullet"/list-item fields (feature titles, benefits, steps,
+  // FAQ questions …) that need word-linking without the full editor's chrome.
+  // Same link dialog, sanitizer and paste handling as the full editor.
+  compact?: boolean;
+  // Optional fixed max height (px) for the editing surface. When set, the content
+  // area scrolls INTERNALLY past this height: the mouse wheel scrolls the editor
+  // (not the page) until it reaches its top/bottom, at which point native scroll
+  // chaining resumes. The toolbar (a sibling above the scroll area) stays visible.
+  // Opt-in — ONLY the Blog Content editor passes it; every other editor leaves it
+  // unset and grows with its content exactly as before.
+  maxHeight?: number;
+  // Optional visual alignment of the editing surface — mirrors a section's
+  // alignment control so WYSIWYG matches how the content will actually render.
+  // Purely presentational (not written into the saved HTML); the section's
+  // align field stays the single source of truth.
+  align?: "left" | "center" | "right";
 };
 
 type LinkDraft = {
@@ -118,7 +136,8 @@ function sanitizePastedHtml(html: string): string {
   return tpl.innerHTML;
 }
 
-export default function RichEditor({ value, onChange, internalPages = [], minHeight = 200 }: Props) {
+export default function RichEditor({ value, onChange, internalPages = [], minHeight, compact = false, maxHeight, align }: Props) {
+  const minH = minHeight ?? (compact ? 40 : 200);
   const ref = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
   const editingAnchor = useRef<HTMLAnchorElement | null>(null);
@@ -322,10 +341,23 @@ export default function RichEditor({ value, onChange, internalPages = [], minHei
   // Run a command whose result should be an inline CSS style (alignment) so it
   // survives into the published HTML and the `.prose-jhb` renderer.
   const execCss = (cmd: string, arg?: string) => {
-    ref.current?.focus();
+    const host = ref.current;
+    host?.focus();
     document.execCommand("styleWithCSS", false, "true");
     document.execCommand(cmd, false, arg);
     document.execCommand("styleWithCSS", false, "false");
+    // A single-line field (e.g. a card title) often has NO block child, so the
+    // browser applies the alignment to the editing HOST element. Only innerHTML
+    // is saved, so a host-level text-align would be silently lost on save (and
+    // in the preview / live page). Move it onto a wrapping block so it persists.
+    if (host && host.style.textAlign) {
+      const align = host.style.textAlign;
+      const wrapper = document.createElement("div");
+      wrapper.style.textAlign = align;
+      while (host.firstChild) wrapper.appendChild(host.firstChild);
+      host.appendChild(wrapper);
+      host.style.removeProperty("text-align");
+    }
     sync();
   };
 
@@ -696,6 +728,66 @@ export default function RichEditor({ value, onChange, internalPages = [], minHei
   return (
     <div className="rounded-xl border border-ink/10 bg-base">
       <div className="flex flex-wrap items-center gap-1 border-b border-ink/10 p-1.5">
+        {compact ? (
+          <>
+            {/* Bold / Italic / Underline / Strikethrough */}
+            {INLINE.map((t) => (
+              <button
+                key={t.cmd}
+                type="button"
+                title={t.title}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => exec(t.cmd)}
+                className={`${tbtn} ${t.cls ?? ""}`}
+              >
+                {t.label}
+              </button>
+            ))}
+            {divider}
+            {/* Highlight (text background) + brand gradient */}
+            <button
+              type="button"
+              title="Highlight colour (text background)"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                openColor("highlight");
+              }}
+              className={tbtn}
+            >
+              🖍
+            </button>
+            <button
+              type="button"
+              title="Gradient brand highlight — click again to remove"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={applyHighlight}
+              className="rounded-md px-2 py-1 text-xs font-bold transition-colors hover:bg-ink/[0.06]"
+            >
+              <span className="grad-text">G</span>
+            </button>
+            {divider}
+            {/* Word link — the whole point of compact mode */}
+            <button
+              type="button"
+              title="Add a link to selected text, or edit a link the cursor is inside"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={openLink}
+              className="rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+            >
+              🔗 Link
+            </button>
+            <button
+              type="button"
+              title="Clear formatting"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => exec("removeFormat")}
+              className={`${tbtn} ml-auto`}
+            >
+              Clear
+            </button>
+          </>
+        ) : (
+          <>
         {/* Font family */}
         <select
           title="Font family"
@@ -926,11 +1018,17 @@ export default function RichEditor({ value, onChange, internalPages = [], minHei
         >
           Clear
         </button>
+          </>
+        )}
       </div>
 
       {hint && <p className="border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">{hint}</p>}
 
-      <div ref={wrapRef} className="relative">
+      <div
+        ref={wrapRef}
+        className="relative"
+        style={maxHeight ? { maxHeight, overflowY: "auto", scrollBehavior: "smooth" } : undefined}
+      >
         <div
           ref={ref}
           contentEditable
@@ -939,7 +1037,7 @@ export default function RichEditor({ value, onChange, internalPages = [], minHei
           onClick={onEditorClick}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
-          style={{ minHeight }}
+          style={{ minHeight: minH, ...(align ? { textAlign: align } : {}) }}
           className="prose-jhb px-4 py-3 text-sm leading-relaxed outline-none [&_a]:text-primary [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h1]:mt-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_hr]:my-3 [&_hr]:border-ink/15 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-ink/[0.05] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_.rt-checklist]:list-none [&_.rt-checklist]:pl-6 [&_figure]:my-4 [&_img]:max-w-full [&_img]:h-auto [&_figcaption]:text-center [&_figcaption]:text-muted"
         />
 

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { FounderBlock } from "@jhb/shared/home";
+import { ALIGN_TEXT, toAlign } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { RichInline } from "@jhb/shared/rich-inline";
 import Reveal from "./Reveal";
 
 // Server component: all entrances run through <Reveal>, so nothing here ships
@@ -8,9 +10,9 @@ import Reveal from "./Reveal";
 export default function FounderPerspective({ founder }: { founder: FounderBlock }) {
   if (!founder.enabled) return null;
   // Admin-selected alignment for the eyebrow + heading only ("left" = the
-  // original design; description/focus list keep their layout untouched).
-  const headingAlign =
-    founder.headingAlign === "center" ? "text-center" : founder.headingAlign === "right" ? "text-right" : "";
+  // original design; description/focus list keep their layout untouched). Uses
+  // the shared alignment system (@jhb/shared/containers) so it matches the CMS.
+  const headingAlign = ALIGN_TEXT[toAlign(founder.headingAlign)];
 
   return (
     <section id="founder" className="relative py-8 sm:py-10 lg:py-12">
@@ -54,7 +56,7 @@ export default function FounderPerspective({ founder }: { founder: FounderBlock 
                       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                         ✓
                       </span>
-                      <span className="text-sm font-medium">{point}</span>
+                      <span className="text-sm font-medium"><RichInline html={point} /></span>
                     </Reveal>
                   ))}
                 </ul>

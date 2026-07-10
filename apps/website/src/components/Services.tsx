@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import { services as defaultServices } from "@jhb/shared/data";
-import { stripHeadingTags } from "@jhb/shared/containers";
+import { stripHeadingTags, richTextAlign, ALIGN_TEXT } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { Heading } from "@jhb/shared/heading";
 import Icon from "./Icon";
 import SectionHeading from "./SectionHeading";
 
@@ -33,6 +34,7 @@ export default function Services({
           eyebrow={eyebrow}
           title={<span className="grad-text [&_p]:m-0 [&_p]:inline" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(heading)) }} />}
           descHtml={subheading}
+          align={richTextAlign(sanitizeRichText(heading))}
         />
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -134,12 +136,19 @@ function ServiceCard({
               className="h-6 w-6 transition-transform duration-300 group-hover:animate-wiggle"
             />
           </span>
-          <div
-            role="heading"
-            aria-level={3}
-            className={`mt-5 font-display text-lg font-semibold leading-tight ${richText}`}
-            dangerouslySetInnerHTML={{ __html: sanitizeRichText(title) }}
-          />
+          {(() => {
+            // strip any nested <hN> the title HTML carries (else it renders a
+            // heading INSIDE this <h3>); lift its alignment onto the wrapper.
+            const s = sanitizeRichText(title);
+            const ta = richTextAlign(s);
+            return (
+              <Heading
+                tag="h3"
+                className={`mt-5 font-display text-lg font-semibold leading-tight ${richText} ${ta ? ALIGN_TEXT[ta] : ""}`}
+                html={stripHeadingTags(s)}
+              />
+            );
+          })()}
           <div
             className={`mt-2 text-sm leading-relaxed text-muted ${richText}`}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(desc) }}

@@ -9,6 +9,7 @@ import { testimonials as fallbackTestimonials } from "@jhb/shared/data";
 import { extractHrefs, seedWhatsIncluded, type ServicePagePayload } from "@jhb/shared/service-pages";
 import { HOME_FAQ_DEFAULTS } from "@jhb/shared/home-faqs";
 import type { PageContainer } from "@jhb/shared/containers";
+import { sanitizeRichText } from "@jhb/shared/rich-text";
 
 async function getStaff() {
   const supabase = await createClient();
@@ -71,6 +72,109 @@ async function snapshot(module: string, label: string, data: unknown, summary: s
   } catch {
     /* non-fatal */
   }
+}
+
+// ─── One-time content cleanup: strip pasted-from-Word/Docs/Office artifacts ───
+// Only strings that actually CONTAIN Office/Word junk are touched; everything
+// else is left byte-for-byte unchanged. The transform is the same proven,
+// non-destructive sanitizeRichText used everywhere else (keeps headings, bold,
+// lists, tables, links, images; removes mso styles, <xml>/<o:p>/<w:…>,
+// conditional comments, StartFragment markers, etc.). JSON-LD tables (jhb_seo)
+// are NOT scanned. Run with apply=false first for a dry-run report.
+const WORD_JUNK =
+  /mso-|WordDocument|LsdException|LatentStyles|StartFragment|EndFragment|MsoNormal|<!--\s*\[if|<!\s*\[if|<\/?o:|<\/?w:|<\/?v:|<\/?m:|<xml[\s>]|<\/xml>/i;
+
+type CleanStats = { fields: number; samples: string[] };
+
+function cleanDeep(value: unknown, stats: CleanStats): unknown {
+  if (typeof value === "string") {
+    if (WORD_JUNK.test(value)) {
+      const out = sanitizeRichText(value);
+      if (out !== value) {
+        stats.fields++;
+        if (stats.samples.length < 6) {
+          stats.samples.push(`${value.replace(/\s+/g, " ").slice(0, 70)} → ${out.replace(/\s+/g, " ").slice(0, 70)}`);
+        }
+      }
+      return out;
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((v) => cleanDeep(v, stats));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(value as Record<string, unknown>)) {
+      out[k] = cleanDeep((value as Record<string, unknown>)[k], stats);
+    }
+    return out;
+  }
+  return value;
+}
+
+export type CleanupTableReport = {
+  table: string;
+  scanned: number;
+  recordsChanged: number;
+  fieldsCleaned: number;
+  samples: string[];
+  error?: string;
+};
+
+// Content tables to scan, with their primary-key column. jhb_seo is intentionally
+// excluded (it holds JSON-LD structured data that must not be rewritten).
+const CLEANUP_TABLES: { table: string; pk: string }[] = [
+  { table: "jhb_content", pk: "key" },
+  { table: "jhb_services", pk: "id" },
+  { table: "jhb_posts", pk: "id" },
+  { table: "jhb_testimonials", pk: "id" },
+  { table: "jhb_service_faqs", pk: "id" },
+  { table: "jhb_home_faqs", pk: "id" },
+];
+
+const IMMUTABLE_COLS = new Set(["id", "key", "created_at", "updated_at", "updated_by", "user_id"]);
+
+export async function cleanAllContent(apply: boolean): Promise<{ ok: boolean; error?: string; report?: CleanupTableReport[] }> {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only an admin can run the content cleanup." };
+  const { supabase } = ctx;
+  const report: CleanupTableReport[] = [];
+
+  for (const { table, pk } of CLEANUP_TABLES) {
+    const entry: CleanupTableReport = { table, scanned: 0, recordsChanged: 0, fieldsCleaned: 0, samples: [] };
+    const { data: rows, error } = await supabase.from(table).select("*");
+    if (error) {
+      entry.error = error.message;
+      report.push(entry);
+      continue;
+    }
+    const stats: CleanStats = { fields: 0, samples: [] };
+    for (const row of (rows ?? []) as Record<string, unknown>[]) {
+      entry.scanned++;
+      const patch: Record<string, unknown> = {};
+      for (const col of Object.keys(row)) {
+        if (IMMUTABLE_COLS.has(col)) continue;
+        const before = JSON.stringify(row[col]);
+        const cleaned = cleanDeep(row[col], stats);
+        if (JSON.stringify(cleaned) !== before) patch[col] = cleaned;
+      }
+      if (Object.keys(patch).length > 0) {
+        entry.recordsChanged++;
+        if (apply) {
+          const { error: uErr } = await supabase.from(table).update(patch).eq(pk, row[pk] as string);
+          if (uErr) entry.error = uErr.message;
+        }
+      }
+    }
+    entry.fieldsCleaned = stats.fields;
+    entry.samples = stats.samples;
+    report.push(entry);
+  }
+
+  if (apply) {
+    await log("content.clean", "Cleaned pasted-from-Word/Office artifacts from stored content");
+    revalidatePath("/", "layout");
+  }
+  return { ok: true, report };
 }
 
 export async function saveContent(key: string, data: Record<string, unknown>) {

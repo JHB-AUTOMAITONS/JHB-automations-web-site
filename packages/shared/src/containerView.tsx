@@ -1,6 +1,6 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, memo, type ReactNode } from "react";
 import Link from "next/link";
-import { Heading } from "./heading";
+import { Heading, subHeadingTag } from "./heading";
 import ContainerContactForm from "./containerContactForm";
 import type {
   AboutContainer,
@@ -28,8 +28,29 @@ import type {
   WorkflowWidth,
   ContainerStyle,
 } from "./containers";
-import { smartImgAttrs, mergeHeroContainers, stripHeadingTags } from "./containers";
+import {
+  smartImgAttrs,
+  mergeHeroContainers,
+  stripHeadingTags,
+  ALIGN_TEXT,
+  ALIGN_ITEMS,
+  ALIGN_JUSTIFY,
+  ALIGN_BLOCK,
+  toAlign,
+  richTextAlign,
+  CONTAINER_LABELS,
+} from "./containers";
 import { sanitizeRichText } from "./richText";
+import { RichInline } from "./richInline";
+import { ErrorBoundary } from "./errorBoundary";
+
+// Defensive helpers: container data comes from a jsonb column that may predate a
+// field, be hand-edited, or be written by another app — so a renderer must never
+// assume an array/object prop exists. `arr` yields a safe array to map/filter over;
+// `btn` yields a safe {label, href} so `.label` can't throw on a missing button.
+const arr = <T,>(v: T[] | null | undefined): T[] => (Array.isArray(v) ? v : []);
+const btn = (b: { label?: string; href?: string } | null | undefined) => b ?? { label: "", href: "" };
+const COLS_FALLBACK = "sm:grid-cols-2 lg:grid-cols-3";
 
 /**
  * SINGLE source of truth for rendering page-builder containers. Used by the
@@ -52,7 +73,6 @@ function Reveal({ children, className }: { children: ReactNode; delay?: number; 
 // paddings; these values keep that sum in the 64/80/96px (mobile/tablet/desktop)
 // range instead of the old 128–160px. `none` (py-0) lets media/banners butt flush.
 const PAD: Record<ContainerStyle["padding"], string> = { none: "py-0", sm: "py-4 sm:py-6", md: "py-6 sm:py-8 lg:py-10", lg: "py-8 sm:py-10 lg:py-12" };
-const ALIGN: Record<ContainerStyle["align"], string> = { left: "text-left", center: "text-center", right: "text-right" };
 const COLS: Record<2 | 3 | 4, string> = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" };
 
 function shell(style: ContainerStyle): string {
@@ -119,19 +139,22 @@ function Hero({ c }: { c: HeroContainer }) {
     true,
   ));
   const subtitleHtml = stripBgStyles(p.subtitle || "");
+  const a = toAlign(c.style.align);
+  // Per-field alignment authored in the rich heading overrides the section align.
+  const headingTA = richTextAlign(p.heading);
   return (
     <section className={sectionClass} style={sectionStyle}>
-      <div className={`container-x ${ALIGN[c.style.align]}`}>
-        <div className={c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}>
+      <div className={`container-x ${ALIGN_TEXT[a]}`}>
+        <div className={`max-w-3xl ${ALIGN_BLOCK[a]}`.trim()}>
           {p.badge ? <Reveal><span className="eyebrow">{p.badge}</span></Reveal> : null}
           {p.heading || p.highlight ? (
             <Reveal delay={0.08}>
               {headingIsRich ? (
-                <div
-                  role="heading"
-                  aria-level={c.headingTag ? Number(c.headingTag.slice(1)) : 2}
-                  className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text"
-                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(headingHtml) }}
+                <Heading
+                  tag={c.headingTag}
+                  fallback="h2"
+                  className={`mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl [&_*]:m-0 [&_strong]:grad-text ${headingTA ? ALIGN_TEXT[headingTA] : ""}`}
+                  html={sanitizeRichText(headingHtml)}
                 />
               ) : (
                 <Heading tag={c.headingTag} fallback="h2" className="mt-5 break-words font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
@@ -141,16 +164,16 @@ function Hero({ c }: { c: HeroContainer }) {
           {p.subtitle ? (
             <Reveal delay={0.16}>
               <div
-                className={`prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : ""}`}
+                className="prose-jhb mt-6 text-lg leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
                 dangerouslySetInnerHTML={{ __html: sanitizeRichText(subtitleHtml) }}
               />
             </Reveal>
           ) : null}
-          {(p.primary.label || p.secondary.label) && (
+          {(btn(p.primary).label || btn(p.secondary).label) && (
             <Reveal delay={0.24}>
-              <div className={`mt-8 flex flex-wrap gap-3 ${c.style.align === "center" ? "justify-center" : ""}`}>
-                {p.primary.label ? <Link href={p.primary.href || "#"} className="btn btn-primary">{p.primary.label}</Link> : null}
-                {p.secondary.label ? <Link href={p.secondary.href || "#"} className="btn btn-ghost">{p.secondary.label}</Link> : null}
+              <div className={`mt-8 flex flex-wrap gap-3 ${ALIGN_JUSTIFY[a]}`}>
+                {btn(p.primary).label ? <Link href={btn(p.primary).href || "#"} className="btn btn-primary">{btn(p.primary).label}</Link> : null}
+                {btn(p.secondary).label ? <Link href={btn(p.secondary).href || "#"} className="btn btn-ghost">{btn(p.secondary).label}</Link> : null}
               </div>
             </Reveal>
           )}
@@ -176,22 +199,23 @@ function Hero({ c }: { c: HeroContainer }) {
 
 function Features({ c }: { c: FeaturesContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.subtitle) && (
-          <div className={`mb-10 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
+          <div className={`mb-10 max-w-2xl ${ALIGN_TEXT[a]} ${ALIGN_BLOCK[a]}`.trim()}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
             {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
         )}
-        <div className={`grid gap-5 ${COLS[p.columns]}`}>
-          {p.items.map((it) => (
+        <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
+          {arr(p.items).map((it) => (
             <Reveal key={it.id}>
               <div className="glass glow-border h-full rounded-2xl p-6">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.04] text-2xl ring-1 ring-ink/10">{it.icon || "✦"}</span>
-                <h3 className="mt-4 font-display text-lg font-semibold">{it.title}</h3>
-                {it.desc ? <p className="mt-2 text-sm leading-relaxed text-muted">{it.desc}</p> : null}
+                <h3 className="mt-4 font-display text-lg font-semibold"><RichInline html={it.title} /></h3>
+                {it.desc ? <p className="mt-2 text-sm leading-relaxed text-muted"><RichInline html={it.desc} /></p> : null}
               </div>
             </Reveal>
           ))}
@@ -203,14 +227,15 @@ function Features({ c }: { c: FeaturesContainer }) {
 
 function Testimonials({ c }: { c: TestimonialsContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {p.heading ? (
-          <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
+          <Reveal><Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         ) : null}
         <div className={`grid gap-5 ${p.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
-          {p.items.map((t) => (
+          {arr(p.items).map((t) => (
             <Reveal key={t.id}>
               <figure className="glass h-full rounded-2xl p-6">
                 <blockquote className="text-sm leading-relaxed text-ink/90">“{t.quote}”</blockquote>
@@ -237,21 +262,22 @@ function Testimonials({ c }: { c: TestimonialsContainer }) {
 
 function Faq({ c }: { c: FaqContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {p.heading ? (
-          <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
+          <Reveal><Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         ) : null}
-        <div className="mx-auto max-w-3xl space-y-3">
-          {p.items.map((f, i) => (
+        <div className={`max-w-3xl space-y-3 ${ALIGN_BLOCK[a] || "mr-auto"}`}>
+          {arr(p.items).map((f, i) => (
             <Reveal key={f.id}>
               <details className="glass rounded-2xl">
                 <summary className="block cursor-pointer break-words p-5 font-display font-semibold !text-[#1877F2]">
                   {p.showNumbers !== false && <span className="mr-2 tabular-nums">{String(i + 1).padStart(2, "0")}.</span>}
-                  {f.q}
+                  <RichInline html={f.q} />
                 </summary>
-                <p className="break-words px-5 pb-5 leading-relaxed text-muted">{f.a}</p>
+                <p className="break-words px-5 pb-5 leading-relaxed text-muted"><RichInline html={f.a} /></p>
               </details>
             </Reveal>
           ))}
@@ -263,12 +289,13 @@ function Faq({ c }: { c: FaqContainer }) {
 
 function Gallery({ c }: { c: GalleryContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
-        {p.heading ? <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl">{p.heading}</Heading></Reveal> : null}
-        <div className={`grid gap-4 ${COLS[p.columns]}`}>
-          {p.images.map((img) => {
+        {p.heading ? <Reveal><Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}>{p.heading}</Heading></Reveal> : null}
+        <div className={`grid gap-4 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
+          {arr(p.images).map((img) => {
             const a = smartImgAttrs(img.imageSettings, { extraClass: "rounded-2xl border border-ink/10", fallbackWidth: "aspect-[4/3] w-full" });
             return (
               <Reveal key={img.id}>
@@ -285,6 +312,7 @@ function Gallery({ c }: { c: GalleryContainer }) {
 
 function ImageBanner({ c }: { c: ImageBannerContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
@@ -298,11 +326,11 @@ function ImageBanner({ c }: { c: ImageBannerContainer }) {
           ) : (
             <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-primary/20 to-secondary/20" />
           )}
-          {(p.heading || p.subtitle || p.button.label) && (
-            <div className={`relative flex min-h-[320px] flex-col items-center justify-center p-8 text-center sm:min-h-[420px] ${p.overlay ? "bg-ink/45 text-white" : ""}`}>
+          {(p.heading || p.subtitle || btn(p.button).label) && (
+            <div className={`relative flex min-h-[320px] flex-col justify-center p-8 sm:min-h-[420px] ${ALIGN_ITEMS[a]} ${ALIGN_TEXT[a]} ${p.overlay ? "bg-ink/45 text-white" : ""}`}>
               {p.heading ? <Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl">{p.heading}</Heading> : null}
               {p.subtitle ? <p className="mt-3 max-w-xl">{p.subtitle}</p> : null}
-              {p.button.label ? <Link href={p.button.href || "#"} className="btn btn-primary mt-6">{p.button.label}</Link> : null}
+              {btn(p.button).label ? <Link href={btn(p.button).href || "#"} className="btn btn-primary mt-6">{btn(p.button).label}</Link> : null}
             </div>
           )}
         </div>
@@ -312,12 +340,13 @@ function ImageBanner({ c }: { c: ImageBannerContainer }) {
 }
 
 function RichTextBlock({ c }: { c: RichTextContainer }) {
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         <Reveal>
           <div
-            className={`prose-jhb leading-relaxed ${ALIGN[c.style.align]} ${c.props.width === "narrow" ? "mx-auto max-w-2xl" : `max-w-4xl ${c.style.align === "center" ? "mx-auto" : ""}`}`}
+            className={`prose-jhb leading-relaxed ${ALIGN_TEXT[a]} ${c.props.width === "narrow" ? "max-w-2xl" : "max-w-4xl"} ${ALIGN_BLOCK[a] || "mr-auto"}`}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }}
           />
         </Reveal>
@@ -328,13 +357,14 @@ function RichTextBlock({ c }: { c: RichTextContainer }) {
 
 function Cta({ c }: { c: CtaContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
-        <div className="glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 text-center sm:p-16">
+        <div className={`glow-border relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-surface to-secondary/15 p-10 sm:p-16 ${ALIGN_TEXT[a]}`}>
           <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
-          {p.subtitle ? <Reveal delay={0.08}><p className="mx-auto mt-4 max-w-xl text-muted">{p.subtitle}</p></Reveal> : null}
-          {p.button.label ? <Reveal delay={0.16}><Link href={p.button.href || "#"} className="btn btn-primary mt-8">{p.button.label}</Link></Reveal> : null}
+          {p.subtitle ? <Reveal delay={0.08}><p className={`mt-4 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
+          {btn(p.button).label ? <Reveal delay={0.16}><Link href={btn(p.button).href || "#"} className="btn btn-primary mt-8">{btn(p.button).label}</Link></Reveal> : null}
         </div>
       </div>
     </section>
@@ -342,12 +372,13 @@ function Cta({ c }: { c: CtaContainer }) {
 }
 
 function HeroDesc({ c }: { c: HeroDescContainer }) {
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
-      <div className={`container-x ${ALIGN[c.style.align]}`}>
+      <div className={`container-x ${ALIGN_TEXT[a]}`}>
         <Reveal>
           <div
-            className={`prose-jhb text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 ${c.style.align === "center" ? "mx-auto max-w-3xl" : "max-w-3xl"}`}
+            className={`prose-jhb text-lg leading-relaxed text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 max-w-3xl ${ALIGN_BLOCK[a]}`.trim()}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }}
           />
         </Reveal>
@@ -358,18 +389,19 @@ function HeroDesc({ c }: { c: HeroDescContainer }) {
 
 function Cards({ c }: { c: CardsContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.highlight) && (
           <Reveal>
-            <Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl">
+            <Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}>
               <Head lead={p.heading} highlight={p.highlight} />
             </Heading>
           </Reveal>
         )}
-        <div className={`grid gap-5 ${COLS[p.columns]}`}>
-          {p.items.map((card) => {
+        <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
+          {arr(p.items).map((card) => {
             const hasBgImage = !!card.bgImage;
             const style = hasBgImage
               ? { backgroundImage: `url(${card.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -396,10 +428,14 @@ function Cards({ c }: { c: CardsContainer }) {
                   ) : card.icon ? (
                     <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.06] text-2xl ring-1 ring-ink/10">{card.icon}</span>
                   ) : null}
-                  {card.title ? <div role="heading" aria-level={3} className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(card.title)) }} /> : null}
+                  {card.title ? (() => {
+                    const s = sanitizeRichText(card.title);
+                    const ta = richTextAlign(s);
+                    return <Heading tag={subHeadingTag(c.headingTag)} className={`font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} html={stripHeadingTags(s)} />;
+                  })() : null}
                   {card.description ? <div className={`prose-jhb mt-2 text-sm leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${hasBgImage ? "text-white/85" : "text-muted"}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(card.description) }} /> : null}
-                  {card.button.label ? (
-                    <Link href={card.button.href || "#"} className={`btn btn-primary mt-4 !px-4 !py-3 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{card.button.label}</Link>
+                  {btn(card.button).label ? (
+                    <Link href={btn(card.button).href || "#"} className={`btn btn-primary mt-4 !px-4 !py-3 !text-xs ${cardLinked ? "pointer-events-auto relative z-10" : ""}`}>{btn(card.button).label}</Link>
                   ) : null}
                 </div>
               </div>
@@ -425,22 +461,23 @@ function Cards({ c }: { c: CardsContainer }) {
 
 function ServicesBlock({ c }: { c: ServicesContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.subtitle) && (
-          <div className={`mb-10 max-w-2xl ${c.style.align === "center" ? "mx-auto text-center" : ""}`}>
+          <div className={`mb-10 max-w-2xl ${ALIGN_TEXT[a]} ${ALIGN_BLOCK[a]}`.trim()}>
             <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
             {p.subtitle ? <Reveal delay={0.08}><p className="mt-4 leading-relaxed text-muted">{p.subtitle}</p></Reveal> : null}
           </div>
         )}
-        <div className={`grid gap-5 ${COLS[p.columns]}`}>
-          {p.items.map((it) => {
+        <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
+          {arr(p.items).map((it) => {
             const inner = (
               <div className="glass glow-border h-full rounded-2xl p-6">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-ink/[0.04] text-2xl ring-1 ring-ink/10">{it.icon || "✦"}</span>
-                <h3 className="mt-4 font-display text-lg font-semibold">{it.title}</h3>
-                {it.desc ? <p className="mt-2 text-sm leading-relaxed text-muted">{it.desc}</p> : null}
+                <h3 className="mt-4 font-display text-lg font-semibold"><RichInline html={it.title} /></h3>
+                {it.desc ? <p className="mt-2 text-sm leading-relaxed text-muted"><RichInline html={it.desc} /></p> : null}
                 {it.href ? <span className="mt-3 inline-block text-sm font-medium text-primary">Learn more →</span> : null}
               </div>
             );
@@ -454,13 +491,14 @@ function ServicesBlock({ c }: { c: ServicesContainer }) {
 
 function AboutBlock({ c }: { c: AboutContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   const imgA = smartImgAttrs(p.imageSettings, { extraClass: "rounded-3xl border border-ink/10 shadow-soft" });
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         <div className={`grid items-center gap-10 ${p.image ? "lg:grid-cols-2" : ""}`}>
           <Reveal>
-            <div className={p.imagePosition === "left" && p.image ? "lg:order-2" : ""}>
+            <div className={`${ALIGN_TEXT[a]} ${p.imagePosition === "left" && p.image ? "lg:order-2" : ""}`.trim()}>
               {p.eyebrow ? <span className="eyebrow">{p.eyebrow}</span> : null}
               <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
               <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.bodyHtml) }} />
@@ -505,7 +543,7 @@ const VALIGN: Record<ImageContentContainer["props"]["verticalAlign"], string> = 
 function ImageContent({ c }: { c: ImageContentContainer }) {
   const p = c.props;
   const left = p.imagePosition === "left";
-  const cols = left ? SPLIT_COLS_LEFT[p.widthSplit] : SPLIT_COLS_RIGHT[p.widthSplit];
+  const cols = (left ? SPLIT_COLS_LEFT[p.widthSplit] : SPLIT_COLS_RIGHT[p.widthSplit]) ?? "lg:grid-cols-2";
   // Background priority: image > solid colour > shared style.bg.
   const hasCustomBg = !!p.bgImage || !!p.bgColor;
   const sectionClass = hasCustomBg ? PAD[c.style.padding] : shell(c.style);
@@ -520,29 +558,32 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
   const contentOrder = `${p.mobileOrder === "content-first" ? "order-1" : "order-2"} ${left ? "lg:order-2" : "lg:order-1"}`;
   const imageOrder = `${p.mobileOrder === "image-first" ? "order-1" : "order-2"} ${left ? "lg:order-1" : "lg:order-2"}`;
 
+  const a = toAlign(c.style.align);
   const content = (
-    <div className={`min-w-0 ${contentOrder}`}>
+    <div className={`min-w-0 ${ALIGN_TEXT[a]} ${contentOrder}`}>
       {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
-      {p.heading ? (
-        <div className="mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text" dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(p.heading)) }} />
-      ) : null}
+      {p.heading ? (() => {
+        const s = sanitizeRichText(p.heading);
+        const ta = richTextAlign(s);
+        return <Heading tag={c.headingTag} fallback="h2" className={`mt-5 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl [&_*]:m-0 [&_strong]:grad-text ${ta ? ALIGN_TEXT[ta] : ""}`} html={stripHeadingTags(s)} />;
+      })() : null}
       {p.description ? (
         <div className="prose-jhb mt-4 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }} />
       ) : null}
-      {p.bullets.length > 0 && (
+      {arr(p.bullets).length > 0 && (
         <ul className="mt-5 space-y-2.5">
-          {p.bullets.filter((b) => b.text.trim()).map((b) => (
+          {arr(p.bullets).filter((b) => (b.text || "").trim()).map((b) => (
             <li key={b.id} className="flex items-start gap-2.5">
               <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[10px] font-bold text-white">✓</span>
-              <span className="min-w-0 text-ink/90">{b.text}</span>
+              <span className="min-w-0 text-ink/90"><RichInline html={b.text} /></span>
             </li>
           ))}
         </ul>
       )}
-      {(p.primary.label || p.secondary.label) && (
-        <div className="mt-7 flex flex-wrap gap-3">
-          {p.primary.label ? <Link href={p.primary.href || "#"} className="btn btn-primary">{p.primary.label}</Link> : null}
-          {p.secondary.label ? <Link href={p.secondary.href || "#"} className="btn btn-ghost">{p.secondary.label}</Link> : null}
+      {(btn(p.primary).label || btn(p.secondary).label) && (
+        <div className={`mt-7 flex flex-wrap gap-3 ${ALIGN_JUSTIFY[a]}`}>
+          {btn(p.primary).label ? <Link href={btn(p.primary).href || "#"} className="btn btn-primary">{btn(p.primary).label}</Link> : null}
+          {btn(p.secondary).label ? <Link href={btn(p.secondary).href || "#"} className="btn btn-ghost">{btn(p.secondary).label}</Link> : null}
         </div>
       )}
     </div>
@@ -579,7 +620,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
   return (
     <section className={sectionClass} style={sectionStyle}>
       <div className="container-x">
-        <div className={`grid grid-cols-1 items-start gap-10 ${cols} ${VALIGN[p.verticalAlign]}`}>
+        <div className={`grid grid-cols-1 items-start gap-10 ${cols} ${VALIGN[p.verticalAlign] ?? "lg:items-center"}`}>
           {content}
           {image}
         </div>
@@ -591,6 +632,7 @@ function ImageContent({ c }: { c: ImageContentContainer }) {
 function ImageBlock({ c }: { c: ImageContainer }) {
   const p = c.props;
   if (!p.url) return null;
+  const al = toAlign(c.style.align);
   const a = smartImgAttrs(p.imageSettings, { extraClass: `${p.rounded ? "rounded-3xl" : ""} border border-ink/10` });
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
@@ -599,9 +641,9 @@ function ImageBlock({ c }: { c: ImageContainer }) {
   return (
     <section className={shell(c.style)}>
       {p.width === "full" ? (
-        <div className="px-0">{img}{p.caption ? <p className="container-x mt-3 text-center text-sm text-muted">{p.caption}</p> : null}</div>
+        <div className="px-0">{img}{p.caption ? <p className={`container-x mt-3 text-sm text-muted ${ALIGN_TEXT[al]}`}>{p.caption}</p> : null}</div>
       ) : (
-        <div className="container-x"><Reveal>{img}{p.caption ? <p className="mt-3 text-center text-sm text-muted">{p.caption}</p> : null}</Reveal></div>
+        <div className="container-x"><Reveal>{img}{p.caption ? <p className={`mt-3 text-sm text-muted ${ALIGN_TEXT[al]}`}>{p.caption}</p> : null}</Reveal></div>
       )}
     </section>
   );
@@ -618,13 +660,14 @@ function toEmbed(url: string): string | null {
 function VideoBlock({ c }: { c: VideoContainer }) {
   const p = c.props;
   if (!p.url) return null;
+  const al = toAlign(c.style.align);
   const embed = toEmbed(p.url);
   const ratio = p.aspect === "4:3" ? "aspect-[4/3]" : p.aspect === "1:1" ? "aspect-square" : "aspect-video";
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         <Reveal>
-          <div className={`mx-auto max-w-4xl overflow-hidden rounded-3xl border border-ink/10 ${ratio}`}>
+          <div className={`max-w-4xl overflow-hidden rounded-3xl border border-ink/10 ${ALIGN_BLOCK[al] || "mr-auto"} ${ratio}`}>
             {embed ? (
               <iframe src={embed} title={p.caption || "Video"} className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             ) : (
@@ -632,7 +675,7 @@ function VideoBlock({ c }: { c: VideoContainer }) {
               <video src={p.url} controls className="h-full w-full object-cover" />
             )}
           </div>
-          {p.caption ? <p className="mt-3 text-center text-sm text-muted">{p.caption}</p> : null}
+          {p.caption ? <p className={`mt-3 text-sm text-muted ${ALIGN_TEXT[al]}`}>{p.caption}</p> : null}
         </Reveal>
       </div>
     </section>
@@ -641,14 +684,15 @@ function VideoBlock({ c }: { c: VideoContainer }) {
 
 function Team({ c }: { c: TeamContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
         {(p.heading || p.highlight) && (
-          <Reveal><Heading tag={c.headingTag} fallback="h2" className="mb-10 text-center font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
+          <Reveal><Heading tag={c.headingTag} fallback="h2" className={`mb-10 font-display text-3xl font-bold sm:text-4xl ${ALIGN_TEXT[a]}`}><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         )}
-        <div className={`grid gap-5 ${COLS[p.columns]}`}>
-          {p.items.map((m) => (
+        <div className={`grid gap-5 ${COLS[p.columns] ?? COLS_FALLBACK}`}>
+          {arr(p.items).map((m) => (
             <Reveal key={m.id}>
               <div className="glass h-full rounded-2xl p-6 text-center">
                 {m.photo ? (
@@ -671,13 +715,14 @@ function Team({ c }: { c: TeamContainer }) {
 
 function ContactFormBlock({ c }: { c: ContactFormContainer }) {
   const p = c.props;
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
-      <div className="container-x text-center">
+      <div className={`container-x ${ALIGN_TEXT[a]}`}>
         {(p.heading || p.highlight) && (
           <Reveal><Heading tag={c.headingTag} fallback="h2" className="font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading></Reveal>
         )}
-        {p.subtitle ? <Reveal delay={0.08}><p className="mx-auto mt-4 max-w-xl text-muted">{p.subtitle}</p></Reveal> : null}
+        {p.subtitle ? <Reveal delay={0.08}><p className={`mt-4 max-w-xl text-muted ${ALIGN_BLOCK[a] || "mr-auto"}`}>{p.subtitle}</p></Reveal> : null}
         <div className="mt-8">
           <ContainerContactForm buttonLabel={p.buttonLabel} />
         </div>
@@ -688,7 +733,8 @@ function ContactFormBlock({ c }: { c: ContactFormContainer }) {
 
 function Advantage({ c }: { c: AdvantageContainer }) {
   const p = c.props;
-  const items = p.items.filter((b) => b.title || b.image);
+  const a = toAlign(c.style.align);
+  const items = arr(p.items).filter((b) => b.title || b.image);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
@@ -696,7 +742,7 @@ function Advantage({ c }: { c: AdvantageContainer }) {
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-secondary/15 blur-3xl" />
           <div className="relative grid gap-10 lg:grid-cols-2">
             <Reveal>
-              <div>
+              <div className={ALIGN_TEXT[a]}>
                 {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
                 <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
                 {p.description ? <p className="mt-4 text-muted">{p.description}</p> : null}
@@ -713,8 +759,8 @@ function Advantage({ c }: { c: AdvantageContainer }) {
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">{b.icon || "✓"}</span>
                     )}
                     <span className="min-w-0 break-words">
-                      <span className="block text-ink/90">{b.title}</span>
-                      {b.desc ? <span className="mt-0.5 block text-sm text-muted">{b.desc}</span> : null}
+                      <span className="block text-ink/90"><RichInline html={b.title} /></span>
+                      {b.desc ? <span className="mt-0.5 block text-sm text-muted"><RichInline html={b.desc} /></span> : null}
                     </span>
                   </li>
                 </Reveal>
@@ -756,8 +802,8 @@ function WorkflowStepBox({ s, index, className = "" }: { s: WorkflowStep; index:
           {s.icon ? <span>{s.icon}</span> : <span className="font-display text-base font-bold">{index + 1}</span>}
         </div>
       )}
-      {s.title ? <h3 className="font-display text-base font-semibold leading-tight">{s.title}</h3> : null}
-      {s.desc ? <p className={`mt-1.5 text-sm leading-relaxed ${s.text ? "opacity-80" : "text-muted"}`}>{s.desc}</p> : null}
+      {s.title ? <h3 className="font-display text-base font-semibold leading-tight"><RichInline html={s.title} /></h3> : null}
+      {s.desc ? <p className={`mt-1.5 text-sm leading-relaxed ${s.text ? "opacity-80" : "text-muted"}`}><RichInline html={s.desc} /></p> : null}
     </div>
   );
 }
@@ -824,14 +870,14 @@ function WorkflowSteps({ steps, layout }: { steps: WorkflowStep[]; layout: Workf
 
 function Workflow({ c }: { c: WorkflowContainer }) {
   const p = c.props;
-  const steps = p.steps.filter((s) => s.enabled);
+  const steps = arr(p.steps).filter((s) => s.enabled);
   const hasHeading = !!(p.heading || p.highlight || p.headingTail);
-  const headAlign = c.style.align === "center" ? "mx-auto text-center" : c.style.align === "right" ? "ml-auto text-right" : "";
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
       <WorkflowWrap width={p.width}>
         {(p.eyebrow || hasHeading || p.subtitle) && (
-          <div className={`mb-10 max-w-2xl ${headAlign}`}>
+          <div className={`mb-10 max-w-2xl ${ALIGN_TEXT[a]} ${ALIGN_BLOCK[a]}`.trim()}>
             {p.eyebrow ? <Reveal><span className="eyebrow">{p.eyebrow}</span></Reveal> : null}
             {hasHeading ? (
               <Reveal delay={0.06}>
@@ -856,14 +902,18 @@ function Workflow({ c }: { c: WorkflowContainer }) {
 }
 
 function CustomBlock({ c }: { c: CustomContainer }) {
+  const a = toAlign(c.style.align);
   return (
     <section className={shell(c.style)}>
-      <div className="container-x overflow-x-auto [&_img]:h-auto [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }} />
+      <div className={`container-x overflow-x-auto [&_img]:h-auto [&_img]:max-w-full ${ALIGN_TEXT[a]}`} dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.props.html) }} />
     </section>
   );
 }
 
-function RenderContainer({ c }: { c: PageContainer }) {
+// Memoised so an unchanged container is skipped when the editor re-renders on
+// every keystroke — only the container whose object identity changed (immutable
+// edits always produce a new object) actually re-renders. Inert on the server.
+const RenderContainer = memo(function RenderContainer({ c }: { c: PageContainer }) {
   switch (c.type) {
     case "hero": return <Hero c={c} />;
     case "herodesc": return <HeroDesc c={c} />;
@@ -887,17 +937,25 @@ function RenderContainer({ c }: { c: PageContainer }) {
     case "custom": return <CustomBlock c={c} />;
     default: return null;
   }
-}
+});
 
 /** Renders every container in `zone`, in order. Empty zone → nothing. */
 export function PageContainersView({ containers, zone }: { containers: PageContainer[]; zone: string }) {
-  // Fold any legacy Hero + Hero-Description pair into one Hero Section before rendering.
-  const inZone = mergeHeroContainers(containers).filter((c) => c.zone === zone);
+  // Fold any legacy Hero + Hero-Description pair into one Hero Section before
+  // rendering, then keep only this zone's containers (guarding a missing/legacy
+  // `id` so a duplicate/absent key can never collapse two containers into one).
+  const inZone = mergeHeroContainers(arr(containers)).filter((c) => c && c.zone === zone);
   if (inZone.length === 0) return null;
   return (
     <>
-      {inZone.map((c) => (
-        <RenderContainer key={c.id} c={c} />
+      {inZone.map((c, i) => (
+        // Isolate EACH container: a throw inside one (bad data, broken embed,
+        // unexpected null) renders a small inline notice instead of blanking the
+        // whole page. resetKeys=[c] auto-clears the error once the container object
+        // changes (i.e. the offending edit is fixed/undone) — no refresh needed.
+        <ErrorBoundary key={c.id ?? `${zone}-${i}`} label={CONTAINER_LABELS[c.type] ?? "section"} resetKeys={[c]}>
+          <RenderContainer c={c} />
+        </ErrorBoundary>
       ))}
     </>
   );

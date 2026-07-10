@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { ErrorBoundary } from "@jhb/shared/error-boundary";
 
 /**
  * Shared live-preview panel for every page editor (About, and future Home /
@@ -20,8 +21,12 @@ import { createPortal } from "react-dom";
  * previews. Drop in any page's shared *View component as children.
  */
 
+// Desktop renders at 1024 (the Tailwind `lg` breakpoint) rather than 1280: the
+// preview panel is narrow, so a smaller render width means less down-scaling —
+// i.e. bigger, more readable text — while still triggering the desktop (`lg:`)
+// two-column layouts. Tablet/mobile stay at real device widths.
 const DEVICES = [
-  { key: "desktop", label: "Desktop", width: 1280 },
+  { key: "desktop", label: "Desktop", width: 1024 },
   { key: "tablet", label: "Tablet", width: 834 },
   { key: "mobile", label: "Mobile", width: 414 },
 ] as const;
@@ -62,12 +67,49 @@ export default function LivePreviewShell({
         </div>
       </div>
 
-      <DeviceFrame width={width}>{children}</DeviceFrame>
+      <DeviceFrame width={width}>
+        {/* Preview-wide safety net: if ANY part of the preview throws while
+            rendering (the shared containers isolate themselves, but the page's
+            own hero / why-choose / faq markup renders here too), show a small
+            notice INSIDE the frame instead of letting the exception bubble up
+            and blank the whole editor. resetKeys=[children] clears it as soon as
+            the next edit produces new children, so it self-heals. */}
+        <ErrorBoundary
+          label="preview"
+          resetKeys={[children]}
+          fallback={
+            <div className="m-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+              <strong>Preview paused.</strong> The last change produced content this preview
+              couldn’t render. Your edits are safe — adjust the field and the preview will refresh.
+            </div>
+          }
+        >
+          {children}
+        </ErrorBoundary>
+      </DeviceFrame>
 
       {footer && <p className="mt-3 text-[11px] text-muted">{footer}</p>}
     </div>
   );
 }
+
+// Baseline stylesheet injected into the iframe BEFORE the mirrored app styles and
+// never removed. It guarantees sane rendering even in the split-second before (or
+// if) the mirrored Tailwind/app CSS is present — which is exactly the window that
+// used to make images balloon to their natural size and text collapse to tiny.
+// These are hard invariants, not cosmetic overrides: images can never overflow
+// their column, and the document keeps a normal base font size.
+const PREVIEW_BASE_CSS = `
+  *, *::before, *::after { box-sizing: border-box; }
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  [data-preview-root] { max-width: 100%; overflow-x: hidden; }
+  [data-preview-root] img,
+  [data-preview-root] svg,
+  [data-preview-root] video,
+  [data-preview-root] canvas { max-width: 100%; height: auto; }
+  [data-preview-root] table { max-width: 100%; }
+`;
 
 function DeviceFrame({ width, children }: { width: number; children: ReactNode }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -99,6 +141,13 @@ function DeviceFrame({ width, children }: { width: number; children: ReactNode }
     let headObserver: MutationObserver | null = null;
     let sizeObserver: ResizeObserver | null = null;
     let raf = 0;
+    // Maps each SOURCE <style>/<link> in the parent head to its clone in the
+    // iframe head. Keeping this identity map is what makes mirroring INCREMENTAL:
+    // an already-mirrored stylesheet is left in place instead of being removed and
+    // re-added, so a <link> never re-fetches and the preview never flashes
+    // unstyled (the old wipe-and-re-clone caused exactly that — images ballooned
+    // to natural size and text collapsed until the refetch landed).
+    const mirrored = new Map<Node, HTMLElement>();
 
     const init = () => {
       const doc = iframe.contentDocument;
@@ -108,13 +157,48 @@ function DeviceFrame({ width, children }: { width: number; children: ReactNode }
       headObserver?.disconnect();
       sizeObserver?.disconnect();
 
+      // Ensure the never-removed baseline stylesheet is first in the iframe head.
+      // A missing base tag means a FRESH iframe document, so any clones still in
+      // the tracking map belong to a previous document — clear it so the app
+      // styles are actually re-mirrored into the new one.
+      let base = doc.getElementById("preview-base-css") as HTMLStyleElement | null;
+      if (!base) {
+        mirrored.clear();
+        base = doc.createElement("style");
+        base.id = "preview-base-css";
+        base.textContent = PREVIEW_BASE_CSS;
+        doc.head.insertBefore(base, doc.head.firstChild);
+      }
+
+      // Incrementally reconcile the mirrored app styles with the parent head:
+      // add clones for new sources, refresh a <style>'s text if it changed
+      // (dev HMR), and drop clones whose source disappeared — never touching an
+      // unchanged clone (so linked stylesheets stay loaded, zero FOUC).
       const mirror = () => {
-        doc.head.querySelectorAll("[data-preview-style]").forEach((n) => n.remove());
-        document.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
+        const sources = document.querySelectorAll('style, link[rel="stylesheet"]');
+        const seen = new Set<Node>();
+        sources.forEach((node) => {
+          seen.add(node);
+          const existing = mirrored.get(node);
+          if (existing) {
+            // Keep <style> text in sync (HMR edits the same node in place).
+            if (node.nodeName === "STYLE" && existing.textContent !== node.textContent) {
+              existing.textContent = (node as HTMLStyleElement).textContent;
+            }
+            return;
+          }
           const clone = node.cloneNode(true) as HTMLElement;
           clone.setAttribute("data-preview-style", "");
           doc.head.appendChild(clone);
+          mirrored.set(node, clone);
         });
+        // Remove clones whose source no longer exists.
+        for (const [node, clone] of mirrored) {
+          if (!seen.has(node)) {
+            clone.remove();
+            mirrored.delete(node);
+          }
+        }
       };
       // Measure the intrinsic height of the portaled content wrapper (NOT the
       // viewport-coupled documentElement/body), rAF-coalesced and guarded so equal
@@ -131,8 +215,9 @@ function DeviceFrame({ width, children }: { width: number; children: ReactNode }
       doc.documentElement.style.background = "transparent";
       doc.body.className = "font-sans antialiased";
       doc.body.style.margin = "0";
+      // Observe only the content wrapper for size (documentElement height is
+      // viewport-coupled and would fight the scale); fall back to body.
       sizeObserver = new ResizeObserver(reportH);
-      sizeObserver.observe(doc.documentElement);
       sizeObserver.observe(doc.body);
       headObserver = new MutationObserver(() => {
         mirror();
@@ -150,10 +235,19 @@ function DeviceFrame({ width, children }: { width: number; children: ReactNode }
       cancelAnimationFrame(raf);
       headObserver?.disconnect();
       sizeObserver?.disconnect();
+      mirrored.clear();
     };
   }, []);
 
-  const scale = availW > 0 ? Math.min(1, availW / width) : 1;
+  // Fit-to-panel scale. Rounded to 3dp and memoised so it only changes when the
+  // available width or the device width actually change — NOT on every keystroke /
+  // preview re-render — which is what kept the frame from randomly re-zooming.
+  // Guard tiny/zero measurements so a transient 0-width read can never scale the
+  // whole preview down to a sliver.
+  const scale = useMemo(() => {
+    if (availW < 1) return 1;
+    return Math.round(Math.min(1, availW / width) * 1000) / 1000;
+  }, [availW, width]);
 
   return (
     // The OUTER panel is the scroll container: a fixed-height viewport that scrolls
@@ -164,8 +258,8 @@ function DeviceFrame({ width, children }: { width: number; children: ReactNode }
       <div ref={wrapRef} className="w-full">
         <div
           style={{
-            width: width * scale,
-            height: contentH ? contentH * scale : undefined,
+            width: Math.round(width * scale),
+            height: contentH ? Math.round(contentH * scale) : undefined,
             minHeight: contentH ? undefined : 240,
             margin: "0 auto",
           }}

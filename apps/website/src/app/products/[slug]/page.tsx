@@ -5,8 +5,10 @@ import Image from "next/image";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import { getSettings } from "@jhb/shared/content-server";
 import { faqPlainText } from "@jhb/shared/faqs";
-import { stripHeadingTags } from "@jhb/shared/containers";
+import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
+import { Heading } from "@jhb/shared/heading";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { RichInline } from "@jhb/shared/rich-inline";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageContainers from "@/components/PageContainers";
@@ -204,12 +206,17 @@ export default async function ProductPage({
                       {i + 1}
                     </span>
                     <div className="min-w-0">
-                      <div
-                        role="heading"
-                        aria-level={3}
-                        className="font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(it.title)) }}
-                      />
+                      {(() => {
+                        const s = sanitizeRichText(it.title);
+                        const ta = richTextAlign(s);
+                        return (
+                          <Heading
+                            tag="h3"
+                            className={`font-display text-lg font-semibold [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                            html={stripHeadingTags(s)}
+                          />
+                        );
+                      })()}
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
                         dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }}
@@ -252,10 +259,10 @@ export default async function ProductPage({
                       {plan.period && <span className="text-sm text-muted">{plan.period}</span>}
                     </p>
                     <ul className="mt-5 flex-1 space-y-2.5 text-sm">
-                      {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5 text-ink/90">
+                      {plan.features.filter((f) => f && f.replace(/<[^>]*>/g, "").trim()).map((f, fi) => (
+                        <li key={fi} className="flex items-start gap-2.5 text-ink/90">
                           <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[10px] text-white">✓</span>
-                          {f}
+                          <RichInline html={f} />
                         </li>
                       ))}
                     </ul>

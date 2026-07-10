@@ -37,6 +37,8 @@
     "./about-server": "./src/about.server.ts",
     "./containers": "./src/containers.ts",
     "./rich-text": "./src/richText.ts",
+    "./rich-inline": "./src/richInline.tsx",
+    "./error-boundary": "./src/errorBoundary.tsx",
     "./container-templates": "./src/containerTemplates.ts",
     "./container-view": "./src/containerView.tsx",
     "./about-view": "./src/aboutView.tsx",

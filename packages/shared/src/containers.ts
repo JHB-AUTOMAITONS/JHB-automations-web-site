@@ -35,6 +35,85 @@ export type ContainerAlign = "left" | "center" | "right";
 export type ContainerStyle = { bg: ContainerBg; padding: ContainerPad; align: ContainerAlign };
 export type Btn = { label: string; href: string };
 
+// ─── Alignment system — the ONE source of truth ──────────────────────────────
+// Maps a horizontal alignment (left / center / right) to the Tailwind utilities
+// that implement it. EVERY renderer — the shared container view (website + admin
+// preview), the service pages, the home sections — reads these maps so a chosen
+// alignment is applied identically everywhere and any new section respects
+// alignment automatically. Do NOT hardcode text-left/center/right, justify-*, or
+// items-* for section alignment anywhere; derive them from these instead.
+//
+//   left   → text-align:left   / align-items:flex-start / justify-content:flex-start
+//   center → text-align:center / align-items:center     / justify-content:center
+//   right  → text-align:right  / align-items:flex-end    / justify-content:flex-end
+export const ALIGN_TEXT: Record<ContainerAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+// Flex CROSS-axis for a column (flex-col) group → CSS align-items.
+export const ALIGN_ITEMS: Record<ContainerAlign, string> = {
+  left: "items-start",
+  center: "items-center",
+  right: "items-end",
+};
+// Flex MAIN-axis for a row (flex-row) group, e.g. a button row → justify-content.
+export const ALIGN_JUSTIFY: Record<ContainerAlign, string> = {
+  left: "justify-start",
+  center: "justify-center",
+  right: "justify-end",
+};
+// Auto-margins that horizontally position a max-width BLOCK (text-align alone
+// can't move a block that has its own max-width). Left needs no margin (a block
+// hugs the left by default), so it stays empty to avoid any layout shift.
+export const ALIGN_BLOCK: Record<ContainerAlign, string> = {
+  left: "",
+  center: "mx-auto",
+  right: "ml-auto",
+};
+
+/** Normalise any (possibly absent/legacy) alignment value to a known key. */
+export function toAlign(a: ContainerAlign | string | null | undefined): ContainerAlign {
+  return a === "center" || a === "right" ? a : "left";
+}
+
+/**
+ * Classes for a section "content group" (heading + copy + buttons): text
+ * alignment plus the block-centering margin. Pass a container's `style.align`
+ * (or any section's align field) straight in.
+ */
+export function alignClasses(a: ContainerAlign | string | null | undefined): string {
+  const k = toAlign(a);
+  return `${ALIGN_TEXT[k]} ${ALIGN_BLOCK[k]}`.trim();
+}
+
+/**
+ * Read the alignment an admin authored INSIDE a rich-text value. The editor
+ * writes alignment as an inline `text-align` on the block element, and
+ * `sanitizeRichText` preserves it. Returns null when none is set.
+ *
+ * Why this exists: heading-style fields are rendered by injecting the rich HTML
+ * into a heading wrapper AND running it through `stripHeadingTags` (which removes
+ * the aligned tag together with its style) or forcing the block `inline` (which
+ * makes `text-align` a no-op). In both cases the authored alignment would be
+ * silently dropped. Call this on the SANITIZED html (before stripHeadingTags) to
+ * recover the alignment, then LIFT it onto the render wrapper via `ALIGN_TEXT`.
+ * Falls back to the section alignment when a field has none of its own:
+ *   const ta = richTextAlign(sanitized) ?? section.align;
+ */
+export function richTextAlign(html: string | null | undefined): ContainerAlign | null {
+  if (!html) return null;
+  // Return only an EXPLICIT non-default alignment authored in the rich text.
+  // The value is an inline text-align that can sit on a NESTED wrapper (e.g. an
+  // outer default-left div around an inner centred one), so a naive "first match"
+  // wrongly returns left. An explicit center/right anywhere is the author's
+  // intent and wins; a default/left is treated as "no override" (null) so it can
+  // never beat the section alignment control.
+  if (/text-align\s*:\s*center/i.test(html)) return "center";
+  if (/text-align\s*:\s*right/i.test(html)) return "right";
+  return null;
+}
+
 // ─── Universal image presentation settings ───────────────────────────────────
 // Optional + fully additive: an image with no `imageSettings` renders exactly as
 // before. Shared by the admin controls (ImageSettingsControls) and the website
@@ -533,6 +612,9 @@ export function mergeHeroContainers(cs: PageContainer[]): PageContainer[] {
   const out: PageContainer[] = [];
   for (let i = 0; i < cs.length; i++) {
     const c = cs[i];
+    // Skip any null/garbage entry a malformed jsonb array could contain — reading
+    // `.type` off it would otherwise throw and take down the whole zone/page.
+    if (!c || typeof c !== "object") continue;
     const next = cs[i + 1];
     if (c.type === "hero" && next && next.type === "herodesc" && next.zone === c.zone) {
       const desc = (next.props.html || "").trim();

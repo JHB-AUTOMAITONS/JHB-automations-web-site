@@ -87,6 +87,7 @@ export default async function Home() {
         heroImageTitle={home.hero.imageTitle || undefined}
         marquee={partners.items.map((p) => p.name)}
         marqueeLabel={home.hero.marqueeLabel}
+        headingAlign={home.hero.headingAlign}
       />
       <PageContainers containers={home.containers} zone="after-hero" />
       {partners.enabled && <Partners heading={partners.heading} items={partners.items} />}

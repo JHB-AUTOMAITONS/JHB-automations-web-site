@@ -13,8 +13,9 @@ import {
   type ServicePagePayload,
   type ServiceStatus,
 } from "@jhb/shared/service-pages";
-import { smartImgAttrs, stripHeadingTags } from "@jhb/shared/containers";
+import { smartImgAttrs, stripHeadingTags, ALIGN_TEXT, ALIGN_BLOCK, toAlign, richTextAlign } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { RichInline } from "@jhb/shared/rich-inline";
 import { saveServicePage, publishServicePage, checkServiceLinks } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import RichEditor from "./RichEditor";
@@ -32,6 +33,7 @@ import { RelatedServicesView } from "@jhb/shared/related-services-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import EditorHeader from "./EditorHeader";
 import LivePreviewShell from "./LivePreviewShell";
+import SplitPane from "./SplitPane";
 import AiSeoPanel from "./ai/AiSeoPanel";
 import AuthorPublisherEditor from "./AuthorPublisherEditor";
 
@@ -250,9 +252,10 @@ export default function ServicePageEditor({
   // Hero alignment for the preview — mirrors ServiceDetail EXACTLY so the preview
   // matches the live page: the selected alignment controls the heading AND the
   // description together (previously only the heading followed it).
-  const heroAlign = form.chrome.heroHeadingAlign ?? "left";
-  const heroAlignText = heroAlign === "center" ? "text-center" : heroAlign === "right" ? "text-right" : "";
-  const heroAlignBlock = heroAlign === "center" ? "mx-auto" : heroAlign === "right" ? "ml-auto" : "";
+  const heroAlign = toAlign(form.chrome.heroHeadingAlign);
+  const heroAlignText = ALIGN_TEXT[heroAlign];
+  const heroAlignBlock = ALIGN_BLOCK[heroAlign];
+  const wiAlign = toAlign(form.whats_included.align);
 
   return (
     // On xl, fill <main>'s height and let the two columns scroll independently
@@ -278,9 +281,12 @@ export default function ServicePageEditor({
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_440px] xl:overflow-hidden">
-        {/* ---- form (own scroll) ---- */}
-        <div className="space-y-6 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-2">
+      <SplitPane
+        storageKey="cms-split:service-page"
+        className="mt-6 xl:min-h-0 xl:flex-1 xl:overflow-hidden"
+        left={
+          /* ---- form (own scroll) ---- */
+          <div className="space-y-6 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-2">
           <Section title="SEO & URL">
             <Field label="Service slug (URL)">
               <input
@@ -551,55 +557,64 @@ export default function ServicePageEditor({
 
           {cb.slot("after-whychoose")}
           {cb.modal}
-        </div>
-
-        {/* ---- preview + SEO (own scroll) ---- */}
-        <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+          </div>
+        }
+        right={
+          /* ---- preview + SEO (own scroll) ---- */
+          <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <LivePreviewShell label="Preview">
                 <div className="p-5">
                   <PageContainersView containers={cb.containers} zone="top" />
-                  {form.image_url && (form.chrome.heroImage?.mode ?? "tile") !== "hidden" && (() => {
+                  {(() => {
+                    // Mirror the LIVE ServiceDetail hero: content + image sit SIDE BY SIDE
+                    // in a 2-column grid (image ~45% of the row), not a full-width image
+                    // stacked on top. Keeps the same image-to-content ratio as production.
                     const hi = form.chrome.heroImage ?? {};
-                    const a = smartImgAttrs(hi.settings, {
-                      extraClass: "mb-4 rounded-xl mx-auto",
-                      fallbackWidth: (hi.mode ?? "tile") === "image" ? "w-full" : "aspect-[16/9] w-full",
+                    const heroImgMode = hi.mode || "tile";
+                    const heroImgLeft = heroImgMode === "image" && hi.align === "left";
+                    const hasImage = !!form.image_url && heroImgMode !== "hidden";
+                    const imgA = smartImgAttrs(hi.settings, {
+                      extraClass: "rounded-xl",
+                      fallbackWidth: heroImgMode === "image" ? "w-full" : "aspect-[16/9] w-full",
                     });
+                    const content = (
+                      <div className={`min-w-0 ${heroImgLeft ? "lg:order-2" : ""}`}>
+                        <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${heroAlignText}`}>
+                          {form.hero_link ? (
+                            <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
+                          ) : (
+                            heroPreviewNode
+                          )}
+                        </Heading>
+                        {form.hero_description && (
+                          <div
+                            className={`prose-jhb mt-2 max-w-md ${heroAlignBlock} ${heroAlignText} text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
+                            dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.hero_description) }}
+                          />
+                        )}
+                      </div>
+                    );
+                    if (!hasImage) return content;
                     return (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={form.image_url}
-                        alt={form.image_alt ?? ""}
-                        {...(form.image_title ? { title: form.image_title } : {})}
-                        className={a.className}
-                        style={a.style}
-                      />
+                      <div className={`grid items-center gap-6 ${heroImgLeft ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.1fr_0.9fr]"}`}>
+                        {content}
+                        <div className={`min-w-0 order-first ${heroImgLeft ? "lg:order-1" : "lg:order-none"}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={form.image_url || ""}
+                            alt={form.image_alt ?? ""}
+                            {...(form.image_title ? { title: form.image_title } : {})}
+                            className={imgA.className}
+                            style={imgA.style}
+                          />
+                        </div>
+                      </div>
                     );
                   })()}
-                  <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${heroAlignText}`}>
-                    {form.hero_link ? (
-                      <a href={form.hero_link} className="transition-opacity hover:opacity-80">{heroPreviewNode}</a>
-                    ) : (
-                      heroPreviewNode
-                    )}
-                  </Heading>
-                  {form.hero_description && (
-                    <div
-                      className={`prose-jhb mt-2 max-w-md ${heroAlignBlock} ${heroAlignText} text-sm text-muted [&_a]:text-primary [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
-                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.hero_description) }}
-                    />
-                  )}
                   <PageContainersView containers={cb.containers} zone="after-hero" />
                   {/* What's Included — chrome + cards */}
                   {form.whats_included.enabled && (
-                    <div
-                      className={`mt-5 ${
-                        form.whats_included.align === "center"
-                          ? "text-center"
-                          : form.whats_included.align === "right"
-                            ? "text-right"
-                            : ""
-                      }`}
-                    >
+                    <div className={`mt-5 ${ALIGN_TEXT[wiAlign]}`}>
                       {form.whats_included.badge && (
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{form.whats_included.badge}</span>
                       )}
@@ -612,7 +627,7 @@ export default function ServicePageEditor({
                         // (ServiceDetail), not as a raw string, so pasted Word/Docs
                         // markup never shows through in the preview.
                         <div
-                          className="prose-jhb mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                          className={`prose-jhb mt-1 max-w-xl text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 ${ALIGN_BLOCK[wiAlign]}`}
                           dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.whats_included.description) }}
                         />
                       )}
@@ -638,10 +653,16 @@ export default function ServicePageEditor({
                                   </span>
                                 )}
                                 <div className="min-w-0">
-                                  <div
-                                    className="text-sm font-semibold [&_p]:m-0 [&_a]:text-primary"
-                                    dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
-                                  />
+                                  {(() => {
+                                    const s = sanitizeRichText(f.title);
+                                    const ta = richTextAlign(s);
+                                    return (
+                                      <div
+                                        className={`text-sm font-semibold [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`}
+                                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }}
+                                      />
+                                    );
+                                  })()}
                                   <div
                                     className="mt-1 text-xs text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
                                     dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
@@ -699,7 +720,7 @@ export default function ServicePageEditor({
                                 <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-[9px] font-bold text-white">✓</span>
                               )}
                               <span className="min-w-0">
-                                <span className="block text-xs font-medium text-ink/90">{b.title}</span>
+                                <span className="block text-xs font-medium text-ink/90"><RichInline html={b.title} /></span>
                                 {b.desc && <span className="block text-[11px] text-muted">{b.desc}</span>}
                               </span>
                             </li>
@@ -758,8 +779,9 @@ export default function ServicePageEditor({
               </div>
             )}
           </div>
-        </div>
-      </div>
+          </div>
+        }
+      />
     </div>
   );
 }

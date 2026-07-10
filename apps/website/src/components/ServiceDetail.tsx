@@ -14,14 +14,15 @@ import type {
 } from "@jhb/shared/service-pages";
 import type { FaqItem } from "@jhb/shared/faqs";
 import { buildRel, type AnchorLink } from "@jhb/shared/service-links";
-import { smartImgAttrs, stripHeadingTags, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
+import { smartImgAttrs, stripHeadingTags, ALIGN_TEXT, ALIGN_BLOCK, ALIGN_JUSTIFY, toAlign, richTextAlign, type ContainerBg, type PageContainer } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { RichInline } from "@jhb/shared/rich-inline";
 import Icon from "./Icon";
 import Reveal from "./Reveal";
 import FaqAccordion from "./FaqAccordion";
 import PageContainers from "./PageContainers";
 import { RelatedServicesView } from "@jhb/shared/related-services-view";
-import { Heading } from "@jhb/shared/heading";
+import { Heading, subHeadingTag } from "@jhb/shared/heading";
 
 // Map a heading tag to the matching framer-motion element so the hero can honor
 // the admin-selected tag (H1–H6 / P) while keeping its entrance animation. The
@@ -48,6 +49,12 @@ function wiBgClass(bg: ContainerBg): string {
 // New tab / safe rel only for absolute URLs; internal paths open in place.
 const extAttrs = (href: string) =>
   /^https?:\/\//i.test(href) ? { target: "_blank" as const, rel: "noopener noreferrer" } : {};
+
+// True when a field holds admin-authored rich HTML (an inline tag such as a
+// manual <a> word-link, <strong>, gradient <span> …). Such fields are rendered
+// verbatim (sanitised) so the author's formatting/links win; plain-text fields
+// keep flowing through linkify() for automatic keyword anchoring.
+const isRich = (s?: string | null): boolean => /<[a-z][\s\S]*?>/i.test(s || "");
 
 // Auto-link the first occurrence of each anchor phrase within a block of text.
 // `used` is shared across the page so each anchor links at most once.
@@ -180,8 +187,9 @@ export default function ServiceDetail({
   const wiButton = wi ? wi.button : { label: "", href: "" };
   const wiBg: ContainerBg = wi ? wi.bg : "none";
   const wiPad = wi ? wi.padding : "md";
-  const wiAlignCenter = wi ? wi.align === "center" : false;
-  const wiAlignRight = wi ? wi.align === "right" : false;
+  // Single shared alignment system (see @jhb/shared/containers). left/center/right
+  // → text-align + block-centering, identical here and in the admin preview.
+  const wiAlign = toAlign(wi?.align);
   // Enabled "Why Choose Us" containers (admin-managed). Falls back to the
   // original static section below when none are configured.
   const whyChoose = (db?.whyChoose ?? []).filter((c) => c.enabled);
@@ -189,16 +197,13 @@ export default function ServiceDetail({
   // — eyebrow, heading, description AND buttons — so a "center" selection centres
   // everything together (not just the heading). "left"/unset keeps the original
   // design. The admin preview (ServicePageEditor) mirrors this exact logic.
-  const heroAlign = db?.chrome?.heroHeadingAlign ?? "left";
-  const heroHeadingAlignClass =
-    heroAlign === "center" ? "text-center" : heroAlign === "right" ? "text-right" : "";
+  const heroAlign = toAlign(db?.chrome?.heroHeadingAlign);
+  const heroHeadingAlignClass = ALIGN_TEXT[heroAlign];
   // Centre/right the constrained-width blocks (heading + description) as a whole,
   // since text-align alone can't move a block that has its own max-width.
-  const heroBlockAlignClass =
-    heroAlign === "center" ? "mx-auto" : heroAlign === "right" ? "ml-auto" : "";
+  const heroBlockAlignClass = ALIGN_BLOCK[heroAlign];
   // Button row justification follows the same alignment.
-  const heroBtnAlignClass =
-    heroAlign === "center" ? "justify-center" : heroAlign === "right" ? "justify-end" : "";
+  const heroBtnAlignClass = ALIGN_JUSTIFY[heroAlign];
   // Hero image layout (chrome.heroImage) — absent/tile renders the legacy icon
   // tile unchanged; "image" renders the uploaded image with the universal size
   // panel applied; "hidden" removes the column so content spans full width.
@@ -379,7 +384,7 @@ export default function ServiceDetail({
         <section className={`${wiBgClass(wiBg)} ${WI_PAD[wiPad]}`.trim()}>
           <div className="container-x">
             <Reveal>
-              <div className={wiAlignCenter ? "text-center" : wiAlignRight ? "text-right" : ""}>
+              <div className={ALIGN_TEXT[wiAlign]}>
                 {wiBadge && <span className="eyebrow">{wiBadge}</span>}
                 <Heading
                   tag={wi?.headingTag}
@@ -399,7 +404,7 @@ export default function ServiceDetail({
                   // values from older pages render unchanged. Manual word-links replace
                   // the previous auto-linkify here.
                   <div
-                    className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${wiAlignCenter ? "mx-auto" : ""}`}
+                    className={`prose-jhb mt-3 max-w-xl text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${ALIGN_BLOCK[wiAlign]}`}
                     dangerouslySetInnerHTML={{ __html: sanitizeRichText(wiDescription) }}
                   />
                 )}
@@ -446,12 +451,17 @@ export default function ServiceDetail({
                       </span>
                     )}
                     <div className="min-w-0">
-                      <div
-                        role="heading"
-                        aria-level={3}
-                        className="break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:transition-colors"
-                        dangerouslySetInnerHTML={{ __html: stripHeadingTags(sanitizeRichText(f.title)) }}
-                      />
+                      {(() => {
+                        const s = sanitizeRichText(f.title);
+                        const ta = richTextAlign(s);
+                        return (
+                          <Heading
+                            tag={subHeadingTag(wi?.headingTag)}
+                            className={`break-words font-display text-lg font-semibold [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_a]:transition-colors ${ta ? ALIGN_TEXT[ta] : ""}`}
+                            html={stripHeadingTags(s)}
+                          />
+                        );
+                      })()}
                       <div
                         className="mt-1.5 break-words text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-20 [&_a]:break-words [&_a]:text-primary [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5"
                         dangerouslySetInnerHTML={{ __html: sanitizeRichText(f.desc) }}
@@ -473,7 +483,7 @@ export default function ServiceDetail({
             </div>
             {wiButton.label && wiButton.href && (
               <div
-                className={`mt-10 ${wiAlignCenter ? "text-center" : wiAlignRight ? "text-right" : ""}`}
+                className={`mt-10 ${ALIGN_TEXT[wiAlign]}`}
               >
                 <Link href={wiButton.href} {...extAttrs(wiButton.href)} className="btn btn-primary">
                   {wiButton.label}
@@ -527,7 +537,7 @@ export default function ServiceDetail({
                             </span>
                           )}
                           <span className="min-w-0 break-words">
-                            <span className="block text-ink/90">{linkify(b.title, links, used)}</span>
+                            <span className="block text-ink/90">{isRich(b.title) ? <RichInline html={b.title} /> : linkify(b.title, links, used)}</span>
                             {b.desc && <span className="mt-0.5 block text-sm text-muted">{b.desc}</span>}
                           </span>
                         </motion.li>

@@ -6,6 +6,7 @@ import { ABOUT_DEFAULT, type AboutDoc, type AboutValue } from "@jhb/shared/about
 import { usePageContainers } from "@/lib/usePageContainers";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
+import SplitPane from "./SplitPane";
 import AboutPreview from "./AboutPreview";
 
 const ABOUT_SECTIONS = [
@@ -106,8 +107,11 @@ export default function AboutManager({
         }
       />
 
-      <div className={`mt-2 grid gap-6 ${showPreview ? "xl:grid-cols-[minmax(0,1fr)_minmax(360px,540px)]" : ""}`}>
-        <div className="space-y-6">
+      <SplitPane
+        storageKey="cms-split:about"
+        className="mt-2"
+        left={
+          <div className="space-y-6">
         <Section title="SEO / Meta">
           <Field label="Meta title" value={d.metaTitle} onChange={set("metaTitle")} />
           <Area label="Meta description" value={d.metaDescription} onChange={set("metaDescription")} />
@@ -200,15 +204,17 @@ export default function AboutManager({
         </Section>
 
         {cb.slot("bottom")}
-        </div>
-
-        {showPreview && (
+          </div>
+        }
+        right={
+          showPreview ? (
           <AboutPreview
             about={liveDoc}
             footer="Live preview of your saved + unsaved draft. Publish to push it live."
           />
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       {cb.modal}
     </div>

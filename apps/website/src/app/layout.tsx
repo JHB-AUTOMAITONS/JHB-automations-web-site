@@ -72,14 +72,17 @@ export async function generateMetadata(): Promise<Metadata> {
   // deploy-independently. See apps/website/public/{favicon.ico,favicon-*.png,
   // apple-touch-icon.png,site.webmanifest}. (To make favicons admin-managed again,
   // reintroduce branding.favicon here as an override once it holds a SQUARE image.)
+  // The `?v=2` cache-buster forces browsers (and Google) to refetch the icon
+  // after it changed — favicons are cached very aggressively. Bump the number
+  // whenever the favicon artwork changes again.
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
+      { url: "/favicon-32x32.png?v=2", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png?v=2", type: "image/png", sizes: "16x16" },
     ],
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png?v=2",
+    shortcut: "/favicon.ico?v=2",
   },
   manifest: "/site.webmanifest",
   };

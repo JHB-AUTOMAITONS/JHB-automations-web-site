@@ -197,3 +197,21 @@ export function sanitizeRichText(input: string | null | undefined): string {
 export function sanitizeHeading(input: string | null | undefined): string {
   return sanitizeRichText(input).replace(/<\/?h[1-6]\b[^>]*>/gi, "");
 }
+
+// Clean PLAIN-TEXT extraction — for short label fields (card titles, names,
+// eyebrows) that are rendered as raw {text}, not HTML, but may have been polluted
+// by a Word/Docs paste. Removes the junk, then strips ALL remaining tags and
+// decodes entities so only readable text remains (never any visible markup).
+export function stripToPlainText(input: string | null | undefined): string {
+  const cleaned = sanitizeRichText(input);
+  return cleaned
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
