@@ -48,6 +48,10 @@ async function revalidateWebsite(paths: string[] = []): Promise<void> {
   const base = (process.env.NEXT_PUBLIC_WEBSITE_URL || "").replace(/\/+$/, "");
   const secret = process.env.REVALIDATE_SECRET;
   if (!base || !secret) return; // not configured (e.g. local dev) — skip silently
+  // Bound the wait: a slow or unreachable website must never make Publish hang.
+  // If it times out, the site still refreshes on its normal ISR `revalidate`.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
     // Trailing slash matches the website's `trailingSlash: true` (avoids a 308 hop).
     await fetch(`${base}/api/revalidate/`, {
@@ -55,9 +59,12 @@ async function revalidateWebsite(paths: string[] = []): Promise<void> {
       headers: { "content-type": "application/json", "x-revalidate-secret": secret },
       body: JSON.stringify({ paths }),
       cache: "no-store",
+      signal: ctrl.signal,
     });
   } catch {
-    /* website unreachable — the layout `revalidate` window will still refresh it */
+    /* unreachable / timed out — the layout `revalidate` window still refreshes it */
+  } finally {
+    clearTimeout(timer);
   }
 }
 
