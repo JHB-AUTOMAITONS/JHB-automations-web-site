@@ -707,7 +707,7 @@ function AdvantageEditor({ c, onChange }: { c: AdvantageContainer; onChange: (c:
         value={p.headingAlignment ?? toAlign(c.style.align)}
         onChange={(v) => set({ headingAlignment: v })}
       />
-      <label className="block"><span className={lbl}>Description</span><textarea rows={2} className={`${input} resize-none`} value={p.description} onChange={(e) => set({ description: e.target.value })} /></label>
+      <div><span className={lbl}>Description — full formatting (bold, italic, lists, links, tables, colour, highlight)</span><RichEditor value={p.description ?? ""} onChange={(html) => set({ description: html })} minHeight={120} /></div>
       <AlignPicker
         label="Description alignment"
         value={p.descriptionAlignment ?? toAlign(c.style.align)}

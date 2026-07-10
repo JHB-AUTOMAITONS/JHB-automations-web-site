@@ -776,7 +776,12 @@ function Advantage({ c }: { c: AdvantageContainer }) {
               <div className={ALIGN_TEXT[ha]}>
                 {p.badge ? <span className="eyebrow">{p.badge}</span> : null}
                 <Heading tag={c.headingTag} fallback="h2" className="mt-5 font-display text-3xl font-bold sm:text-4xl"><Head lead={p.heading} highlight={p.highlight} /></Heading>
-                {p.description ? <p className={`mt-6 text-muted ${ALIGN_TEXT[da]}`}>{p.description}</p> : null}
+                {p.description ? (
+                  <div
+                    className={`prose-jhb mt-6 leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${ALIGN_TEXT[da]}`}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.description) }}
+                  />
+                ) : null}
               </div>
             </Reveal>
             <ul className="space-y-4">
