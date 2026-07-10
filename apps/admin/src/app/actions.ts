@@ -33,6 +33,34 @@ async function requireAdmin() {
   return { ...ctx, ok: true as const };
 }
 
+// Purge the (separately deployed) website's ISR cache right after a publish, so
+// content + visibility changes go live IMMEDIATELY instead of after the layout's
+// `revalidate` window. The admin can't revalidatePath() the website directly
+// (it's a different Netlify deployment), so it pings the website's
+// /api/revalidate endpoint. Best-effort: a missing env var or an unreachable
+// site never fails the publish — it just falls back to timed ISR.
+//
+// Setup (one-time): add the SAME `REVALIDATE_SECRET` to BOTH Netlify sites'
+// environment variables (any long random string). `NEXT_PUBLIC_WEBSITE_URL` is
+// already configured on the admin. Pass `paths` to purge specific routes, or
+// omit to purge the whole public site (default on the website side).
+async function revalidateWebsite(paths: string[] = []): Promise<void> {
+  const base = (process.env.NEXT_PUBLIC_WEBSITE_URL || "").replace(/\/+$/, "");
+  const secret = process.env.REVALIDATE_SECRET;
+  if (!base || !secret) return; // not configured (e.g. local dev) — skip silently
+  try {
+    // Trailing slash matches the website's `trailingSlash: true` (avoids a 308 hop).
+    await fetch(`${base}/api/revalidate/`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-revalidate-secret": secret },
+      body: JSON.stringify({ paths }),
+      cache: "no-store",
+    });
+  } catch {
+    /* website unreachable — the layout `revalidate` window will still refresh it */
+  }
+}
+
 async function log(action: string, detail: string) {
   try {
     const { supabase, user } = await getStaff();
@@ -189,6 +217,7 @@ export async function saveContent(key: string, data: Record<string, unknown>) {
   await log("content.update", `Updated content block "${key}"`);
   revalidatePath("/");
   revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -206,6 +235,7 @@ export async function saveToolsHub(data: Record<string, unknown>) {
   await snapshot("tools_hub", "JHB Automation Tools", data, "Updated Automation Tools hub");
   revalidatePath("/jhb-automation-tools");
   revalidatePath("/");
+  await revalidateWebsite(["/jhb-automation-tools", "/"]);
   return { ok: true };
 }
 
@@ -262,6 +292,7 @@ export async function publishProducts(data: Record<string, unknown>) {
   revalidatePath("/", "layout");
   revalidatePath("/vasool-app");
   revalidatePath("/about-vasool");
+  await revalidateWebsite();
   return { ok: true };
 }
 
@@ -316,6 +347,7 @@ export async function publishAbout(data: Record<string, unknown>) {
   await log("about.publish", "Published about page");
   await snapshot("about", "About Page", data, "Published about page");
   revalidatePath("/about");
+  await revalidateWebsite(["/about"]);
   return { ok: true };
 }
 
@@ -332,6 +364,7 @@ export async function savePartners(data: Record<string, unknown>) {
   await log("partners.update", "Updated Partners strip");
   await snapshot("partners", "Partners", data, "Updated Partners strip");
   revalidatePath("/");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -353,6 +386,7 @@ export async function saveSettings(data: Record<string, unknown>) {
   await snapshot("settings", "Site Settings", data, "Updated website settings");
   revalidatePath("/", "layout");
   revalidatePath("/settings");
+  await revalidateWebsite();
   return { ok: true };
 }
 
@@ -374,6 +408,7 @@ export async function saveBranding(data: Record<string, unknown>) {
   await snapshot("settings", "Site Settings", data, "Logo Management settings changed");
   revalidatePath("/", "layout");
   revalidatePath("/branding");
+  await revalidateWebsite();
   return { ok: true };
 }
 
@@ -1230,6 +1265,8 @@ export async function publishServicePage(key: string) {
   await snapshot(`service_page:${key}`, `Service Page — ${key}`, row, `Published service page "${key}"`);
   revalidatePath("/service-pages");
   revalidatePath(`/service-pages/${key}`);
+  // Purge the PUBLIC service page (`/[slug]`) on the live website immediately.
+  await revalidateWebsite([`/${key}`]);
   return { ok: true, publishedAt: now };
 }
 
@@ -1396,6 +1433,7 @@ export async function createHomeFaq(input: HomeFaqInput) {
   if (error) return { ok: false, error: error.message };
   await log("home_faq.create", `Added home FAQ`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1412,6 +1450,7 @@ export async function updateHomeFaq(id: string, input: HomeFaqInput) {
   if (error) return { ok: false, error: error.message };
   await log("home_faq.update", `Updated home FAQ ${id}`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1422,6 +1461,7 @@ export async function deleteHomeFaq(id: string) {
   if (error) return { ok: false, error: error.message };
   await log("home_faq.delete", `Deleted home FAQ ${id}`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1433,6 +1473,7 @@ export async function setHomeFaqActive(id: string, active: boolean) {
   if (error) return { ok: false, error: error.message };
   await log("home_faq.publish", `${active ? "Published" : "Unpublished"} home FAQ ${id}`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1446,6 +1487,7 @@ export async function reorderHomeFaqs(ids: string[]) {
   }
   await log("home_faq.reorder", `Reordered ${ids.length} home FAQs`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1462,6 +1504,7 @@ export async function seedHomeFaqs() {
   if (error) return { ok: false, error: error.message };
   await log("home_faq.seed", `Imported ${rows.length} default FAQs`);
   revalidatePath("/"); revalidatePath("/home");
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1605,6 +1648,9 @@ export async function publishHome() {
   if (error) return { ok: false, error: error.message };
   await log("home.publish", "Published home page");
   revalidatePath("/home");
+  // Purge the live website's cache NOW so a hidden/edited section appears (or
+  // disappears) immediately instead of after the ISR window.
+  await revalidateWebsite(["/"]);
   return { ok: true };
 }
 
@@ -1729,6 +1775,7 @@ export async function savePost(input: PostInput) {
   revalidatePath("/posts");
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
+  await revalidateWebsite(["/blog", `/blog/${slug}`]);
   return { ok: true, id: result.data?.id as string };
 }
 
