@@ -123,16 +123,18 @@ export async function getServicePageSummaries(): Promise<ServicePageSummary[]> {
     rows = [];
   }
   const byKey = new Map(rows.map((r) => [r.key, r]));
-  return serviceDetails.map((d) => {
-    const r = byKey.get(d.slug);
-    return {
-      key: d.slug,
-      title: d.title,
-      slug: r?.slug || d.slug,
-      status: (r?.status || "draft") as ServiceStatus,
-      content_updated_at: r?.content_updated_at ?? null,
-    };
-  });
+  return serviceDetails
+    .map((d) => {
+      const r = byKey.get(d.slug);
+      return {
+        key: d.slug,
+        title: d.title,
+        slug: r?.slug || d.slug,
+        status: (r?.status || "draft") as ServiceStatus,
+        content_updated_at: r?.content_updated_at ?? null,
+      };
+    })
+    .sort((a, b) => (byKey.get(a.key)?.sort_order ?? 0) - (byKey.get(b.key)?.sort_order ?? 0));
 }
 
 // Public: raw stored editor content for a service (nulls preserved so the

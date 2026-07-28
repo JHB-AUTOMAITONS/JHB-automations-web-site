@@ -10,25 +10,6 @@ export type ServiceDetail = {
   stats: { value: string; label: string }[];
 };
 
-export const serviceOrder = [
-  "content-marketing",
-  "app-development",
-  "web-development",
-  "ai-automations",
-  "software-customization",
-  "search-engine-optimization",
-  "search-engine-marketing",
-  "ecommerce-website-development",
-  "chatbot-services",
-  "digital-marketing",
-  "social-media-marketing",
-  "influencer-marketing",
-] as const;
-
-const serviceOrderIndex = new Map<string, number>(
-  serviceOrder.map((slug, index) => [slug, index])
-);
-
 export const serviceDetails: ServiceDetail[] = [
   {
     slug: "influencer-marketing",
@@ -342,11 +323,7 @@ export const serviceDetails: ServiceDetail[] = [
       { value: "24/7", label: "Support" },
     ],
   },
-].sort(
-  (a, b) =>
-    (serviceOrderIndex.get(a.slug) ?? Number.MAX_SAFE_INTEGER) -
-    (serviceOrderIndex.get(b.slug) ?? Number.MAX_SAFE_INTEGER)
-);
+];
 
 export function getService(slug: string) {
   return serviceDetails.find((s) => s.slug === slug);

@@ -48,7 +48,13 @@ function resolve(detail: ServiceDetail, row?: ServiceRow): ResolvedService {
 
 export async function getServices(): Promise<ResolvedService[]> {
   const rows = await getRows();
-  return serviceDetails.map((d) => resolve(d, rows.get(d.slug)));
+  return serviceDetails
+    .map((d) => resolve(d, rows.get(d.slug)))
+    .sort((a, b) => {
+      const sa = rows.get(a.key)?.sort_order ?? 0;
+      const sb = rows.get(b.key)?.sort_order ?? 0;
+      return sa - sb;
+    });
 }
 
 export async function getServiceBySlug(
