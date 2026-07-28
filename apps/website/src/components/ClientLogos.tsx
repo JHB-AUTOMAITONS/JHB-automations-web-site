@@ -4,8 +4,9 @@ import { ALIGN_TEXT } from "@jhb/shared/containers";
 
 type Logo = { id: string; logo: string; alt?: string | null; title?: string | null };
 
-// Server component: logo grid + mobile marquee are static (CSS animation); only
-// the heading and per-logo entrances are animated via <Reveal>.
+// Server component: the whole marquee is pure CSS (no client JS state, so
+// there's nothing to re-render) — only the heading uses <Reveal> for its
+// entrance animation.
 export default function ClientLogos({
   items = [],
   eyebrow = "Trusted Partnerships",
@@ -28,6 +29,17 @@ export default function ClientLogos({
     .filter((c) => c.logo_url)
     .map((c) => ({ id: c.id, logo: c.logo_url as string, alt: c.alt_text, title: c.image_title }));
   if (clients.length === 0) return null;
+
+  // Split into 3 sequential rows — order is preserved end-to-end (row 1 holds
+  // the first third, row 2 the next third, row 3 the rest) — so no logo is
+  // reordered or dropped, only redistributed across rows.
+  const per = Math.ceil(clients.length / 3);
+  const rows = [clients.slice(0, per), clients.slice(per, per * 2), clients.slice(per * 2)].filter(
+    (r) => r.length > 0
+  );
+  // Slightly different durations per row so 3 rows never fall back into sync.
+  const durations = [34, 40, 46];
+
   return (
     <section
       id="clients"
@@ -55,51 +67,75 @@ export default function ClientLogos({
           </h2>
           {description && <p className={`mt-3 text-white/60 ${ALIGN_TEXT[descriptionAlign ?? "center"]}`}>{description}</p>}
         </Reveal>
+      </div>
 
-        {/* Desktop / tablet: responsive grid */}
-        <div className="mt-10 hidden grid-cols-3 gap-4 sm:grid sm:grid-cols-4 lg:grid-cols-5">
-          {clients.map((c, i) => (
-            <Reveal key={c.id} y={20} duration={0.45} delay={(i % 5) * 0.06}>
-              <LogoCard client={c} />
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Mobile: autoplay marquee */}
-        <div className="mt-10 sm:hidden">
-          <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
-            <div className="flex w-max gap-4 animate-marquee group-hover:[animation-play-state:paused]">
-              {[...clients, ...clients].map((c, i) => (
-                <div key={`${c.id}-${i}`} className="w-36 shrink-0">
-                  <LogoCard client={c} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* 3 continuously scrolling rows (full-bleed, outside container-x so the
+          edge fade reaches the section edges) — row 1 & 3 scroll right→left,
+          row 2 scrolls left→right. Same rows/card size at every breakpoint;
+          only the card dimensions and speed scale down on smaller screens. */}
+      <div className="relative mt-10 flex flex-col gap-3 sm:gap-4">
+        {rows.map((row, i) => (
+          <MarqueeRow key={i} items={row} reverse={i === 1} duration={durations[i]} rowIndex={i} />
+        ))}
       </div>
     </section>
   );
 }
 
-function LogoCard({ client }: { client: Logo }) {
+function MarqueeRow({
+  items,
+  reverse,
+  duration,
+  rowIndex,
+}: {
+  items: Logo[];
+  reverse: boolean;
+  duration: number;
+  rowIndex: number;
+}) {
+  // Duplicate the row so the loop point is invisible: the animation runs from
+  // translate3d(0,0,0) to translate3d(-50%,0,0) (or the reverse), and since the
+  // second half is a pixel-identical copy of the first, the reset is seamless.
+  const loop = [...items, ...items];
   return (
-    <div className="group/logo h-24 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-[0_18px_40px_-12px_rgba(37,99,235,0.5)]">
-      {/* Dedicated logo container: fixed size, centered, padded, clipped */}
-      <div className="flex h-full w-full items-center justify-center overflow-hidden p-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={client.logo}
-          alt={client.alt || "Client logo"}
-          title={client.title || undefined}
-          loading="lazy"
-          decoding="async"
-          // max-* (not h/w-full) → logos scale DOWN to fit but never upscale past
-          // native resolution, so they stay crisp; object-contain keeps aspect.
-          className="max-h-full max-w-full object-contain object-center transition-transform duration-300 group-hover/logo:scale-105"
-          style={{ imageRendering: "auto" }}
-        />
+    <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
+      <div
+        data-row={rowIndex}
+        className={`client-logos-row flex w-max gap-3 will-change-transform sm:gap-4 lg:gap-5 ${
+          reverse ? "animate-marquee-reverse" : "animate-marquee"
+        } group-hover:[animation-play-state:paused]`}
+        style={{ animationDuration: `${duration}s` }}
+      >
+        {loop.map((c, i) => (
+          <LogoCard key={`${c.id}-${i}`} client={c} duplicate={i >= items.length} />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function LogoCard({ client, duplicate }: { client: Logo; duplicate: boolean }) {
+  return (
+    <div
+      // The duplicated half of the loop is decorative (a11y-wise the first
+      // pass already announced every logo), so hide it from screen readers.
+      aria-hidden={duplicate || undefined}
+      className="group/logo flex h-16 w-24 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-[0_18px_40px_-12px_rgba(37,99,235,0.5)] sm:h-20 sm:w-32 sm:p-4 lg:h-24 lg:w-40 lg:p-5"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={client.logo}
+        alt={client.alt || "Client logo"}
+        title={client.title || undefined}
+        loading="lazy"
+        decoding="async"
+        // h/w-full (not max-*) → small source logos scale UP to fill the card
+        // instead of floating tiny in the middle; object-contain still scales
+        // large ones down and never crops, so aspect ratio is always kept.
+        // grayscale(10%) → full colour on hover is a subtle premium touch.
+        className="h-full w-full object-contain object-center grayscale-[10%] transition-all duration-300 group-hover/logo:scale-105 group-hover/logo:grayscale-0"
+        style={{ imageRendering: "auto" }}
+      />
     </div>
   );
 }

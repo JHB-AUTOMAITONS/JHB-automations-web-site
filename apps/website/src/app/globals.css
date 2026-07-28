@@ -451,6 +451,15 @@ label[for] {
   animation: like-pop 0.45s ease;
 }
 
+/* Client-logo marquee rows run slightly slower on small screens (~1.3x each
+   row's desktop duration, set in ClientLogos.tsx). !important is required to
+   win over the equal-specificity inline animation-duration set per row. */
+@media (max-width: 639px) {
+  .client-logos-row[data-row="0"] { animation-duration: 44s !important; }
+  .client-logos-row[data-row="1"] { animation-duration: 52s !important; }
+  .client-logos-row[data-row="2"] { animation-duration: 60s !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
