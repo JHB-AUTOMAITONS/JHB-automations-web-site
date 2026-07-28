@@ -16,10 +16,12 @@ import { getPublishedHome } from "@jhb/shared/home-server";
 import { composeHeroHeading } from "@jhb/shared/home";
 import PageContainers from "@/components/PageContainers";
 import { getActiveTestimonials } from "@jhb/shared/testimonials-server";
+import { testimonials as fallbackTestimonials } from "@jhb/shared/data";
+import { matchLogoForCompany } from "@jhb/shared/testimonials";
 import { getMediaAltMap } from "@jhb/shared/media-server";
 import { altFor } from "@jhb/shared/media";
 import { getActiveHomeFaqs } from "@jhb/shared/home-faqs-server";
-import { getActiveClientLogos } from "@jhb/shared/client-logos-server";
+import { getActiveClientLogos, getClientLogoNameMap } from "@jhb/shared/client-logos-server";
 import { getPartners } from "@jhb/shared/partners-server";
 import type { Metadata } from "next";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
@@ -33,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos, partners, seo] =
+  const [home, stats, settings, services, testimonialItems, altMap, homeFaqs, clientLogos, clientLogoNameMap, partners, seo] =
     await Promise.all([
       getPublishedHome(),
       getStats(),
@@ -43,6 +45,7 @@ export default async function Home() {
       getMediaAltMap(),
       getActiveHomeFaqs(),
       getActiveClientLogos(),
+      getClientLogoNameMap(),
       getPartners(),
       getSeo("/"),
     ]);
@@ -58,6 +61,22 @@ export default async function Home() {
     ctaSecondaryLabel: home.hero.buttonSecondaryText,
     ctaSecondaryHref: home.hero.buttonSecondaryHref,
   };
+
+  // Resolve each rendered testimonial's company to its uploaded Client Logos
+  // asset (server-side only — clientLogoNameMap carries every uploaded
+  // client's internal `name`, which must never reach the browser bundle, so
+  // only this small, already-public {company: logoUrl} result is passed to
+  // the (client-component) Testimonials). Mirrors Testimonials.tsx's own
+  // DB-vs-fallback choice so the matched company list is exactly what renders.
+  const testimonialCompanies =
+    testimonialItems.length > 0
+      ? testimonialItems.map((r) => r.company)
+      : fallbackTestimonials.map((t) => t.company);
+  const testimonialLogoMap: Record<string, string> = {};
+  for (const company of testimonialCompanies) {
+    const logoUrl = matchLogoForCompany(company, clientLogoNameMap);
+    if (logoUrl) testimonialLogoMap[company] = logoUrl;
+  }
 
   // Apply per-card content overrides from the Home manager
   const overrides = new Map(home.serviceCards.map((o) => [o.slug, o]));
@@ -115,6 +134,7 @@ export default async function Home() {
       <PageContainers containers={home.containers} zone="after-stats" />
       <Testimonials
         items={testimonialItems}
+        logoByCompany={testimonialLogoMap}
         eyebrow={home.testimonialsHeader.eyebrow}
         headingLead={home.testimonialsHeader.headingLead}
         headingHighlight={home.testimonialsHeader.headingHighlight}

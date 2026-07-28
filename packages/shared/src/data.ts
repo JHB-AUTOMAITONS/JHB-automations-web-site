@@ -445,141 +445,205 @@ export type Testimonial = {
   quote: string;
   result: string;
   tags: string[];
+  // One-line summary of the solution delivered, shown between the
+  // designation/company line and the star rating.
+  solution: string;
+  // Client company logo shown in the avatar circle instead of initials, when
+  // available. Left unset to fall back to initials (see rollout notes above
+  // the array below).
+  logo?: string;
   accent: "blue" | "cyan" | "purple" | "orange";
 };
 
+// Company-logo avatars: none of these 15 real clients have a logo asset
+// available in this repo (checked apps/website/public — only the JHB brand
+// logo files exist there) or reachable via the Supabase project that stores
+// the admin-uploaded "Client Logos" marquee images (that project isn't
+// reachable from this environment, and even if it were, those rows don't
+// expose a company-name column to match against). Every entry below
+// therefore omits `logo` and falls back to initials, per instructions.
+// Once real logo files/URLs are supplied, set e.g. `logo: "/clients/aarthi-gold-finance.png"`.
+
 export const testimonials: Testimonial[] = [
   {
-    name: "Arjun Mehta",
-    role: "CEO",
-    company: "MediCare Plus",
-    rating: 5,
-    quote:
-      "JHB rebuilt our entire intake process. We capture every patient inquiry now — even at 2 AM. Absolutely game-changing for our clinics.",
-    result: "+187% bookings",
-    tags: ["AI Chatbot", "WhatsApp"],
-    accent: "cyan",
-  },
-  {
-    name: "Priya Nair",
+    name: "Manikandan",
     role: "Founder",
-    company: "Urban Nest Realty",
+    company: "Aarthi Gold Finance",
     rating: 5,
     quote:
-      "Their AI lead-qualification system doubled our conversions in under three months. The team is genuinely world-class.",
-    result: "2x conversions",
-    tags: ["AI Automation", "CRM"],
-    accent: "purple",
-  },
-  {
-    name: "Karthik Raj",
-    role: "Director",
-    company: "PureGlow Cosmetics",
-    rating: 5,
-    quote:
-      "The WhatsApp recovery automation paid for itself in weeks. Revenue is up over 200%. Couldn't recommend them more.",
-    result: "+212% revenue",
-    tags: ["Ecommerce", "WhatsApp"],
-    accent: "orange",
-  },
-  {
-    name: "Sneha Iyer",
-    role: "COO",
-    company: "FinEdge",
-    rating: 5,
-    quote:
-      "Finally an agency that treats automation like engineering. Reliable, fast and obsessed with measurable results.",
-    result: "-40% cost/lead",
-    tags: ["SEM", "Analytics"],
-    accent: "blue",
-  },
-  {
-    name: "Rahul Verma",
-    role: "Marketing Head",
-    company: "ShopSphere",
-    rating: 5,
-    quote:
-      "Our organic traffic tripled in six months. The SEO and content engine they built keeps compounding every week.",
-    result: "3x organic traffic",
-    tags: ["SEO", "Content"],
+      "We came to JHB looking for a way to manage leads better, and they delivered more than we expected. The custom CRM keeps our branches organized, the mobile app makes it easy for customers to reach us, and the marketing team is always quick to respond. Genuinely dependable people to work with.",
+    result: "Long-Term Partnership",
+    tags: ["DIGITAL MARKETING", "APP DEVELOPMENT", "CRM"],
+    solution: "Digital growth strategy powered by a custom CRM and mobile application.",
     accent: "cyan",
   },
   {
-    name: "Aisha Khan",
+    name: "Prasanna",
     role: "Founder",
-    company: "GlowSkin Clinic",
+    company: "H2O Tracker",
     rating: 5,
     quote:
-      "The chatbot books appointments while we sleep. Our front desk finally has time to focus on patients.",
-    result: "24/7 bookings",
-    tags: ["Chatbot", "Healthcare"],
+      "Tracking our fleet used to be a constant headache until JHB built our GPS system from scratch. It works exactly the way we need it to, and whenever we've asked for changes, they've handled it quickly without any fuss. Their support team stays available, and the whole process felt refreshingly straightforward.",
+    result: "Reliable Service",
+    tags: ["GPS TRACKING", "CUSTOM SOFTWARE"],
+    solution: "Custom GPS tracking platform built for real-time fleet management.",
     accent: "purple",
   },
   {
-    name: "Vikram Desai",
-    role: "CEO",
-    company: "BuildRight",
-    rating: 5,
-    quote:
-      "From a slow brochure site to a lead machine. The new website loads instantly and converts like crazy.",
-    result: "+68% conversions",
-    tags: ["Web Dev", "CRO"],
-    accent: "orange",
-  },
-  {
-    name: "Meera Pillai",
-    role: "Growth Lead",
-    company: "EduSpark",
-    rating: 5,
-    quote:
-      "Their multi-channel campaigns gave us predictable, qualified leads month after month. ROI we can actually track.",
-    result: "5.4x ROI",
-    tags: ["Digital Marketing"],
-    accent: "blue",
-  },
-  {
-    name: "Daniel Roy",
-    role: "VP Sales",
-    company: "LogiFlow",
-    rating: 5,
-    quote:
-      "Lead routing that used to take hours is now instant. Our sales team only talks to ready-to-buy prospects.",
-    result: "-90% manual work",
-    tags: ["Workflow", "CRM"],
-    accent: "cyan",
-  },
-  {
-    name: "Fatima Sheikh",
-    role: "Director",
-    company: "Trendora",
-    rating: 5,
-    quote:
-      "The influencer campaigns they ran felt authentic and actually drove sales. Best agency we've worked with.",
-    result: "+143% engagement",
-    tags: ["Influencer", "Social"],
-    accent: "purple",
-  },
-  {
-    name: "Nikhil Kumar",
+    name: "Subaranjani Natarajan",
     role: "Co-Founder",
-    company: "FreshCart",
+    company: "Manakkadu Masala",
     rating: 5,
     quote:
-      "Cart abandonment dropped almost in half after their automation flows went live. The numbers speak for themselves.",
-    result: "-48% cart drop-off",
-    tags: ["Ecommerce", "Automation"],
+      "Moving our masala business online felt overwhelming, but JHB made it simple. The Shopify store they built looks professional and works smoothly, and their SEO work has genuinely helped people find us on Google. They explained everything clearly along the way and were patient with all our questions.",
+    result: "Business Growth",
+    tags: ["SHOPIFY", "SEO"],
+    solution: "Shopify e-commerce store optimized for online sales and search visibility.",
     accent: "orange",
   },
   {
-    name: "Ananya Bose",
-    role: "CMO",
-    company: "NovaBank",
+    name: "Karthikeyan",
+    role: "Co-Founder",
+    company: "JK Finstrade",
     rating: 5,
     quote:
-      "Professional, transparent and relentlessly data-driven. They feel like an extension of our own team.",
-    result: "+96% lead volume",
-    tags: ["SEM", "Strategy"],
+      "JHB shot our advertisement campaign and it turned out better than we imagined — sharp visuals, great direction, no wasted time on set. Since then their digital marketing team has kept our campaigns consistent and on-brand. They communicate clearly at every stage and never leave us guessing about progress or results.",
+    result: "Creative Solutions",
+    tags: ["ADS SHOOT", "DIGITAL MARKETING"],
+    solution: "Creative advertising campaigns supported by performance-driven marketing.",
     accent: "blue",
+  },
+  {
+    name: "Aruna Jayavel",
+    role: "Co-Founder",
+    company: "Aruna Furniture",
+    rating: 5,
+    quote:
+      "We needed our furniture brand to look as premium online as it does in the showroom, and JHB delivered exactly that. The advertisement shoot captured our pieces beautifully, and their digital marketing has kept us visible to the right audience. Professional team, easy to reach, and genuinely invested in our brand.",
+    result: "Professional Team",
+    tags: ["ADS SHOOT", "DIGITAL MARKETING"],
+    solution: "Creative brand campaigns designed to strengthen digital presence.",
+    accent: "cyan",
+  },
+  {
+    name: "Nazzer",
+    role: "Founder",
+    company: "Koyas",
+    rating: 5,
+    quote:
+      "JHB connected us with influencers who actually matched our brand instead of just anyone with followers, and it made a real difference. Our social media has been far more active and engaging since we started working with them. They're organized, communicate well, and clearly understand how to run a campaign properly.",
+    result: "Highly Recommended",
+    tags: ["INFLUENCER MARKETING", "SMM"],
+    solution: "Influencer collaborations combined with strategic social media marketing.",
+    accent: "purple",
+  },
+  {
+    name: "Kumarasan",
+    role: "Co-Founder",
+    company: "Indian Master",
+    rating: 5,
+    quote:
+      "The mobile app JHB built for us runs smoothly and our customers find it genuinely easy to use. Alongside that, their digital marketing has brought steady, relevant traffic our way. What stood out most was how responsive the team stayed throughout — every question was answered without delay and every update was clear.",
+    result: "Quality Delivery",
+    tags: ["APP DEVELOPMENT", "DIGITAL MARKETING"],
+    solution: "Business mobile application supported by effective digital marketing.",
+    accent: "orange",
+  },
+  {
+    name: "Vijayakannan",
+    role: "Founder",
+    company: "Salem Cosmetic Clinic",
+    rating: 5,
+    quote:
+      "Running the clinic used to mean juggling paper records and missed appointments. JHB built us a web application with a proper clinic management system, and now everything from bookings to patient records runs in one place. The team took time to understand our workflow and delivered something that actually fits how we work.",
+    result: "Premium Service",
+    tags: ["WEB APPLICATION", "CLINIC MANAGEMENT"],
+    solution: "Custom clinic management web application for streamlined operations.",
+    accent: "blue",
+  },
+  {
+    name: "Dhandraj",
+    role: "Founder",
+    company: "Gun Point",
+    rating: 5,
+    quote:
+      "Before JHB, we were managing customer requests across scattered notebooks and phone calls. Now we have a proper management system paired with a mobile app that keeps everything organized in one place. The build quality was solid, the turnaround was quick, and their support team has stayed helpful even after launch.",
+    result: "Fast Turnaround",
+    tags: ["CUSTOM SOFTWARE", "APP DEVELOPMENT"],
+    solution: "Business management platform integrated with a dedicated mobile application.",
+    accent: "cyan",
+  },
+  {
+    name: "Harish",
+    role: "Owner",
+    company: "Kauvery Restaurant",
+    rating: 5,
+    quote:
+      "JHB took the time to actually understand our restaurant and the kind of customers we wanted to reach, instead of running generic campaigns. Our social media presence feels far more consistent now, and we're seeing more regulars mention finding us online. They're friendly to work with and always quick to reply.",
+    result: "Customer Satisfaction",
+    tags: ["DIGITAL MARKETING", "SMM"],
+    solution: "Restaurant marketing focused on improving local customer engagement.",
+    accent: "purple",
+  },
+  {
+    name: "Praveen Kumar",
+    role: "Owner",
+    company: "Swarnalaya",
+    rating: 5,
+    quote:
+      "As a jewellery business, trust matters more than anything, and JHB's marketing has helped us build exactly that online. Our visibility has improved noticeably, and they take the time to explain what's working and why. It's rare to find a team this transparent and easy to communicate with on a regular basis.",
+    result: "Trusted Partner",
+    tags: ["DIGITAL MARKETING"],
+    solution: "Performance-focused digital campaigns to improve online visibility.",
+    accent: "orange",
+  },
+  {
+    name: "Prabhu Antony Raj",
+    role: "Owner",
+    company: "Jojo Momos",
+    rating: 5,
+    quote:
+      "Our online ordering site runs smoothly now thanks to the Shopify store JHB set up for us, and the digital marketing around it has genuinely brought in new customers. What I appreciate most is how easy they are to reach — no long waits for replies, just quick, honest updates every time.",
+    result: "Smooth Execution",
+    tags: ["SHOPIFY", "DIGITAL MARKETING"],
+    solution: "Online ordering website supported by targeted digital marketing campaigns.",
+    accent: "blue",
+  },
+  {
+    name: "Prasanth",
+    role: "Owner",
+    company: "Ram Aromatics",
+    rating: 5,
+    quote:
+      "The product photography JHB delivered made our aromatics line look far more premium than any photos we'd had before, and the advertisement shoot matched that same quality. They were professional on set, easy to communicate with, and delivered the final files right on schedule without any back and forth.",
+    result: "Dedicated Support",
+    tags: ["ADS SHOOT", "PRODUCT SHOOT"],
+    solution: "Professional product photography and commercial advertising creatives.",
+    accent: "cyan",
+  },
+  {
+    name: "Rishib",
+    role: "Founder",
+    company: "J Pencil",
+    rating: 5,
+    quote:
+      "JHB built our website from the ground up and added an AI chatbot that actually handles customer questions well, not just generic replies. The whole build felt well thought out, and they stayed responsive throughout the project, explaining decisions instead of just implementing things quietly in the background.",
+    result: "Timely Delivery",
+    tags: ["WEBSITE DEVELOPMENT", "AI CHATBOT"],
+    solution: "Modern business website integrated with an AI-powered customer chatbot.",
+    accent: "purple",
+  },
+  {
+    name: "Shanker",
+    role: "Owner",
+    company: "SFC",
+    rating: 5,
+    quote:
+      "We'd tried digital marketing before with little to show for it, but JHB's approach was different from day one — clear plans, honest expectations, and steady follow-through. Our brand visibility has grown month over month, and their team is always reachable whenever we have questions or want to adjust something.",
+    result: "Excellent Support",
+    tags: ["DIGITAL MARKETING"],
+    solution: "Digital marketing campaigns designed to increase brand visibility.",
+    accent: "orange",
   },
 ];
 

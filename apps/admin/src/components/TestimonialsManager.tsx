@@ -282,7 +282,7 @@ export default function TestimonialsManager({
               disabled={busy}
               className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary disabled:opacity-60"
             >
-              Import 12 sample testimonials
+              Import 15 sample testimonials
             </button>
           </div>
         </div>

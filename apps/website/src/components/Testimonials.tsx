@@ -52,11 +52,14 @@ const fallbackCards: Card[] = testimonials.map((t) => ({
   quote: t.quote,
   result: t.result,
   tags: t.tags,
+  solution: t.solution,
+  logo: t.logo,
   accent: t.accent,
 }));
 
 export default function Testimonials({
   items,
+  logoByCompany,
   eyebrow = "Social Proof",
   headingLead = "Trusted by",
   headingHighlight = "Ambitious Teams",
@@ -67,6 +70,10 @@ export default function Testimonials({
   descriptionAlign,
 }: {
   items?: TestimonialRow[];
+  // Pre-resolved {company: logoUrl} map (matched server-side in page.tsx
+  // against the Client Logos uploads) — never the raw name list, which must
+  // stay server-only. Keyed by the same `company` string rendered on the card.
+  logoByCompany?: Record<string, string>;
   eyebrow?: string;
   headingLead?: string;
   headingHighlight?: string;
@@ -77,8 +84,14 @@ export default function Testimonials({
   descriptionAlign?: "left" | "center" | "right";
 }) {
   // Use DB testimonials when available; otherwise the built-in fallback set.
-  const cards: Card[] =
+  const baseCards: Card[] =
     items && items.length > 0 ? items.map((r, i) => rowToCard(r, i)) : fallbackCards;
+  // Attach the matched company logo, if any (falls back to `photo`/initials
+  // in TestimonialCard when neither is set — see its render logic).
+  const cards: Card[] = baseCards.map((c) => ({
+    ...c,
+    logo: c.logo ?? logoByCompany?.[c.company],
+  }));
 
   const mid = Math.ceil(cards.length / 2);
   const row1 = cards.slice(0, mid);
@@ -210,10 +223,24 @@ function TestimonialCard({ t }: { t: Card }) {
     >
       {/* header */}
       <div className="flex items-center gap-3">
-        {/* Fixed-size circular avatar — clips photo or fallback identically,
-            so every card header has the same height and the image stays put. */}
+        {/* Fixed-size circular avatar — clips photo/logo or fallback
+            identically, so every card header has the same height and the
+            image stays put. Company logo (object-contain, never cropped, on
+            a neutral white disc so any transparent/white-bg source logo sits
+            naturally) takes priority over a person photo (object-cover,
+            fills the circle) over initials. */}
         <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full shadow-lg ring-1 ring-ink/10">
-          {t.photo ? (
+          {t.logo ? (
+            <span className="grid h-full w-full place-items-center bg-white p-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={t.logo}
+                alt={`${t.company} logo`}
+                loading="lazy"
+                className="h-full w-full object-contain object-center"
+              />
+            </span>
+          ) : t.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={t.photo}
@@ -240,6 +267,11 @@ function TestimonialCard({ t }: { t: Card }) {
           </p>
         </div>
       </div>
+
+      {/* solution — one subtle line summarising what JHB delivered */}
+      {t.solution && (
+        <p className="mt-2 text-xs leading-snug text-muted/90">{t.solution}</p>
+      )}
 
       {/* stars */}
       <div className="mt-4 flex gap-0.5 text-sm text-accent">
