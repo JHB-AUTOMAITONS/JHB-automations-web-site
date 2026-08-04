@@ -38,14 +38,18 @@ jobs:
       # from netlify.toml), just on this runner instead of Netlify's Buildbot.
       # Netlify pulls the site's configured env vars (Supabase URL/key,
       # REVALIDATE_SECRET, etc.) in automatically once linked via the token/site ID.
+      # --filter=website tells the CLI which npm workspace package this site is
+      # (matches the "name" field in apps/website/package.json) — without it,
+      # the CLI can't tell admin/website/@jhb/shared apart in this monorepo and
+      # fails with "We've detected multiple projects inside your repository".
       - name: Netlify build
-        run: npx netlify build
+        run: npx netlify build --filter=website
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Netlify deploy (production)
-        run: npx netlify deploy --prod
+        run: npx netlify deploy --prod --filter=website
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
