@@ -1,0 +1,51 @@
+name: Deploy website to Netlify
+
+# Builds the website on GitHub Actions (not Netlify's own build servers) and
+# pushes the result with `netlify deploy --prod`. This only saves Netlify
+# build minutes if the website site's own Netlify auto-build is turned OFF
+# ("Stop builds" in Site settings -> Build & deploy) — otherwise Netlify would
+# also build on every push and you'd pay for both.
+#
+# Admin is intentionally NOT covered here — it keeps deploying via Netlify's
+# own build system as before.
+#
+# Required GitHub repo secrets (Settings -> Secrets and variables -> Actions):
+#   NETLIFY_AUTH_TOKEN  — Netlify personal access token (User settings -> Applications)
+#   NETLIFY_SITE_ID     — the website site's API ID (Site settings -> General -> Site details)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Installs from the repo root so npm workspaces (incl. @jhb/shared) resolve,
+      # matching netlify.toml's own "base directory stays at repo root" setup.
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs the SAME build Netlify would run (command + @netlify/plugin-nextjs
+      # from netlify.toml), just on this runner instead of Netlify's Buildbot.
+      # Netlify pulls the site's configured env vars (Supabase URL/key,
+      # REVALIDATE_SECRET, etc.) in automatically once linked via the token/site ID.
+      - name: Netlify build
+        run: npx netlify build
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Netlify deploy (production)
+        run: npx netlify deploy --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
