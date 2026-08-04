@@ -178,7 +178,14 @@ export default function ServiceDetail({
   const showHeroVisual = heroImgMode !== "hidden";
   const heroImgLeft = heroImgMode === "image" && heroImg.align === "left";
   const heroImgA = smartImgAttrs(heroImg.settings, {
-    extraClass: "mx-auto rounded-3xl border border-ink/10 shadow-soft",
+    // Portrait box (~4:5) so the image reads as a hero visual, not a banner;
+    // object-contain (default overridden below) keeps the whole image visible
+    // — never cropped — inside it. An admin-set aspectRatio/objectFit in
+    // heroImg.settings still wins (applied as an inline style, which beats
+    // this class), so this is purely the sane default for pages that haven't
+    // configured one.
+    extraClass: "mx-auto aspect-[4/5] rounded-3xl border border-ink/10 shadow-soft",
+    fallbackFit: "object-contain",
   });
   return (
     <main className="relative pt-24">
@@ -206,10 +213,14 @@ export default function ServiceDetail({
 
         <div
           className={`grid items-center gap-10 ${
-            showHeroVisual ? (heroImgLeft ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.1fr_0.9fr]") : ""
+            showHeroVisual
+              ? heroImgLeft
+                ? "md:grid-cols-[1fr_1.3fr] lg:grid-cols-[0.9fr_1.1fr]"
+                : "md:grid-cols-[1.3fr_1fr] lg:grid-cols-[1.1fr_0.9fr]"
+              : ""
           }`}
         >
-          <div className={`min-w-0 ${heroHeadingAlignClass} ${!showHeroVisual && heroAlign === "center" ? "mx-auto max-w-3xl" : ""} ${heroImgLeft ? "lg:order-2" : ""}`}>
+          <div className={`min-w-0 ${heroHeadingAlignClass} ${!showHeroVisual && heroAlign === "center" ? "mx-auto max-w-3xl" : ""} ${heroImgLeft ? "md:order-2" : ""}`}>
             <div className={heroHeadingAlignClass}>
               <motion.span
                 initial={{ opacity: 0, y: 16 }}
@@ -273,13 +284,16 @@ export default function ServiceDetail({
             </motion.div>
           </div>
 
-          {/* hero visual — custom image (chrome.heroImage), or the legacy icon tile */}
+          {/* hero visual — custom image (chrome.heroImage), or the legacy icon tile.
+              Natural DOM order already stacks it below the text column on
+              mobile/tablet-stacked; md:order-1 only kicks in for the
+              "image on left" layout once the columns go side by side. */}
           {showHeroVisual && heroImgMode === "image" && db?.image ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className={`min-w-0 order-first ${heroImgLeft ? "lg:order-1" : "lg:order-none"}`}
+              className={`mx-auto w-full max-w-md min-w-0 md:max-w-none ${heroImgLeft ? "md:order-1" : ""}`}
             >
               <figure>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
