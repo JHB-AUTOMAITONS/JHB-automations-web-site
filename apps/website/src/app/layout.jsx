@@ -86,6 +86,9 @@ export async function generateMetadata() {
   // Admin favicon override → static /public brand-mark fallback (computed above).
   icons,
   manifest: "/site.webmanifest",
+  verification: {
+    google: "VEX8_7EyGMoR-RqJ5_QiWfETA0rFUJRpvZLPuTtl2fQ",
+  },
   };
 }
 
