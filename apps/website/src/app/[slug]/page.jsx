@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getServiceBySlug, getServices } from "@jhb/shared/services-server";
 import { getServiceFaqs } from "@jhb/shared/faqs-server";
-import { faqPlainText } from "@jhb/shared/faqs";
 import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
 import { getSettings } from "@jhb/shared/content-server";
@@ -132,18 +131,10 @@ export default async function ServicePage({
       },
     ],
   };
-  const faqSchema =
-    faqs.length > 0
-      ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faqs.map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: faqPlainText(f.answer) },
-          })),
-        }
-      : null;
+  // No page-level FAQPage schema here — <FaqAccordion> (rendered inside
+  // ServiceDetailView below, same faqs.length > 0 condition) already emits it,
+  // and previously both fired at once, giving each service page two
+  // near-identical FAQPage script blocks.
 
   return (
     <>
@@ -155,12 +146,6 @@ export default async function ServicePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      {faqSchema && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-      )}
       <ServiceDetailView data={data} related={related} relatedUrlByKey={relatedUrlByKey} faqs={faqs} links={links} db={db} faqShowNumbers={settings.faqShowNumbers} />
     </>
   );
