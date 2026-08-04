@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
 import { getSettings } from "@jhb/shared/content-server";
-import { faqPlainText } from "@jhb/shared/faqs";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { Heading } from "@jhb/shared/heading";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
@@ -76,24 +75,13 @@ export default async function ProductPage({
       { "@type": "ListItem", position: 2, name: p.title, item: `${site}/products/${p.slug}` },
     ],
   };
-  const faqSchema =
-    p.faqs.length > 0
-      ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: p.faqs.map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: faqPlainText(f.answer) },
-          })),
-        }
-      : null;
+  // No page-level FAQPage schema here — <FaqAccordion> below (same
+  // p.faqs.length > 0 condition) already emits it; both used to fire at once.
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
 
       <main className="relative pt-24">
         <div className="pointer-events-none absolute left-1/2 top-10 -z-10 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />

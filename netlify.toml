@@ -53,3 +53,17 @@
   to = "/products/vasool-app/about/"
   status = 301
   force = true
+
+# Deleted blog post still indexed by Google (returns 404 without this) — send
+# searchers to the closest live equivalent instead of losing that traffic/equity.
+[[redirects]]
+  from = "/top-3-digital-marketing-agencies-in-salem"
+  to = "/digital-marketing-in-salem/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/top-3-digital-marketing-agencies-in-salem/"
+  to = "/digital-marketing-in-salem/"
+  status = 301
+  force = true
