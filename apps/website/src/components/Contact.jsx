@@ -1,0 +1,286 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
+import { SETTINGS_DEFAULT } from "@jhb/shared/content";
+import { createClient } from "@jhb/shared/supabase/client";
+import { ALIGN_TEXT } from "@jhb/shared/containers";
+
+const empty = { name: "", company: "", email: "", phone: "", details: "" };
+
+export default function Contact({
+  settings = SETTINGS_DEFAULT,
+  eyebrow = "Let's Talk",
+  headingLead = "Get in",
+  headingHighlight = "Touch",
+  description = "Tell us about your goals and we'll map the fastest path to automated, predictable growth — no obligation.",
+  headingAlign,
+  descriptionAlign,
+}) {
+  const [fields, setFields] = useState(empty);
+  const [errors, setErrors] = useState(
+    {}
+  );
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  // Derive all micro-copy from settings with inline defaults as safety net.
+  const formName    = settings.contactFormName    || "Full Name";
+  const formCompany = settings.contactFormCompany || "Company Name";
+  const formEmail   = settings.contactFormEmail   || "Email Address";
+  const formPhone   = settings.contactFormPhone   || "Phone Number";
+  const formMessage = settings.contactFormMessage || "Project Details";
+  const formSubmit  = settings.contactFormSubmit  || "Send Message →";
+  const formCallCta = settings.contactFormCallCta || "Contact Team";
+  const successHeading = settings.contactSuccessHeading || "Message Sent!";
+  const successText    = settings.contactSuccessText    || "Our team will reach out within 24 hours.";
+  const callLabel  = settings.contactInfoCallLabel  || "Call us";
+  const emailLabel = settings.contactInfoEmailLabel || "Email us";
+  const visitLabel = settings.contactInfoVisitLabel || "Visit us";
+
+  const update =
+    (key) =>
+    (e) => {
+      setFields((f) => ({ ...f, [key]: e.target.value }));
+      setErrors((er) => ({ ...er, [key]: undefined }));
+    };
+
+  const validate = () => {
+    const e = {};
+    if (!fields.name.trim()) e.name = "Please enter your name";
+    if (!fields.email.trim()) e.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email))
+      e.email = "Enter a valid email";
+    if (!fields.details.trim()) e.details = "Tell us a little about your project";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    if (sending) return; // guard against double-submit
+    setSubmitError(null);
+    setSending(true);
+    const payload = {
+      name: fields.name,
+      company: fields.company || null,
+      email: fields.email,
+      phone: fields.phone || null,
+      message: fields.details,
+      source: "contact",
+    };
+    // Persist the lead directly from the browser (no server). Requires an RLS
+    // INSERT policy on jhb_leads for the anon role. supabase-js RESOLVES with
+    // { error } on RLS/constraint/network failures (it does not throw), so we
+    // MUST inspect `error` — otherwise a failed insert would show a false
+    // "Message Sent!" and the lead would be silently lost.
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("jhb_leads").insert(payload);
+      if (error) throw error;
+      // Only now — after a confirmed successful write — show success + reset.
+      setSent(true);
+      setFields(empty);
+      setErrors({});
+      setTimeout(() => setSent(false), 6000);
+    } catch (err) {
+      console.error("Contact lead submission failed:", err);
+      setSubmitError(
+        "Sorry — we couldn't send your message. Please try again, or email us directly."
+      );
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section id="contact" className="relative section-y">
+      <div className="container-x">
+        <div className="glass-strong glow-border relative overflow-hidden rounded-3xl">
+          <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-secondary/15 blur-3xl" />
+
+          <div className="relative grid gap-8 p-8 sm:p-12 lg:grid-cols-2">
+            {/* left */}
+            <div>
+              <div className={ALIGN_TEXT[headingAlign ?? "left"]}>
+                {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+                <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+                  {headingLead}{headingLead && headingHighlight ? " " : ""}
+                  {headingHighlight && <span className="grad-text">{headingHighlight}</span>}
+                </h2>
+              </div>
+              {description && <p className={`mt-4 text-muted ${ALIGN_TEXT[descriptionAlign ?? "left"]}`}>{description}</p>}
+
+              <ul className="mt-8 space-y-4 text-sm">
+                <li className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
+                    📞
+                  </span>
+                  <div className="min-w-0 break-words">
+                    <p className="text-muted">{callLabel}</p>
+                    <p className="font-medium">{settings.phone}</p>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
+                    ✉️
+                  </span>
+                  <div className="min-w-0 break-words">
+                    <p className="text-muted">{emailLabel}</p>
+                    <p className="font-medium">{settings.email}</p>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink/[0.04] ring-1 ring-ink/10">
+                    📍
+                  </span>
+                  <div className="min-w-0 break-words">
+                    <p className="text-muted">{visitLabel}</p>
+                    <p className="font-medium">{settings.address}</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* form */}
+            <div className="relative">
+              <AnimatePresence>
+                {sent && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-surface/90 backdrop-blur-sm"
+                  >
+                    <div className="text-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                        className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-3xl shadow-glow"
+                      >
+                        ✓
+                      </motion.div>
+                      <h3 className="mt-4 font-display text-xl font-bold">
+                        {successHeading}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted">
+                        {successText}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form onSubmit={onSubmit} noValidate className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    id="name"
+                    label={formName}
+                    value={fields.name}
+                    onChange={update("name")}
+                    error={errors.name}
+                  />
+                  <Field
+                    id="company"
+                    label={formCompany}
+                    value={fields.company}
+                    onChange={update("company")}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    id="email"
+                    label={formEmail}
+                    type="email"
+                    value={fields.email}
+                    onChange={update("email")}
+                    error={errors.email}
+                  />
+                  <Field
+                    id="phone"
+                    label={formPhone}
+                    type="tel"
+                    value={fields.phone}
+                    onChange={update("phone")}
+                  />
+                </div>
+                <Field
+                  id="details"
+                  label={formMessage}
+                  textarea
+                  value={fields.details}
+                  onChange={update("details")}
+                  error={errors.details}
+                />
+
+                {submitError && (
+                  <p className="pl-1 text-sm text-red-400" role="alert">{submitError}</p>
+                )}
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                  <button type="submit" disabled={sending} className="btn btn-primary flex-1 disabled:opacity-60">
+                    {sending ? "Sending…" : formSubmit}
+                  </button>
+                  <a
+                    href={`tel:${settings.phone.replace(/\s+/g, "")}`}
+                    className="btn btn-ghost flex-1"
+                  >
+                    {formCallCta}
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  type = "text",
+  textarea = false,
+}) {
+  const base =
+    "peer w-full rounded-xl border bg-ink/[0.03] px-4 pb-2 pt-5 text-sm text-ink outline-none transition-colors placeholder-transparent focus:border-primary";
+  const borderClass = error ? "border-red-400/60" : "border-ink/10";
+
+  return (
+    <div className="relative">
+      {textarea ? (
+        <textarea
+          id={id}
+          rows={4}
+          placeholder={label}
+          value={value}
+          onChange={onChange}
+          className={`${base} ${borderClass} resize-none`}
+        />
+      ) : (
+        <input
+          id={id}
+          type={type}
+          placeholder={label}
+          value={value}
+          onChange={onChange}
+          className={`${base} ${borderClass}`}
+        />
+      )}
+      <label
+        htmlFor={id}
+        className="pointer-events-none absolute left-4 top-2 text-xs text-muted transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted/70 peer-focus:top-2 peer-focus:text-xs peer-focus:text-primary"
+      >
+        {label}
+      </label>
+      {error && <p className="mt-1 pl-1 text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
