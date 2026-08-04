@@ -19,7 +19,7 @@ const nextConfig = {
   // requires a segment after it.
   async redirects() {
     return [
-      { source: "/services/:slug", destination: "/:slug", statusCode: 301 },
+      { source: "/services/:slug", destination: "/:slug/", statusCode: 301 },
     ];
   },
   webpack: (config, { dev }) => {

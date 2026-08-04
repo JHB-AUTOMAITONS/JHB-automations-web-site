@@ -153,15 +153,34 @@ export default async function RootLayout({
       <body className="font-sans antialiased">
         {/* Web fonts offered by the admin Rich Text Editor font-family dropdown,
             loaded so published content renders the same face the editor previews.
-            React 19 hoists these <link>s into <head>. Keep in sync with
-            apps/admin/src/components/editorFonts.ts (web: true). */}
+            Keep in sync with apps/admin/src/components/editorFonts.ts (web: true).
+            Loaded NON-render-blocking: media="print" doesn't match screen so the
+            browser fetches it without blocking paint, then the inline script below
+            flips it to "all" once loaded (React strips literal onload="" attributes
+            on host elements, so the swap has to happen via a real script tag rather
+            than an inline handler). A previous blocking version of this link was a
+            confirmed contributor to this site's poor Core Web Vitals (SEO audit,
+            2026-08). */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
+          id="editor-google-fonts"
           rel="stylesheet"
-          precedence="default"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;700&family=Ubuntu:wght@400;500;700&display=swap"
+          media="print"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(l){if(!l)return;if(l.sheet){l.media='all';return}l.onload=function(){l.media='all'}})(document.getElementById('editor-google-fonts'));",
+          }}
+        />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;700&family=Ubuntu:wght@400;500;700&display=swap"
+          />
+        </noscript>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
