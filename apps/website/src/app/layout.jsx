@@ -6,10 +6,22 @@ import { getServiceLinks } from "@jhb/shared/services-server";
 import { getPublishedProducts } from "@jhb/shared/products-server";
 import { productHref } from "@jhb/shared/products";
 
-// ISR: every route under this layout is regenerated at most once per 30s, so
-// admin edits go live within ~30s without a rebuild. Lower for fresher content
+// ISR: every route under this layout is regenerated at most once per this
+// window, so admin edits go live without a rebuild. Lower for fresher content
 // (e.g. 10), or set 0 to render fully dynamically on every request.
-export const revalidate = 30;
+//
+// Was 30s; raised to 120s after measuring that a stale page on this host
+// blocks the requesting visitor on a full regeneration rather than serving
+// the cached copy while refreshing in the background (confirmed via repeated
+// timing: ~0.15s TTFB on a warm cache vs. ~0.7-0.9s on a cold one for the
+// home page alone, which runs 11 parallel queries to build its sections).
+// That's rarely noticeable on a fast connection, but on slower mobile
+// networks it compounds into a real stall — matched to reports of the site
+// sometimes hanging on the very first page load on iPhones. Note: Next.js
+// takes the LOWEST revalidate value across a route's layout+page tree, so
+// this value is the effective floor for every route site-wide; a
+// page-level override can only lower it further, never raise it above this.
+export const revalidate = 120;
 
 const inter = Inter({
   subsets: ["latin"],
