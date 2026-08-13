@@ -230,7 +230,7 @@ export const SETTINGS_DEFAULT: SiteSettings = {
   facebook: "#",
   linkedin: "#",
   toolsButtonEnabled: true,
-  toolsButtonLabel: "JHB Automation Tools",
+  toolsButtonLabel: "JHB HR Management System",
   toolsButtonHref: "/jhb-automation-tools",
   toolsButtonNewTab: false,
   branding: LOGO_DEFAULT,

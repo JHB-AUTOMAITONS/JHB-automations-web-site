@@ -10,23 +10,42 @@ type Entry = Leaf | Group;
 
 const isGroup = (e: Entry): e is Group => "children" in e;
 
-const items: Entry[] = [
+// Pinned entries for the existing, dedicated admin routes — kept exactly as
+// they were (same hrefs, same editor) so nothing already working changes.
+const PINNED_PRODUCT_ENTRIES: Leaf[] = [
+  { href: "/jhb-automation-tools", label: "JHB HR Management System", icon: "🧰" },
+  { href: "/vasool-app", label: "Vasool App", icon: "📱" },
+  { href: "/about-vasool", label: "About Vasool", icon: "ℹ️" },
+];
+// Slugs already covered by a pinned entry above — excluded from the dynamic
+// list below so a product never appears twice.
+const PINNED_PRODUCT_SLUGS = new Set(["vasool-app"]);
+
+// Any OTHER product (added from the admin, or by a future migration) gets its
+// nav entry generated from the live data — no code change needed per product,
+// reached via the generic /products/{slug} (+ /about) editor routes.
+function buildProductsGroup(products: { slug: string; title: string }[]): Group {
+  const dynamic = products
+    .filter((p) => !PINNED_PRODUCT_SLUGS.has(p.slug))
+    .flatMap((p) => [
+      { href: `/products/${p.slug}`, label: p.title, icon: "📦" },
+      { href: `/products/${p.slug}/about`, label: `About ${p.title}`, icon: "ℹ️" },
+    ]);
+  return {
+    label: "JHB Products",
+    icon: "📦",
+    adminOnly: true,
+    children: [...PINNED_PRODUCT_ENTRIES, ...dynamic],
+  };
+}
+
+const BASE_ITEMS: Entry[] = [
   { href: "/", label: "Dashboard", icon: "▦" },
   { href: "/home", label: "Home Page", icon: "🏠", adminOnly: true },
   { href: "/about", label: "About Page", icon: "📖", adminOnly: true },
   { href: "/client-logos", label: "Client Logos", icon: "🏢", adminOnly: true },
   { href: "/services", label: "Services", icon: "🧩" },
   { href: "/service-pages", label: "Service Pages", icon: "📄", adminOnly: true },
-  {
-    label: "JHB Products",
-    icon: "📦",
-    adminOnly: true,
-    children: [
-      { href: "/jhb-automation-tools", label: "JHB Automation Tools", icon: "🧰" },
-      { href: "/vasool-app", label: "Vasool App", icon: "📱" },
-      { href: "/about-vasool", label: "About Vasool", icon: "ℹ️" },
-    ],
-  },
   {
     label: "Recent Activity",
     icon: "🕑",
@@ -114,16 +133,23 @@ function NavGroup({ group, pathname, role }: { group: Group; pathname: string; r
 function AdminNav({
   horizontal = false,
   role = "editor",
+  products = [],
 }: {
   horizontal?: boolean;
   role?: string;
+  products?: { id: string; slug: string; title: string }[];
 }) {
   const pathname = usePathname();
-  // Only recompute the visible set when the role changes (not on every nav).
-  const visible = useMemo(
-    () => items.filter((i) => !i.adminOnly || role === "admin"),
-    [role]
-  );
+  // Rebuild the full nav (with the products group's dynamic entries) only
+  // when the product list or role changes, then filter to what's visible.
+  const visible = useMemo(() => {
+    const items: Entry[] = [
+      ...BASE_ITEMS.slice(0, 6),
+      buildProductsGroup(products),
+      ...BASE_ITEMS.slice(6),
+    ];
+    return items.filter((i) => !i.adminOnly || role === "admin");
+  }, [products, role]);
 
   return (
     <nav className={horizontal ? "flex gap-1 overflow-x-auto pt-3" : "flex flex-col gap-1"}>

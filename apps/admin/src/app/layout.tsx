@@ -6,6 +6,7 @@ import { createClient } from "@jhb/shared/supabase/server";
 import { signOut } from "./actions";
 import AdminNav from "@/components/AdminNav";
 import { getSettings } from "@jhb/shared/content-server";
+import { getProducts } from "@jhb/shared/products-server";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,13 +37,16 @@ export default async function AdminRootLayout({
 
   let profile: { role: string; full_name: string | null; email: string | null } | null =
     null;
+  // Products beyond the pinned Vasool App entries (below) render in the nav
+  // dynamically, so a newly added product needs no nav code — see AdminNav.
+  let products: { id: string; slug: string; title: string }[] = [];
   if (user) {
-    const { data } = await supabase
-      .from("jhb_profiles")
-      .select("role, full_name, email")
-      .eq("id", user.id)
-      .maybeSingle();
+    const [{ data }, productsDoc] = await Promise.all([
+      supabase.from("jhb_profiles").select("role, full_name, email").eq("id", user.id).maybeSingle(),
+      getProducts(),
+    ]);
     profile = data;
+    products = productsDoc.items;
   }
   const role = profile?.role ?? "editor";
   const adminLogo = user ? (await getSettings()).branding?.adminLogo ?? "" : "";
@@ -84,7 +88,7 @@ export default async function AdminRootLayout({
                 </span>
               </Link>
 
-              <AdminNav role={role} />
+              <AdminNav role={role} products={products} />
 
               <div className="mt-auto rounded-2xl border border-ink/10 bg-base p-4">
                 <p className="truncate text-sm font-semibold">
@@ -127,7 +131,7 @@ export default async function AdminRootLayout({
               </header>
               <div className="shrink-0 lg:hidden">
                 <div className="border-b border-ink/10 bg-surface px-3 pb-3">
-                  <AdminNav horizontal role={role} />
+                  <AdminNav horizontal role={role} products={products} />
                 </div>
               </div>
 

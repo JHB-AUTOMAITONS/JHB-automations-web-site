@@ -29,7 +29,7 @@ export default async function JhbAutomationToolsPage() {
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "JHB Automation Tools",
+    name: "JHB HR Management System",
     itemListElement: hub.categories.map((c, i) => ({
       "@type": "ListItem",
       position: i + 1,
@@ -42,7 +42,7 @@ export default async function JhbAutomationToolsPage() {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: site },
-      { "@type": "ListItem", position: 2, name: "JHB Automation Tools", item: `${site}/jhb-automation-tools` },
+      { "@type": "ListItem", position: 2, name: "JHB HR Management System", item: `${site}/jhb-automation-tools` },
     ],
   };
 
