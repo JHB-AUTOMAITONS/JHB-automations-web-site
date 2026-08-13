@@ -3,16 +3,25 @@
 
 import type { PageContainer } from "./containers";
 
+// ─── Visibility (`hidden`) — same convention as page-builder containers ──────
+// Every section flag and every card below is an OPTIONAL `hidden?: boolean`.
+// Absent/false = SHOWN. That polarity is deliberate: content saved before this
+// field existed has no such key, so it stays visible with no migration. It
+// matters doubly here because toolsHub.server.ts shallow-merges only the top
+// level, so a saved `sections` object replaces the default wholesale — with an
+// `enabled` flag every guard would need `!== false` and one miss would blank a
+// live section. Never invert this.
 export type ToolCategory = {
   id: string;
   title: string;
   desc: string;
   icon: string; // Icon component key (crm, flow, rocket, chat, settings, spark, app…)
   image: string | null;
+  hidden?: boolean;
 };
-export type CrmFeature = { title: string; desc: string };
-export type HubBenefit = { title: string; desc: string };
-export type ToolsHubFaq = { question: string; answer: string };
+export type CrmFeature = { title: string; desc: string; hidden?: boolean };
+export type HubBenefit = { title: string; desc: string; hidden?: boolean };
+export type ToolsHubFaq = { question: string; answer: string; hidden?: boolean };
 
 export type ToolsHub = {
   hero: {
@@ -50,6 +59,17 @@ export type ToolsHub = {
     otherToolsEyebrow: string;
     otherToolsHeadingLead: string;
     otherToolsHeadingHighlight: string;
+    // Per-section visibility. Absent = shown (see the note above).
+    heroHidden?: boolean;
+    categoriesHidden?: boolean;
+    crmHidden?: boolean; // parent — also suppresses the three CRM sub-blocks
+    crmFeaturesHidden?: boolean;
+    crmWorkflowHidden?: boolean;
+    crmBenefitsHidden?: boolean;
+    otherToolsHidden?: boolean;
+    benefitsHidden?: boolean;
+    faqsHidden?: boolean;
+    ctaHidden?: boolean;
   };
   seo: {
     metaTitle: string;

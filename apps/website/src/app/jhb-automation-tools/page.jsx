@@ -30,7 +30,9 @@ export default async function JhbAutomationToolsPage() {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "JHB HR Management System",
-    itemListElement: hub.categories.map((c, i) => ({
+    // Hidden tools are removed from the schema too — never advertise to a
+    // crawler something a visitor can't see on the page.
+    itemListElement: (hub.categories ?? []).filter((c) => !c.hidden).map((c, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: c.title,

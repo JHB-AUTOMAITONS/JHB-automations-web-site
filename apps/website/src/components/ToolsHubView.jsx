@@ -16,7 +16,16 @@ const fade = {
 };
 
 export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true }) {
-  const others = hub.categories.filter((c) => c.id !== "crm");
+  // Visibility: drop hidden cards BEFORE rendering, never inside the .map()s —
+  // CRM feature badges are numbered from the array index and FaqAccordion
+  // derives its numbering, search affordance and FAQPage schema from the array
+  // it is handed. Absent `hidden` = shown (see toolsHub.ts).
+  const s = hub.sections;
+  const cats = (hub.categories ?? []).filter((c) => !c.hidden);
+  const others = cats.filter((c) => c.id !== "crm");
+  const crmFeatures = (hub.crm.features ?? []).filter((f) => !f.hidden);
+  const hubBenefits = (hub.benefits ?? []).filter((b) => !b.hidden);
+  const hubFaqs = (hub.faqs ?? []).filter((f) => !f.hidden);
   const containers = hub.containers ?? [];
 
   return (
@@ -27,6 +36,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
       <PageContainersView containers={containers} zone="top" />
 
       {/* ---- Hero ---- */}
+      {!s.heroHidden && (
       <section className="container-x">
         <div className="mx-auto max-w-3xl text-center">
           <motion.span {...fade} className="eyebrow">
@@ -60,10 +70,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           </motion.div>
         )}
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="after-hero" />
 
       {/* ---- Tool Categories ---- */}
+      {!s.categoriesHidden && cats.length > 0 && (
       <section id="tools" className="container-x mt-16">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.categoriesEyebrow && <span className="eyebrow">{hub.sections.categoriesEyebrow}</span>}
@@ -73,7 +85,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           </h2>
         </motion.div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {hub.categories.map((c, i) => (
+          {cats.map((c, i) => (
             <motion.a
               key={c.id}
               href={c.id === "crm" ? "#crm" : "#other-tools"}
@@ -90,10 +102,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           ))}
         </div>
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="after-categories" />
 
       {/* ---- CRM Software Section ---- */}
+      {!s.crmHidden && (
       <section id="crm" className="container-x mt-16 scroll-mt-28">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.crmEyebrow && <span className="eyebrow">{hub.sections.crmEyebrow}</span>}
@@ -107,8 +121,9 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
         </motion.div>
 
         {/* features */}
+        {!s.crmFeaturesHidden && crmFeatures.length > 0 && (
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {hub.crm.features.map((f, i) => (
+          {crmFeatures.map((f, i) => (
             <motion.div
               key={f.title}
               {...fade}
@@ -125,9 +140,10 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
             </motion.div>
           ))}
         </div>
+        )}
 
         {/* workflow process */}
-        {hub.crm.workflow.length > 0 && (
+        {!s.crmWorkflowHidden && hub.crm.workflow.length > 0 && (
           <div className="mt-10">
             <h3 className="text-center font-display text-xl font-bold">{hub.sections.crmWorkflowHeading}</h3>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -148,7 +164,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
         )}
 
         {/* CRM benefits */}
-        {hub.crm.benefits.length > 0 && (
+        {!s.crmBenefitsHidden && hub.crm.benefits.length > 0 && (
           <div className="mx-auto mt-10 max-w-3xl rounded-3xl border border-ink/10 bg-surface p-8 shadow-soft">
             <h3 className="font-display text-xl font-bold">{hub.sections.crmBenefitsHeading}</h3>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -162,10 +178,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           </div>
         )}
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="after-crm" />
 
       {/* ---- Other Automation Tools ---- */}
+      {!s.otherToolsHidden && others.length > 0 && (
       <section id="other-tools" className="container-x mt-16 scroll-mt-28">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.otherToolsEyebrow && <span className="eyebrow">{hub.sections.otherToolsEyebrow}</span>}
@@ -193,10 +211,12 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           ))}
         </div>
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="after-other-tools" />
 
       {/* ---- Benefits ---- */}
+      {!s.benefitsHidden && hubBenefits.length > 0 && (
       <section className="container-x mt-16">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
           {hub.sections.benefitsEyebrow && <span className="eyebrow">{hub.sections.benefitsEyebrow}</span>}
@@ -206,7 +226,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           </h2>
         </motion.div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {hub.benefits.map((b, i) => (
+          {hubBenefits.map((b, i) => (
             <motion.div
               key={b.title}
               {...fade}
@@ -219,17 +239,21 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           ))}
         </div>
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="after-benefits" />
 
       {/* ---- FAQ ---- */}
+      {!s.faqsHidden && hubFaqs.length > 0 && (
       <div className="mt-16">
-        <FaqAccordion items={hub.faqs} showNumbers={faqShowNumbers} />
+        <FaqAccordion items={hubFaqs} showNumbers={faqShowNumbers} />
       </div>
+      )}
 
       <PageContainersView containers={containers} zone="after-faq" />
 
       {/* ---- CTA ---- */}
+      {!s.ctaHidden && (
       <section className="container-x my-16">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-10 text-center shadow-soft sm:px-12">
           <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]" />
@@ -243,6 +267,7 @@ export default function ToolsHubView({ hub, heroImageAlt, faqShowNumbers = true 
           )}
         </div>
       </section>
+      )}
 
       <PageContainersView containers={containers} zone="bottom" />
     </main>

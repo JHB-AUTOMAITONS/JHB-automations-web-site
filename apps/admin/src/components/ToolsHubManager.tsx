@@ -96,6 +96,8 @@ export default function ToolsHubManager({
   const setCta = (k: keyof ToolsHub["cta"], v: string) => setForm((p) => ({ ...p, cta: { ...p.cta, [k]: v } }));
   const setSeo = (k: keyof ToolsHub["seo"], v: string) => setForm((p) => ({ ...p, seo: { ...p.seo, [k]: v } }));
   const setSection = (k: keyof ToolsHub["sections"], v: string) => setForm((p) => ({ ...p, sections: { ...p.sections, [k]: v } }));
+  // Boolean sibling of setSection, for the `*Hidden` visibility flags.
+  const setFlag = (k: keyof ToolsHub["sections"], v: boolean) => setForm((p) => ({ ...p, sections: { ...p.sections, [k]: v } }));
 
   // categories
   const setCat = (i: number, patch: Partial<ToolCategory>) =>
@@ -175,6 +177,7 @@ export default function ToolsHubManager({
 
       {/* Hero */}
       <Card title="Hero Section">
+        <VisibilityToggle hidden={form.sections.heroHidden} onChange={(h) => setFlag("heroHidden", h)} />
         <Field label="Badge" value={form.hero.badge} onChange={(v) => setHero("badge", v)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Heading" value={form.hero.heading} onChange={(v) => setHero("heading", v)} />
@@ -202,6 +205,7 @@ export default function ToolsHubManager({
 
       {/* Tool Categories */}
       <Card title="Tool Categories">
+        <VisibilityToggle hidden={form.sections.categoriesHidden} onChange={(h) => setFlag("categoriesHidden", h)} />
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Eyebrow" value={form.sections.categoriesEyebrow} onChange={(v) => setSection("categoriesEyebrow", v)} />
           <Field label="Heading" value={form.sections.categoriesHeadingLead} onChange={(v) => setSection("categoriesHeadingLead", v)} />
@@ -215,6 +219,7 @@ export default function ToolsHubManager({
                 <div className="flex gap-1">
                   <button onClick={() => moveCat(i, -1)} disabled={i === 0} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↑</button>
                   <button onClick={() => moveCat(i, 1)} disabled={i === form.categories.length - 1} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↓</button>
+                  <CardVisibilityToggle hidden={c.hidden} onChange={(h) => setCat(i, { hidden: h })} />
                   <button onClick={() => rmCat(i)} className="grid h-7 w-7 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
                 </div>
               </div>
@@ -236,6 +241,7 @@ export default function ToolsHubManager({
 
       {/* CRM content */}
       <Card title="CRM Software Section">
+        <VisibilityToggle hidden={form.sections.crmHidden} onChange={(h) => setFlag("crmHidden", h)} hint="Turn off to hide the whole CRM section (and its sub-blocks) on the live page." />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Section eyebrow" value={form.sections.crmEyebrow} onChange={(v) => setSection("crmEyebrow", v)} />
           <Field label="CRM heading" value={form.crm.heading} onChange={(v) => setCrm("heading", v)} />
@@ -245,12 +251,14 @@ export default function ToolsHubManager({
           <RichEditor value={form.crm.overviewHtml} onChange={(html) => setCrm("overviewHtml", html)} internalPages={internalPages} />
         </div>
 
+        <VisibilityToggle hidden={form.sections.crmFeaturesHidden} onChange={(h) => setFlag("crmFeaturesHidden", h)} title="Show CRM features" hint="Turn off to hide just the CRM feature grid." className="mb-2 mt-2" />
         <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted">CRM features</p>
         <div className="space-y-2">
           {form.crm.features.map((f, i) => (
             <div key={i} className="rounded-xl border border-ink/10 p-3">
               <div className="flex gap-2">
                 <input value={f.title} onChange={(e) => setFeat(i, { title: e.target.value })} placeholder="Feature title" className="input flex-1" />
+                <CardVisibilityToggle hidden={f.hidden} onChange={(h) => setFeat(i, { hidden: h })} />
                 <button onClick={() => rmFeat(i)} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
               </div>
               <textarea value={f.desc} onChange={(e) => setFeat(i, { desc: e.target.value })} placeholder="Feature description" rows={2} className="input mt-2 resize-none" />
@@ -259,10 +267,12 @@ export default function ToolsHubManager({
           <button onClick={addFeat} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-muted hover:border-primary hover:text-primary">+ Add CRM feature</button>
         </div>
 
+        <VisibilityToggle hidden={form.sections.crmWorkflowHidden} onChange={(h) => setFlag("crmWorkflowHidden", h)} title="Show CRM workflow" hint="Turn off to hide just the CRM workflow steps." className="mb-2 mt-2" />
         <Field label="Workflow sub-heading" value={form.sections.crmWorkflowHeading} onChange={(v) => setSection("crmWorkflowHeading", v)} />
         <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted">CRM workflow steps</p>
         <StrList items={form.crm.workflow} onChange={(i, v) => setStr("workflow", i, v)} onAdd={() => addStr("workflow")} onRemove={(i) => rmStr("workflow", i)} onMove={(i, d) => moveStr("workflow", i, d)} placeholder="Workflow step" addLabel="+ Add step" />
 
+        <VisibilityToggle hidden={form.sections.crmBenefitsHidden} onChange={(h) => setFlag("crmBenefitsHidden", h)} title="Show CRM benefits" hint="Turn off to hide just the CRM benefits list." className="mb-2 mt-2" />
         <Field label="Benefits sub-heading" value={form.sections.crmBenefitsHeading} onChange={(v) => setSection("crmBenefitsHeading", v)} />
         <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted">CRM benefits</p>
         <StrList items={form.crm.benefits} onChange={(i, v) => setStr("benefits", i, v)} onAdd={() => addStr("benefits")} onRemove={(i) => rmStr("benefits", i)} onMove={(i, d) => moveStr("benefits", i, d)} placeholder="Benefit" addLabel="+ Add benefit" />
@@ -274,6 +284,7 @@ export default function ToolsHubManager({
           are the same `categories` the Tool Categories grid uses; the live page
           shows them in both places, so editing here updates both instantly. */}
       <Card title="Other Automation Tools">
+        <VisibilityToggle hidden={form.sections.otherToolsHidden} onChange={(h) => setFlag("otherToolsHidden", h)} />
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Eyebrow" value={form.sections.otherToolsEyebrow} onChange={(v) => setSection("otherToolsEyebrow", v)} />
           <Field label="Heading (Lead)" value={form.sections.otherToolsHeadingLead} onChange={(v) => setSection("otherToolsHeadingLead", v)} />
@@ -310,6 +321,7 @@ export default function ToolsHubManager({
 
       {/* Hub benefits */}
       <Card title="Benefits Section">
+        <VisibilityToggle hidden={form.sections.benefitsHidden} onChange={(h) => setFlag("benefitsHidden", h)} />
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Eyebrow" value={form.sections.benefitsEyebrow} onChange={(v) => setSection("benefitsEyebrow", v)} />
           <Field label="Heading" value={form.sections.benefitsHeadingLead} onChange={(v) => setSection("benefitsHeadingLead", v)} />
@@ -320,6 +332,7 @@ export default function ToolsHubManager({
             <div key={i} className="rounded-xl border border-ink/10 p-3">
               <div className="flex gap-2">
                 <input value={b.title} onChange={(e) => setBen(i, { title: e.target.value })} placeholder="Benefit title" className="input flex-1" />
+                <CardVisibilityToggle hidden={b.hidden} onChange={(h) => setBen(i, { hidden: h })} />
                 <button onClick={() => rmBen(i)} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
               </div>
               <textarea value={b.desc} onChange={(e) => setBen(i, { desc: e.target.value })} placeholder="Benefit description" rows={2} className="input mt-2 resize-none" />
@@ -333,6 +346,7 @@ export default function ToolsHubManager({
 
       {/* FAQs */}
       <Card title="FAQ Section">
+        <VisibilityToggle hidden={form.sections.faqsHidden} onChange={(h) => setFlag("faqsHidden", h)} />
         <div className="space-y-2">
           {form.faqs.map((f, i) => (
             <div key={i} className="rounded-xl border border-ink/10 p-3">
@@ -341,6 +355,7 @@ export default function ToolsHubManager({
                 <div className="flex gap-1">
                   <button onClick={() => moveFaq(i, -1)} disabled={i === 0} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↑</button>
                   <button onClick={() => moveFaq(i, 1)} disabled={i === form.faqs.length - 1} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs disabled:opacity-30">↓</button>
+                  <CardVisibilityToggle hidden={f.hidden} onChange={(h) => setFaq(i, { hidden: h })} />
                   <button onClick={() => rmFaq(i)} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
                 </div>
               </div>
@@ -357,6 +372,7 @@ export default function ToolsHubManager({
 
       {/* CTA */}
       <Card title="CTA Section">
+        <VisibilityToggle hidden={form.sections.ctaHidden} onChange={(h) => setFlag("ctaHidden", h)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Heading" value={form.cta.heading} onChange={(v) => setCta("heading", v)} />
           <Field label="Button label" value={form.cta.buttonLabel} onChange={(v) => setCta("buttonLabel", v)} />
@@ -397,13 +413,19 @@ export default function ToolsHubManager({
 
 /* ---- live preview (mirrors ToolsHubView, interleaving page-builder zones) ---- */
 function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContainer[] }) {
-  const others = hub.categories.filter((c) => c.id !== "crm");
+  // Mirrors ToolsHubView exactly: hidden cards dropped before render.
   const s = hub.sections;
+  const cats = (hub.categories ?? []).filter((c) => !c.hidden);
+  const others = cats.filter((c) => c.id !== "crm");
+  const crmFeatures = (hub.crm.features ?? []).filter((f) => !f.hidden);
+  const hubBenefits = (hub.benefits ?? []).filter((b) => !b.hidden);
+  const hubFaqs = (hub.faqs ?? []).filter((f) => !f.hidden);
   return (
     <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
       <PageContainersView containers={containers} zone="top" />
 
       {/* hero */}
+      {!s.heroHidden && (
       <div className="bg-surface p-5 text-center">
         <span className="eyebrow !text-[10px]">{hub.hero.badge}</span>
         <h3 className="mt-2 font-display text-lg font-bold leading-tight">
@@ -419,9 +441,11 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
           <img src={hub.hero.image} alt="" className="mt-3 aspect-[16/9] w-full rounded-lg object-cover" />
         )}
       </div>
+      )}
       <PageContainersView containers={containers} zone="after-hero" />
 
       {/* tool categories */}
+      {!s.categoriesHidden && cats.length > 0 && (
       <div className="border-t border-ink/10 p-5">
         {s.categoriesEyebrow && (
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">{s.categoriesEyebrow}</p>
@@ -432,7 +456,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
           </h4>
         )}
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {hub.categories.map((c, i) => (
+          {cats.map((c, i) => (
             <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
               <p className="text-[11px] font-semibold leading-tight">{c.title}</p>
               <p className="mt-1 text-[10px] text-muted">{c.desc}</p>
@@ -440,9 +464,11 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
           ))}
         </div>
       </div>
+      )}
       <PageContainersView containers={containers} zone="after-categories" />
 
       {/* CRM software */}
+      {!s.crmHidden && (
       <div className="border-t border-ink/10 p-5">
         {s.crmEyebrow && (
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">{s.crmEyebrow}</p>
@@ -454,9 +480,9 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         />
 
         {/* CRM features — ALL items, no slice */}
-        {hub.crm.features.length > 0 && (
+        {!s.crmFeaturesHidden && crmFeatures.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {hub.crm.features.map((f, i) => (
+            {crmFeatures.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
                 <p className="text-[11px] font-semibold leading-tight">{f.title}</p>
                 <p className="mt-1 text-[10px] text-muted">{f.desc}</p>
@@ -466,7 +492,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         )}
 
         {/* CRM workflow steps */}
-        {hub.crm.workflow.length > 0 && (
+        {!s.crmWorkflowHidden && hub.crm.workflow.length > 0 && (
           <div className="mt-4">
             {s.crmWorkflowHeading && (
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">{s.crmWorkflowHeading}</p>
@@ -483,7 +509,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
         )}
 
         {/* CRM benefits */}
-        {hub.crm.benefits.length > 0 && (
+        {!s.crmBenefitsHidden && hub.crm.benefits.length > 0 && (
           <div className="mt-4">
             {s.crmBenefitsHeading && (
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">{s.crmBenefitsHeading}</p>
@@ -499,10 +525,11 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
           </div>
         )}
       </div>
+      )}
       <PageContainersView containers={containers} zone="after-crm" />
 
       {/* other tools */}
-      {others.length > 0 && (
+      {!s.otherToolsHidden && others.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           {s.otherToolsEyebrow && (
             <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">{s.otherToolsEyebrow}</p>
@@ -525,7 +552,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
       <PageContainersView containers={containers} zone="after-other-tools" />
 
       {/* benefits */}
-      {hub.benefits.length > 0 && (
+      {!s.benefitsHidden && hubBenefits.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           {s.benefitsEyebrow && (
             <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">{s.benefitsEyebrow}</p>
@@ -536,7 +563,7 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
             </h4>
           )}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {hub.benefits.map((b, i) => (
+            {hubBenefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
                 <p className="text-[11px] font-semibold leading-tight">{b.title}</p>
                 <p className="mt-1 text-[10px] text-muted">{b.desc}</p>
@@ -548,28 +575,88 @@ function HubPreview({ hub, containers }: { hub: ToolsHub; containers: PageContai
       <PageContainersView containers={containers} zone="after-benefits" />
 
       {/* faq — same accordion component as the live tools hub */}
-      {hub.faqs.filter((f) => f.question).length > 0 && (
+      {!s.faqsHidden && hubFaqs.filter((f) => f.question).length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">FAQ</p>
           <div className="mt-3">
-            <FaqAccordionView items={hub.faqs} />
+            <FaqAccordionView items={hubFaqs} />
           </div>
         </div>
       )}
       <PageContainersView containers={containers} zone="after-faq" />
 
       {/* cta */}
+      {!s.ctaHidden && (
       <div className="border-t border-ink/10 bg-gradient-to-br from-primary/10 to-secondary/10 p-5 text-center">
         <h4 className="font-display text-base font-bold">{hub.cta.heading}</h4>
         <p className="mt-1 text-[11px] text-muted">{hub.cta.text}</p>
         {hub.cta.buttonLabel && <span className="btn btn-primary mt-3 !px-4 !py-2 !text-xs">{hub.cta.buttonLabel}</span>}
       </div>
+      )}
       <PageContainersView containers={containers} zone="bottom" />
     </div>
   );
 }
 
 /* ---- helpers ---- */
+
+/**
+ * Hide/Unhide control — same markup as the page-builder container toggle
+ * (ContainerParts.tsx), so every section on the site reads identically.
+ * `hidden` absent = shown, matching the data contract in toolsHub.ts.
+ */
+function VisibilityToggle({
+  hidden,
+  onChange,
+  title = "Show this section",
+  hint = "Turn off to hide this section on the live page.",
+  className = "mb-3",
+}: {
+  hidden?: boolean;
+  onChange: (hidden: boolean) => void;
+  title?: string;
+  hint?: string;
+  className?: string;
+}) {
+  const visible = !hidden;
+  return (
+    <div className={`flex items-center justify-between rounded-xl border border-ink/10 bg-surface p-3 ${className}`}>
+      <div>
+        <p className="text-xs font-semibold text-ink/90">{title}</p>
+        <p className="text-[11px] text-muted">{hint}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!hidden)}
+        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+      >
+        <span className={`relative h-4 w-7 rounded-full transition-colors ${visible ? "bg-primary" : "bg-ink/20"}`}>
+          <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${visible ? "left-[14px]" : "left-0.5"}`} />
+        </span>
+        {visible ? "On" : "Off"}
+      </button>
+    </div>
+  );
+}
+
+/** Compact per-card variant — sits in a card's header row. */
+function CardVisibilityToggle({ hidden, onChange }: { hidden?: boolean; onChange: (hidden: boolean) => void }) {
+  const visible = !hidden;
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!hidden)}
+      title={visible ? "Visible — click to hide it on the live page" : "Hidden — click to show it"}
+      className="flex h-9 shrink-0 items-center gap-1.5 rounded border border-ink/10 px-2 text-[11px]"
+    >
+      <span className={`relative h-4 w-7 rounded-full transition-colors ${visible ? "bg-primary" : "bg-ink/20"}`}>
+        <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${visible ? "left-[14px]" : "left-0.5"}`} />
+      </span>
+      {visible ? "Shown" : "Hidden"}
+    </button>
+  );
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
