@@ -18,15 +18,25 @@ const PINNED_PRODUCT_ENTRIES: Leaf[] = [
   { href: "/about-vasool", label: "About Vasool", icon: "ℹ️" },
 ];
 // Slugs already covered by a pinned entry above — excluded from the dynamic
-// list below so a product never appears twice.
-const PINNED_PRODUCT_SLUGS = new Set(["vasool-app"]);
+// list below so a product never appears twice. Every slug that appears in
+// PINNED_PRODUCT_ENTRIES must be listed here, or that product renders twice
+// (once pinned, once dynamic).
+const PINNED_PRODUCT_SLUGS = new Set(["vasool-app", "jhb-automation-tools"]);
 
 // Any OTHER product (added from the admin, or by a future migration) gets its
 // nav entry generated from the live data — no code change needed per product,
 // reached via the generic /products/{slug} (+ /about) editor routes.
-function buildProductsGroup(products: { slug: string; title: string }[]): Group {
+function buildProductsGroup(
+  products: { slug: string; title: string; href?: string }[]
+): Group {
   const dynamic = products
     .filter((p) => !PINNED_PRODUCT_SLUGS.has(p.slug))
+    // A product carrying an `href` override renders at its own custom page and
+    // is edited through its own dedicated admin module (that's what the href
+    // means), so it must not also get generic /products/{slug} entries. This
+    // keeps ONE nav entry per product without needing the pin list to be
+    // updated by hand for every such product.
+    .filter((p) => !(p.href ?? "").trim())
     .flatMap((p) => [
       { href: `/products/${p.slug}`, label: p.title, icon: "📦" },
       { href: `/products/${p.slug}/about`, label: `About ${p.title}`, icon: "ℹ️" },
@@ -137,7 +147,7 @@ function AdminNav({
 }: {
   horizontal?: boolean;
   role?: string;
-  products?: { id: string; slug: string; title: string }[];
+  products?: { id: string; slug: string; title: string; href?: string }[];
 }) {
   const pathname = usePathname();
   // Rebuild the full nav (with the products group's dynamic entries) only

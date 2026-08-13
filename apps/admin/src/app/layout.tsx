@@ -39,7 +39,7 @@ export default async function AdminRootLayout({
     null;
   // Products beyond the pinned Vasool App entries (below) render in the nav
   // dynamically, so a newly added product needs no nav code — see AdminNav.
-  let products: { id: string; slug: string; title: string }[] = [];
+  let products: { id: string; slug: string; title: string; href?: string }[] = [];
   if (user) {
     const [{ data }, productsDoc] = await Promise.all([
       supabase.from("jhb_profiles").select("role, full_name, email").eq("id", user.id).maybeSingle(),
