@@ -379,7 +379,7 @@ function CardsEditor({ c, onChange }: { c: CardsContainer; onChange: (c: CardsCo
       </div>
       <AlignPicker
         label="Description alignment"
-        value={p.descriptionAlignment ?? "left"}
+        value={p.descriptionAlignment ?? p.headingAlignment ?? toAlign(c.style.align)}
         onChange={(v) => set({ descriptionAlignment: v })}
       />
       <div className="space-y-2">

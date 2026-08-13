@@ -49,3 +49,7 @@ next-env.d.ts
 AdminDashboard.exe
 launcher/dist/
 launcher/node_modules/
+
+# Local dev server logs (large, machine-specific)
+.website-dev.log
+.website-dev-error.log

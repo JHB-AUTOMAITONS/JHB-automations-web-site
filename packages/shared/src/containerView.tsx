@@ -407,8 +407,19 @@ function Cards({ c }: { c: CardsContainer }) {
   // Section heading alignment: the new headingAlignment field wins; older Card
   // Sections fall back to the existing style.align so they render identically.
   const ha = toAlign(p.headingAlignment ?? c.style.align);
-  const da = toAlign(p.descriptionAlignment); // absent → "left"
   const descHtml = (p.description || "").trim();
+  const descSanitized = descHtml ? sanitizeRichText(descHtml) : "";
+  // Description alignment: an alignment authored INSIDE the rich text (the
+  // editor's own align button, which writes inline text-align on the <p>)
+  // reflects the admin's most direct, most recent choice and wins; otherwise
+  // the section's Description-alignment field wins; otherwise it follows the
+  // heading's own alignment (not a hardcoded "left") so an unset description
+  // always shares the heading's center axis instead of defaulting away from
+  // it. Without this, an in-text alignment would center the TEXT while this
+  // max-w-3xl block's own position (mx-auto/mr-auto) stayed keyed to the
+  // (differing) container-level field, splitting the text and its box onto
+  // two different axes.
+  const da = toAlign(richTextAlign(descSanitized) ?? p.descriptionAlignment ?? p.headingAlignment ?? c.style.align);
   return (
     <section className={shell(c.style)}>
       <div className="container-x">
@@ -419,11 +430,11 @@ function Cards({ c }: { c: CardsContainer }) {
             </Heading>
           </Reveal>
         )}
-        {descHtml ? (
+        {descSanitized ? (
           <Reveal delay={0.06}>
             <div
               className={`prose-jhb mb-10 max-w-3xl leading-relaxed text-muted [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full ${ALIGN_TEXT[da]} ${ALIGN_BLOCK[da] || "mr-auto"}`}
-              dangerouslySetInnerHTML={{ __html: sanitizeRichText(descHtml) }}
+              dangerouslySetInnerHTML={{ __html: descSanitized }}
             />
           </Reveal>
         ) : null}

@@ -566,17 +566,22 @@ export default function ServicePageEditor({
                 <div className="p-5">
                   <PageContainersView containers={cb.containers} zone="top" />
                   {(() => {
-                    // Mirror the LIVE ServiceDetail hero: content + image sit SIDE BY SIDE
-                    // in a 2-column grid (image ~45% of the row), not a full-width image
-                    // stacked on top. Keeps the same image-to-content ratio as production.
+                    // Mirror the LIVE ServiceDetail hero EXACTLY: content + image sit side
+                    // by side in a 2-column grid, and — like production — the Size & style
+                    // panel (width/align/etc.) only takes visual effect when "Hero image
+                    // style" is set to "Full image". "Icon tile" (the default) always
+                    // renders the small fixed decorative tile regardless of those settings,
+                    // same as ServiceDetail.jsx. Previously this preview applied the custom
+                    // size/width UNCONDITIONALLY, so a width/align change looked "applied"
+                    // here even while still in tile mode — hiding the fact that the live
+                    // site was ignoring it. Branching the same way here is what keeps the
+                    // preview and the live page pixel-consistent.
                     const hi = form.chrome.heroImage ?? {};
                     const heroImgMode = hi.mode || "tile";
                     const heroImgLeft = heroImgMode === "image" && hi.align === "left";
-                    const hasImage = !!form.image_url && heroImgMode !== "hidden";
-                    const imgA = smartImgAttrs(hi.settings, {
-                      extraClass: "rounded-xl",
-                      fallbackWidth: heroImgMode === "image" ? "w-full" : "aspect-[16/9] w-full",
-                    });
+                    const showHeroVisual = heroImgMode !== "hidden";
+                    const isCustomImage = heroImgMode === "image" && !!form.image_url;
+                    const imgA = smartImgAttrs(hi.settings, { extraClass: "rounded-xl" });
                     const content = (
                       <div className={`min-w-0 ${heroImgLeft ? "lg:order-2" : ""}`}>
                         <Heading tag={heroTag} fallback="h1" className={`font-display text-2xl font-bold ${heroAlignText}`}>
@@ -594,19 +599,39 @@ export default function ServicePageEditor({
                         )}
                       </div>
                     );
-                    if (!hasImage) return content;
+                    if (!showHeroVisual) return content;
+                    const visual = isCustomImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={form.image_url || ""}
+                        alt={form.image_alt ?? ""}
+                        {...(form.image_title ? { title: form.image_title } : {})}
+                        className={imgA.className}
+                        style={imgA.style}
+                      />
+                    ) : (
+                      // Same small fixed tile as the "Icon tile" mode in ServiceDetail.jsx
+                      // (minus the per-service floating stat badges, which come from static
+                      // code data rather than admin content).
+                      <div className="relative mx-auto grid aspect-square w-full max-w-[220px] place-items-center">
+                        <div className="absolute inset-6 rounded-full border border-dashed border-ink/10" />
+                        <div className="absolute inset-10 rounded-full border border-ink/[0.06]" />
+                        <div className="glass-strong glow-border relative grid h-28 w-28 place-items-center overflow-hidden rounded-2xl">
+                          <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10" />
+                          {form.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={form.image_url} alt="" className="relative h-full w-full object-cover" />
+                          ) : (
+                            <span className="relative text-3xl text-primary">✦</span>
+                          )}
+                        </div>
+                      </div>
+                    );
                     return (
                       <div className={`grid items-center gap-6 ${heroImgLeft ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.1fr_0.9fr]"}`}>
                         {content}
                         <div className={`min-w-0 order-first ${heroImgLeft ? "lg:order-1" : "lg:order-none"}`}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={form.image_url || ""}
-                            alt={form.image_alt ?? ""}
-                            {...(form.image_title ? { title: form.image_title } : {})}
-                            className={imgA.className}
-                            style={imgA.style}
-                          />
+                          {visual}
                         </div>
                       </div>
                     );
