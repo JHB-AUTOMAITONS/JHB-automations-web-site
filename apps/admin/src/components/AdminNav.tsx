@@ -37,10 +37,12 @@ function buildProductsGroup(
     // keeps ONE nav entry per product without needing the pin list to be
     // updated by hand for every such product.
     .filter((p) => !(p.href ?? "").trim())
-    .flatMap((p) => [
-      { href: `/products/${p.slug}`, label: p.title, icon: "📦" },
-      { href: `/products/${p.slug}/about`, label: `About ${p.title}`, icon: "ℹ️" },
-    ]);
+    // ONE row per product. The product's "About" sub-page is deliberately not
+    // listed here — it stays reachable/editable at /products/{slug}/about (that
+    // route is unchanged), it just doesn't get its own sidebar entry. Vasool's
+    // "About Vasool" row is unaffected: it's a pinned entry above, not generated
+    // here.
+    .map((p) => ({ href: `/products/${p.slug}`, label: p.title, icon: "📦" }));
   return {
     label: "JHB Products",
     icon: "📦",
