@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
+import { visibleItems } from "@jhb/shared/products";
 import { getSettings } from "@jhb/shared/content-server";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { Heading } from "@jhb/shared/heading";
@@ -57,6 +58,19 @@ export default async function ProductPage({
   // Products that link to an existing page/URL just redirect there.
   if (p.href && p.href.trim()) redirect(p.href.trim());
 
+  // Visibility: drop hidden sections and hidden cards BEFORE rendering, never
+  // inside the .map()s below — the card badges are numbered from the array index
+  // ({i + 1}) and FaqAccordion derives its numbering, its search affordance and
+  // its FAQPage schema from the array it is handed, so a skip-inside-map would
+  // leave gaps in the numbering and schema entries for cards nobody can see.
+  // A section whose cards are ALL hidden drops out too, rather than stranding
+  // its heading over an empty grid. Absent `hidden` = shown (see products.ts).
+  const featureSections = visibleItems(p.sections)
+    .map((sec) => ({ ...sec, items: visibleItems(sec.items) }))
+    .filter((sec) => sec.items.length > 0);
+  const pricingPlans = visibleItems(p.pricing);
+  const faqItems = visibleItems(p.faqs);
+
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const productSchema = {
     "@context": "https://schema.org",
@@ -98,6 +112,9 @@ export default async function ProductPage({
             <span className="text-ink">{p.title}</span>
           </nav>
 
+          {/* Hero hidden → the breadcrumb above still renders, so the page never
+              loses its "you are here" trail (and its only link back). */}
+          {!p.heroHidden && (
           <div className="mt-8 flex flex-col items-center gap-10">
             <div className="hero-content">
               <Reveal>
@@ -138,12 +155,13 @@ export default async function ProductPage({
               </Reveal>
             )}
           </div>
+          )}
         </section>
 
         <PageContainers containers={p.containers ?? []} zone="after-hero" />
 
         {/* ---- Overview ---- */}
-        {p.overview && (
+        {!p.overviewHidden && p.overview && (
           <section className="container-x mt-16">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal>
@@ -167,7 +185,7 @@ export default async function ProductPage({
         <PageContainers containers={p.containers ?? []} zone="after-overview" />
 
         {/* ---- Feature sections (Features, Loan Types, Staff, GPS, Reports…) ---- */}
-        {p.sections.map((sec) => (
+        {featureSections.map((sec) => (
           <section key={sec.title} className="container-x mt-16">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal>
@@ -223,7 +241,7 @@ export default async function ProductPage({
         <PageContainers containers={p.containers ?? []} zone="after-sections" />
 
         {/* ---- Pricing ---- */}
-        {p.pricing.length > 0 && (
+        {!p.pricingHidden && pricingPlans.length > 0 && (
           <section id="pricing" className="container-x mt-16 scroll-mt-28">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal>
@@ -236,7 +254,7 @@ export default async function ProductPage({
               </Reveal>
             </div>
             <div className="mt-10 grid items-stretch gap-5 lg:grid-cols-3">
-              {p.pricing.map((plan, i) => (
+              {pricingPlans.map((plan, i) => (
                 <Reveal key={plan.name} delay={(i % 3) * 0.06}>
                   <div className={`flex h-full flex-col rounded-3xl border p-7 shadow-soft ${plan.highlighted ? "border-primary bg-gradient-to-br from-primary/10 to-secondary/10 shadow-glow" : "border-ink/10 bg-surface"}`}>
                     {plan.highlighted && (
@@ -270,15 +288,19 @@ export default async function ProductPage({
         <PageContainers containers={p.containers ?? []} zone="after-pricing" />
 
         {/* ---- FAQ ---- */}
-        {p.faqs.length > 0 && (
+        {!p.faqsHidden && faqItems.length > 0 && (
           <div className="mt-16">
-            <FaqAccordion items={p.faqs} showNumbers={settings.faqShowNumbers} />
+            <FaqAccordion items={faqItems} showNumbers={settings.faqShowNumbers} />
           </div>
         )}
 
         <PageContainers containers={p.containers ?? []} zone="after-faq" />
 
         {/* ---- CTA ---- */}
+        {/* Every field here is hardcoded/fallback copy, so there is no existing
+            emptiness guard to hang this off — the toggle is the only way to
+            remove it. Wraps the <section> so its my-16 margin goes with it. */}
+        {!p.ctaHidden && (
         <section className="container-x my-16">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-10 text-center shadow-soft sm:px-12">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]" />
@@ -294,6 +316,7 @@ export default async function ProductPage({
             </Link>
           </div>
         </section>
+        )}
 
         <PageContainers containers={p.containers ?? []} zone="bottom" />
       </main>

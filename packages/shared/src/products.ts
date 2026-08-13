@@ -5,13 +5,23 @@
 
 import type { PageContainer } from "./containers";
 
-export type ProductFeature = { title: string; desc: string };
+// ─── Visibility (`hidden`) — the ONE convention ──────────────────────────────
+// Every section and every repeated card below carries an OPTIONAL
+// `hidden?: boolean`, matching the page-builder containers' `Base.hidden`.
+// Absent/false = SHOWN. That polarity is deliberate and load-bearing: content
+// saved before this field existed has no such key, so it stays visible with no
+// migration and nothing currently live disappears on deploy. Never invert this
+// to `enabled`/`visible`, which would make every pre-existing record hidden.
+// Section flags and card flags are independent: hiding a section hides it
+// whatever its cards say; hiding a card removes only that card.
+export type ProductFeature = { title: string; desc: string; hidden?: boolean };
 // `linksHidden` powers the "Show section link" toggle. These sections carry no
 // href/button field — the only links they can contain are ones the admin typed
 // inside the rich text — so turning it off strips those anchors (keeping the
 // words) rather than blanking a field. Absent/false = links shown, so every
-// section already saved keeps its links.
-export type ProductSection = { title: string; subtitle: string; items: ProductFeature[]; linksHidden?: boolean };
+// section already saved keeps its links. `hidden` is separate and hides the
+// whole section.
+export type ProductSection = { title: string; subtitle: string; items: ProductFeature[]; hidden?: boolean; linksHidden?: boolean };
 export type PricingPlan = {
   name: string;
   price: string;
@@ -20,9 +30,14 @@ export type PricingPlan = {
   highlighted: boolean;
   ctaLabel: string;
   ctaHref: string;
+  hidden?: boolean;
 };
-export type ProductFaq = { question: string; answer: string };
-export type ProductStat = { value: string; label: string };
+export type ProductFaq = { question: string; answer: string; hidden?: boolean };
+export type ProductStat = { value: string; label: string; hidden?: boolean };
+
+/** Members of a list that are not hidden. Absent `hidden` = shown. */
+export const visibleItems = <T extends { hidden?: boolean }>(list: T[] | null | undefined): T[] =>
+  (Array.isArray(list) ? list : []).filter((i) => !i.hidden);
 
 // "About <Product>" sub-page (always rendered at /products/{slug}/about).
 export type ProductAbout = {
@@ -44,6 +59,13 @@ export type ProductAbout = {
   ogTitle: string;
   ogDescription: string;
   canonical: string;
+  // Per-section visibility (see the `hidden` convention above). Absent = shown.
+  heroHidden?: boolean;
+  overviewHidden?: boolean;
+  statsHidden?: boolean;
+  featuresHidden?: boolean;
+  benefitsHidden?: boolean;
+  ctaHidden?: boolean;
   // Page-builder containers inserted between the About page's native sections.
   containers?: PageContainer[];
 };
@@ -94,6 +116,12 @@ export type Product = {
   ogDescription: string;
   status: "draft" | "published";
   sortOrder: number;
+  // Per-section visibility (see the `hidden` convention above). Absent = shown.
+  heroHidden?: boolean;
+  overviewHidden?: boolean;
+  pricingHidden?: boolean;
+  faqsHidden?: boolean;
+  ctaHidden?: boolean;
   // Page-builder containers inserted between the product page's native sections.
   containers?: PageContainer[];
 };

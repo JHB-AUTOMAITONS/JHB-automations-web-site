@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, ProductSection, PricingPlan, ProductFaq, ProductAbout, ProductFeature, ProductStat } from "@jhb/shared/products";
 import type { InternalPage } from "@jhb/shared/service-pages";
-import { PRODUCT_DEFAULTS } from "@jhb/shared/products";
+import { PRODUCT_DEFAULTS, visibleItems } from "@jhb/shared/products";
 import { saveProductsDraft, publishProducts } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import ImagePicker from "./ImagePicker";
@@ -37,6 +37,63 @@ const ABOUT_SECTIONS = [
   { label: "Benefits", zone: "after-benefits" },
   { label: "Call to Action", zone: "bottom" },
 ];
+
+/**
+ * Hide/Unhide control — same markup as the page-builder container toggle
+ * (ContainerParts.tsx), so native sections and containers read identically.
+ * `hidden` absent = shown, matching the data contract in products.ts.
+ */
+function VisibilityToggle({
+  hidden,
+  onChange,
+  title = "Show this section",
+  hint = "Turn off to hide this section on the live page.",
+  className = "mt-2",
+}: {
+  hidden?: boolean;
+  onChange: (hidden: boolean) => void;
+  title?: string;
+  hint?: string;
+  className?: string;
+}) {
+  const visible = !hidden;
+  return (
+    <div className={`flex items-center justify-between rounded-xl border border-ink/10 bg-surface p-3 ${className}`}>
+      <div>
+        <p className="text-xs font-semibold text-ink/90">{title}</p>
+        <p className="text-[11px] text-muted">{hint}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!hidden)}
+        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+      >
+        <span className={`relative h-4 w-7 rounded-full transition-colors ${visible ? "bg-primary" : "bg-ink/20"}`}>
+          <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${visible ? "left-[14px]" : "left-0.5"}`} />
+        </span>
+        {visible ? "On" : "Off"}
+      </button>
+    </div>
+  );
+}
+
+/** Compact per-card variant — sits in a card's header row. */
+function CardVisibilityToggle({ hidden, onChange }: { hidden?: boolean; onChange: (hidden: boolean) => void }) {
+  const visible = !hidden;
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!hidden)}
+      title={visible ? "Card is visible — click to hide it on the live page" : "Card is hidden — click to show it"}
+      className="flex h-9 shrink-0 items-center gap-1.5 rounded border border-ink/10 px-2 text-[11px]"
+    >
+      <span className={`relative h-4 w-7 rounded-full transition-colors ${visible ? "bg-primary" : "bg-ink/20"}`}>
+        <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${visible ? "left-[14px]" : "left-0.5"}`} />
+      </span>
+      {visible ? "Shown" : "Hidden"}
+    </button>
+  );
+}
 
 type Toast = { type: "success" | "error"; msg: string } | null;
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -261,12 +318,18 @@ function ProductBody({
               <ImagePicker value={p.image} onChange={(u) => onPatch({ image: u })} alt={false} />
             </div>
             <Field label="Image alt text" value={p.imageAlt} onChange={(v) => onPatch({ imageAlt: v })} />
+            <VisibilityToggle
+              hidden={p.heroHidden}
+              onChange={(h) => onPatch({ heroHidden: h })}
+              hint="Turn off to hide the hero on the live page. The breadcrumb stays."
+            />
           </div>
 
           {cb.slot("after-hero")}
 
           <div>
             <span className="mb-1 block text-xs font-medium text-muted">Overview / main content (rich text — supports word links)</span>
+            <VisibilityToggle hidden={p.overviewHidden} onChange={(h) => onPatch({ overviewHidden: h })} className="mb-2" />
             <RichEditor value={p.overview} onChange={(html) => onPatch({ overview: html })} internalPages={internalPages} />
           </div>
 
@@ -278,11 +341,13 @@ function ProductBody({
           {cb.slot("after-sections")}
 
           {/* Pricing */}
+          <VisibilityToggle hidden={p.pricingHidden} onChange={(h) => onPatch({ pricingHidden: h })} className="mb-2" />
           <PricingEditor plans={p.pricing} onChange={(pricing) => onPatch({ pricing })} />
 
           {cb.slot("after-pricing")}
 
           {/* FAQs */}
+          <VisibilityToggle hidden={p.faqsHidden} onChange={(h) => onPatch({ faqsHidden: h })} className="mb-2" />
           <FaqsEditor faqs={p.faqs} onChange={(faqs) => onPatch({ faqs })} internalPages={internalPages} />
 
           {cb.slot("after-faq")}
@@ -299,6 +364,13 @@ function ProductBody({
           </div>
 
           <Toggle label="Published (visible in nav)" checked={p.status === "published"} onChange={(v) => onPatch({ status: v ? "published" : "draft" })} />
+
+          {/* The CTA panel has no other editor — all its copy is hardcoded, so
+              this toggle is the only control over it. */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Call to Action</p>
+            <VisibilityToggle hidden={p.ctaHidden} onChange={(h) => onPatch({ ctaHidden: h })} />
+          </div>
 
           {cb.slot("bottom")}
           {cb.modal}
@@ -322,6 +394,14 @@ function ProductBody({
 /* ---- live preview (mirrors /products/[slug], interleaving page-builder zones) ---- */
 function ProductPreview({ product: p }: { product: Product }) {
   const containers = p.containers ?? [];
+  // Mirrors the live page exactly: hidden sections and hidden cards are dropped
+  // BEFORE render (card badges are numbered from the array index), and a section
+  // whose cards are all hidden drops out rather than stranding its heading.
+  const featureSections = visibleItems(p.sections)
+    .map((sec) => ({ ...sec, items: visibleItems(sec.items) }))
+    .filter((sec) => sec.items.length > 0);
+  const pricingPlans = visibleItems(p.pricing);
+  const faqItems = visibleItems(p.faqs);
   // A product that links elsewhere shows no rich content on its own page.
   if (p.href?.trim()) {
     return (
@@ -356,7 +436,7 @@ function ProductPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-hero" />
 
       {/* overview */}
-      {p.overview && (
+      {!p.overviewHidden && p.overview && (
         <div className="border-t border-ink/10 p-5 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Overview</p>
           <h4 className="mt-1 font-display text-base font-bold">
@@ -371,7 +451,7 @@ function ProductPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-overview" />
 
       {/* feature sections */}
-      {p.sections.map((sec, si) => (
+      {featureSections.map((sec, si) => (
         <div key={si} className="border-t border-ink/10 p-5">
           <h4 className="text-center font-display text-base font-bold grad-text">{sec.title}</h4>
           {sec.subtitle && <p className="mt-1 text-center text-[11px] text-muted">{sec.subtitle}</p>}
@@ -393,11 +473,11 @@ function ProductPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-sections" />
 
       {/* pricing */}
-      {p.pricing.length > 0 && (
+      {!p.pricingHidden && pricingPlans.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">Pricing</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {p.pricing.map((plan, i) => (
+            {pricingPlans.map((plan, i) => (
               <div key={i} className={`rounded-lg border p-2.5 ${plan.highlighted ? "border-primary bg-gradient-to-br from-primary/10 to-secondary/10" : "border-ink/10 bg-surface"}`}>
                 {plan.highlighted && <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-primary">Most Popular</span>}
                 <p className="text-[11px] font-semibold">{plan.name}</p>
@@ -420,11 +500,11 @@ function ProductPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-pricing" />
 
       {/* faq — same accordion component as the live product page */}
-      {p.faqs.filter((f) => f.question).length > 0 && (
+      {!p.faqsHidden && faqItems.filter((f) => f.question).length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">FAQ</p>
           <div className="mt-3">
-            <FaqAccordionView items={p.faqs} />
+            <FaqAccordionView items={faqItems} />
           </div>
         </div>
       )}
@@ -446,6 +526,10 @@ function ProductPreview({ product: p }: { product: Product }) {
 function AboutPreview({ product: p }: { product: Product }) {
   const a = p.about;
   const containers = a.containers ?? [];
+  // Mirrors the live About page.
+  const aboutStats = visibleItems(a.stats);
+  const aboutFeatures = visibleItems(a.features);
+  const aboutBenefits = visibleItems(a.benefits);
   return (
     <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-ink/10 bg-base shadow-soft xl:max-h-[calc(100vh-10rem)]">
       <PageContainersView containers={containers} zone="top" />
@@ -470,7 +554,7 @@ function AboutPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-hero" />
 
       {/* overview */}
-      {a.overview && (
+      {!a.overviewHidden && a.overview && (
         <div className="border-t border-ink/10 p-5 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Our Story</p>
           <div
@@ -482,10 +566,10 @@ function AboutPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-overview" />
 
       {/* stats */}
-      {a.stats.length > 0 && (
+      {!a.statsHidden && aboutStats.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <div className="grid grid-cols-2 gap-2">
-            {a.stats.map((s, i) => (
+            {aboutStats.map((s, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5 text-center">
                 <p className="font-display text-base font-bold grad-text">{s.value}</p>
                 <p className="mt-0.5 text-[10px] text-muted">{s.label}</p>
@@ -497,11 +581,11 @@ function AboutPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-stats" />
 
       {/* features */}
-      {a.features.length > 0 && (
+      {!a.featuresHidden && aboutFeatures.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">What makes it different</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {a.features.map((f, i) => (
+            {aboutFeatures.map((f, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
                 {(() => { const s = sanitizeRichText(f.title); const ta = richTextAlign(s); return (
                 <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
@@ -515,11 +599,11 @@ function AboutPreview({ product: p }: { product: Product }) {
       <PageContainersView containers={containers} zone="after-features" />
 
       {/* benefits */}
-      {a.benefits.length > 0 && (
+      {!a.benefitsHidden && aboutBenefits.length > 0 && (
         <div className="border-t border-ink/10 p-5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-primary">The benefits</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {a.benefits.map((b, i) => (
+            {aboutBenefits.map((b, i) => (
               <div key={i} className="rounded-lg border border-ink/10 bg-surface p-2.5">
                 {(() => { const s = sanitizeRichText(b.title); const ta = richTextAlign(s); return (
                 <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
@@ -547,7 +631,7 @@ function AboutPreview({ product: p }: { product: Product }) {
 
 function SectionsEditor({ sections, onChange, internalPages = [] }: { sections: ProductSection[]; onChange: (s: ProductSection[]) => void; internalPages?: InternalPage[] }) {
   const upd = (i: number, patch: Partial<ProductSection>) => onChange(sections.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
-  const item = (si: number, ii: number, patch: Partial<{ title: string; desc: string }>) =>
+  const item = (si: number, ii: number, patch: Partial<ProductFeature>) =>
     upd(si, { items: sections[si].items.map((it, idx) => (idx === ii ? { ...it, ...patch } : it)) });
   return (
     <div className="rounded-xl border border-ink/10 p-3">
@@ -560,6 +644,11 @@ function SectionsEditor({ sections, onChange, internalPages = [] }: { sections: 
               <button onClick={() => onChange(sections.filter((_, idx) => idx !== si))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
             </div>
             <input value={s.subtitle} onChange={(e) => upd(si, { subtitle: e.target.value })} placeholder="Section subtitle (optional)" className="input mt-2" />
+            <VisibilityToggle
+              hidden={s.hidden}
+              onChange={(h) => upd(si, { hidden: h })}
+              hint="Turn off to hide this whole section on the live page."
+            />
             {/* Link visibility for this section. These sections have no href/button
                 field — their only links are ones typed into the card rich text via
                 the 🔗 button — so OFF strips those anchors and keeps the words. */}
@@ -589,7 +678,10 @@ function SectionsEditor({ sections, onChange, internalPages = [] }: { sections: 
                       <span className="mb-1 block text-[11px] font-medium text-muted">Card title</span>
                       <RichEditor value={it.title} onChange={(html) => item(si, ii, { title: html })} internalPages={internalPages} minHeight={48} />
                     </div>
-                    <button onClick={() => upd(si, { items: s.items.filter((_, idx) => idx !== ii) })} className="mt-6 grid h-9 w-9 shrink-0 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+                    <div className="mt-6 flex shrink-0 items-center gap-1.5">
+                      <CardVisibilityToggle hidden={it.hidden} onChange={(h) => item(si, ii, { hidden: h })} />
+                      <button onClick={() => upd(si, { items: s.items.filter((_, idx) => idx !== ii) })} className="grid h-9 w-9 shrink-0 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+                    </div>
                   </div>
                   <div className="mt-2">
                     <span className="mb-1 block text-[11px] font-medium text-muted">Card description</span>
@@ -617,6 +709,7 @@ function PricingEditor({ plans, onChange }: { plans: PricingPlan[]; onChange: (p
           <div key={i} className="rounded-lg border border-ink/10 bg-base/50 p-3">
             <div className="flex gap-2">
               <input value={pl.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder="Plan name" className="input flex-1 font-medium" />
+              <CardVisibilityToggle hidden={pl.hidden} onChange={(h) => upd(i, { hidden: h })} />
               <button onClick={() => onChange(plans.filter((_, idx) => idx !== i))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -657,6 +750,7 @@ function FaqsEditor({ faqs, onChange, internalPages = [] }: { faqs: ProductFaq[]
           <div key={i} className="rounded-lg border border-ink/10 bg-base/50 p-3">
             <div className="flex gap-2">
               <input value={f.question} onChange={(e) => upd(i, { question: e.target.value })} placeholder="Question" className="input flex-1 font-medium" />
+              <CardVisibilityToggle hidden={f.hidden} onChange={(h) => upd(i, { hidden: h })} />
               <button onClick={() => onChange(faqs.filter((_, idx) => idx !== i))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
             </div>
             <div className="mt-2">
@@ -683,7 +777,10 @@ function ItemsEditor({ label, items, onChange, internalPages = [] }: { label: st
                 <span className="mb-1 block text-[11px] font-medium text-muted">Card title</span>
                 <RichEditor value={it.title} onChange={(html) => upd(i, { title: html })} internalPages={internalPages} minHeight={48} />
               </div>
-              <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="mt-6 grid h-9 w-9 shrink-0 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+              <div className="mt-6 flex shrink-0 items-center gap-1.5">
+                <CardVisibilityToggle hidden={it.hidden} onChange={(h) => upd(i, { hidden: h })} />
+                <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="grid h-9 w-9 shrink-0 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
+              </div>
             </div>
             <div className="mt-2">
               <span className="mb-1 block text-[11px] font-medium text-muted">Card description</span>
@@ -707,6 +804,7 @@ function StatsEditor({ stats, onChange }: { stats: ProductStat[]; onChange: (v: 
           <div key={i} className="flex gap-2">
             <input value={s.value} onChange={(e) => upd(i, { value: e.target.value })} placeholder="Value (e.g. 3x)" className="input w-32" />
             <input value={s.label} onChange={(e) => upd(i, { label: e.target.value })} placeholder="Label" className="input flex-1" />
+            <CardVisibilityToggle hidden={s.hidden} onChange={(h) => upd(i, { hidden: h })} />
             <button onClick={() => onChange(stats.filter((_, idx) => idx !== i))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
           </div>
         ))}
@@ -743,6 +841,12 @@ function AboutEditor({
         <div className="mt-3 space-y-3">
           {slot("top")}
 
+          <VisibilityToggle
+            hidden={about.heroHidden}
+            onChange={(h) => set({ heroHidden: h })}
+            hint="Turn off to hide the About hero. The breadcrumb stays."
+            className="mb-2"
+          />
           <Field label="Hero title" value={about.heroTitle} onChange={(v) => set({ heroTitle: v })} />
           <div>
             <span className="mb-1 block text-xs font-medium text-muted">Hero description (rich text — select a word, click 🔗 to link)</span>
@@ -760,25 +864,30 @@ function AboutEditor({
 
           <div>
             <span className="mb-1 block text-xs font-medium text-muted">Main content / story (rich text — supports word links)</span>
+            <VisibilityToggle hidden={about.overviewHidden} onChange={(h) => set({ overviewHidden: h })} className="mb-2" />
             <RichEditor value={about.overview} onChange={(html) => set({ overview: html })} internalPages={internalPages} />
           </div>
 
           {slot("after-overview")}
 
+          <VisibilityToggle hidden={about.statsHidden} onChange={(h) => set({ statsHidden: h })} className="mb-2" />
           <StatsEditor stats={about.stats} onChange={(stats) => set({ stats })} />
 
           {slot("after-stats")}
 
+          <VisibilityToggle hidden={about.featuresHidden} onChange={(h) => set({ featuresHidden: h })} className="mb-2" />
           <ItemsEditor label="Features" items={about.features} onChange={(features) => set({ features })} internalPages={internalPages} />
 
           {slot("after-features")}
 
+          <VisibilityToggle hidden={about.benefitsHidden} onChange={(h) => set({ benefitsHidden: h })} className="mb-2" />
           <ItemsEditor label="Benefits" items={about.benefits} onChange={(benefits) => set({ benefits })} internalPages={internalPages} />
 
           {slot("after-benefits")}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="CTA heading" value={about.ctaHeading} onChange={(v) => set({ ctaHeading: v })} />
+          <VisibilityToggle hidden={about.ctaHidden} onChange={(h) => set({ ctaHidden: h })} className="mb-2" />
             <Field label="CTA button label" value={about.ctaButtonLabel} onChange={(v) => set({ ctaButtonLabel: v })} />
             <Field label="CTA text" value={about.ctaText} onChange={(v) => set({ ctaText: v })} />
             <Field label="CTA button link" value={about.ctaButtonHref} onChange={(v) => set({ ctaButtonHref: v })} />

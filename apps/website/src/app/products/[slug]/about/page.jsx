@@ -4,6 +4,7 @@ import Image from "next/image";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-server";
+import { visibleItems } from "@jhb/shared/products";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { Heading } from "@jhb/shared/heading";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
@@ -70,6 +71,14 @@ export default async function AboutProductPage({
   if (!p || p.status !== "published") notFound();
   const a = p.about;
   const containers = a.containers ?? [];
+  // Drop hidden cards BEFORE rendering — the feature/benefit cards are numbered
+  // from the array index, so skipping inside the map would leave gaps. The
+  // existing length>0 guards below now test the FILTERED arrays, so hiding every
+  // card in a block removes the block instead of stranding its heading over an
+  // empty grid. Absent `hidden` = shown (see products.ts).
+  const aboutStats = visibleItems(a.stats);
+  const aboutFeatures = visibleItems(a.features);
+  const aboutBenefits = visibleItems(a.benefits);
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const aboutSchema = {
@@ -109,6 +118,10 @@ export default async function AboutProductPage({
             <span className="text-ink">About</span>
           </nav>
 
+          {/* Hero hidden → the breadcrumb above survives, which matters here:
+              it carries the only other link back to the product page (the
+              "← Back to" button lives inside this block). */}
+          {!a.heroHidden && (
           <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
             {/* Brand logo — prominent, contained, padded, never cropped */}
             {hasImage(a.image) && (
@@ -152,12 +165,13 @@ export default async function AboutProductPage({
               </Reveal>
             </div>
           </div>
+          )}
         </section>
 
         <PageContainers containers={containers} zone="after-hero" />
 
         {/* Overview */}
-        {a.overview && (
+        {!a.overviewHidden && a.overview && (
           <section className="container-x mt-16">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal><span className="eyebrow">Our Story</span></Reveal>
@@ -174,10 +188,10 @@ export default async function AboutProductPage({
         <PageContainers containers={containers} zone="after-overview" />
 
         {/* Stats */}
-        {a.stats.length > 0 && (
+        {!a.statsHidden && aboutStats.length > 0 && (
           <section className="container-x mt-16">
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {a.stats.map((s, i) => (
+              {aboutStats.map((s, i) => (
                 <Reveal key={s.label} delay={(i % 4) * 0.06}>
                   <div className="glass rounded-2xl p-6 text-center">
                     <p className="font-display text-4xl font-bold grad-text">{s.value}</p>
@@ -192,13 +206,13 @@ export default async function AboutProductPage({
         <PageContainers containers={containers} zone="after-stats" />
 
         {/* Features */}
-        {a.features.length > 0 && (
+        {!a.featuresHidden && aboutFeatures.length > 0 && (
           <section className="container-x mt-16">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal><h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">What makes it <span className="grad-text">different</span></h2></Reveal>
             </div>
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {a.features.map((f, i) => (
+              {aboutFeatures.map((f, i) => (
                 <Reveal key={f.title} delay={(i % 3) * 0.06}>
                   <div className="glass glow-border flex h-full items-start gap-4 rounded-2xl p-6">
                     <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">{i + 1}</span>
@@ -229,13 +243,13 @@ export default async function AboutProductPage({
         <PageContainers containers={containers} zone="after-features" />
 
         {/* Benefits */}
-        {a.benefits.length > 0 && (
+        {!a.benefitsHidden && aboutBenefits.length > 0 && (
           <section className="container-x mt-16">
             <div className="mx-auto max-w-2xl text-center">
               <Reveal><h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">The <span className="grad-text">benefits</span></h2></Reveal>
             </div>
             <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              {a.benefits.map((b, i) => (
+              {aboutBenefits.map((b, i) => (
                 <Reveal key={b.title} delay={(i % 2) * 0.06}>
                   <div className="rounded-2xl border border-ink/10 bg-surface p-6 shadow-soft">
                     {(() => {
@@ -263,6 +277,9 @@ export default async function AboutProductPage({
         <PageContainers containers={containers} zone="after-benefits" />
 
         {/* CTA */}
+        {/* Falls back to hardcoded copy when its fields are blank, so emptying
+            them can't remove it — the toggle is the only way. */}
+        {!a.ctaHidden && (
         <section className="container-x my-16">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-surface to-secondary/10 px-6 py-10 text-center shadow-soft sm:px-12">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]" />
@@ -274,6 +291,7 @@ export default async function AboutProductPage({
             </SmartLink>
           </div>
         </section>
+        )}
 
         <PageContainers containers={containers} zone="bottom" />
       </main>
