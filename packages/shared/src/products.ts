@@ -6,7 +6,12 @@
 import type { PageContainer } from "./containers";
 
 export type ProductFeature = { title: string; desc: string };
-export type ProductSection = { title: string; subtitle: string; items: ProductFeature[] };
+// `linksHidden` powers the "Show section link" toggle. These sections carry no
+// href/button field — the only links they can contain are ones the admin typed
+// inside the rich text — so turning it off strips those anchors (keeping the
+// words) rather than blanking a field. Absent/false = links shown, so every
+// section already saved keeps its links.
+export type ProductSection = { title: string; subtitle: string; items: ProductFeature[]; linksHidden?: boolean };
 export type PricingPlan = {
   name: string;
   price: string;

@@ -15,7 +15,7 @@ import { useContainerSlots } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
-import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { sanitizeRichText, stripAnchors } from "@jhb/shared/rich-text";
 import { RichInline } from "@jhb/shared/rich-inline";
 
 // Native sections of the live product detail page, in order (zone after each).
@@ -379,10 +379,11 @@ function ProductPreview({ product: p }: { product: Product }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {sec.items.map((it, ii) => (
                 <div key={ii} className="rounded-lg border border-ink/10 bg-surface p-2.5">
-                  {(() => { const s = sanitizeRichText(it.title); const ta = richTextAlign(s); return (
+                  {/* Mirrors the live page: links off → anchors stripped, words kept. */}
+                  {(() => { const s = sec.linksHidden ? stripAnchors(sanitizeRichText(it.title)) : sanitizeRichText(it.title); const ta = richTextAlign(s); return (
                   <div className={`text-[11px] font-semibold leading-tight [&_p]:m-0 [&_a]:text-primary ${ta ? ALIGN_TEXT[ta] : ""}`} dangerouslySetInnerHTML={{ __html: stripHeadingTags(s) }} />
                   ); })()}
-                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }} />
+                  <div className="mt-1 text-[10px] text-muted [&_p]:m-0 [&_a]:text-primary" dangerouslySetInnerHTML={{ __html: sec.linksHidden ? stripAnchors(sanitizeRichText(it.desc)) : sanitizeRichText(it.desc) }} />
                 </div>
               ))}
             </div>
@@ -559,6 +560,27 @@ function SectionsEditor({ sections, onChange, internalPages = [] }: { sections: 
               <button onClick={() => onChange(sections.filter((_, idx) => idx !== si))} className="grid h-9 w-9 place-items-center rounded border border-ink/10 text-xs hover:border-red-300 hover:text-red-500">✕</button>
             </div>
             <input value={s.subtitle} onChange={(e) => upd(si, { subtitle: e.target.value })} placeholder="Section subtitle (optional)" className="input mt-2" />
+            {/* Link visibility for this section. These sections have no href/button
+                field — their only links are ones typed into the card rich text via
+                the 🔗 button — so OFF strips those anchors and keeps the words. */}
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-ink/10 bg-surface p-3">
+              <div>
+                <p className="text-xs font-semibold text-ink/90">Show section link</p>
+                <p className="text-[11px] text-muted">
+                  Turn off to hide the links inside this section&rsquo;s cards. The text stays; only the links go.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => upd(si, { linksHidden: !s.linksHidden })}
+                className="flex items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+              >
+                <span className={`relative h-4 w-7 rounded-full transition-colors ${!s.linksHidden ? "bg-primary" : "bg-ink/20"}`}>
+                  <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${!s.linksHidden ? "left-[14px]" : "left-0.5"}`} />
+                </span>
+                {!s.linksHidden ? "On" : "Off"}
+              </button>
+            </div>
             <div className="mt-2 space-y-2 border-l border-ink/10 pl-3">
               {s.items.map((it, ii) => (
                 <div key={ii} className="rounded border border-ink/10 p-2">

@@ -198,6 +198,21 @@ export function sanitizeHeading(input: string | null | undefined): string {
   return sanitizeRichText(input).replace(/<\/?h[1-6]\b[^>]*>/gi, "");
 }
 
+// Remove the LINKS from already-sanitized rich text while keeping the words.
+// Powers the "Show section link" toggle on sections whose only links are ones
+// the admin typed inside the rich text (the editor's 🔗 button), where there is
+// no structured href field to blank. Only the <a> wrapper is unwrapped — the
+// text it wrapped, and every other tag (bold, colour, lists), is left untouched,
+// so turning links off never deletes any of the copy.
+// Input is expected to have been through sanitizeRichText already (that is what
+// guarantees the markup is well-formed and the tag set is known).
+export function stripAnchors(input: string | null | undefined): string {
+  if (!input) return "";
+  // No anchor → return as-is so the common case allocates nothing.
+  if (!/<a\b/i.test(input)) return input;
+  return input.replace(/<a\b[^>]*>/gi, "").replace(/<\/a\s*>/gi, "");
+}
+
 // Clean PLAIN-TEXT extraction — for short label fields (card titles, names,
 // eyebrows) that are rendered as raw {text}, not HTML, but may have been polluted
 // by a Word/Docs paste. Removes the junk, then strips ALL remaining tags and

@@ -5,7 +5,7 @@ import { getProductBySlug, getPublishedProducts } from "@jhb/shared/products-ser
 import { getSettings } from "@jhb/shared/content-server";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { Heading } from "@jhb/shared/heading";
-import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { sanitizeRichText, stripAnchors } from "@jhb/shared/rich-text";
 import { RichInline } from "@jhb/shared/rich-inline";
 import Reveal from "@/components/Reveal";
 import FaqAccordion from "@/components/FaqAccordion";
@@ -190,7 +190,11 @@ export default async function ProductPage({
                     </span>
                     <div className="min-w-0">
                       {(() => {
-                        const s = sanitizeRichText(it.title);
+                        // "Show section link" OFF → drop the links the admin typed
+                        // into this section's rich text, keeping all the words.
+                        const rt = (html) =>
+                          sec.linksHidden ? stripAnchors(sanitizeRichText(html)) : sanitizeRichText(html);
+                        const s = rt(it.title);
                         const ta = richTextAlign(s);
                         return (
                           <Heading
@@ -202,7 +206,11 @@ export default async function ProductPage({
                       })()}
                       <div
                         className="mt-1.5 text-sm leading-relaxed text-muted [&_p]:m-0 [&_a]:text-primary [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(it.desc) }}
+                        dangerouslySetInnerHTML={{
+                          __html: sec.linksHidden
+                            ? stripAnchors(sanitizeRichText(it.desc))
+                            : sanitizeRichText(it.desc),
+                        }}
                       />
                     </div>
                   </div>
