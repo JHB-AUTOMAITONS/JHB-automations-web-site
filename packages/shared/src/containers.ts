@@ -234,7 +234,11 @@ export function smartImgAttrs(
 // container — present and future — can be toggled off without per-type churn.
 // Absent/false = shown (backward compatible); true = hidden from the admin
 // preview AND the live site, while all its content stays saved in the DB.
-type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: HeadingTag; hidden?: boolean };
+// `linksHidden` is the same idea for the container's LINKS only: true hides its
+// structured buttons/links (see stripContainerLinks) while the section itself
+// still renders — the two flags are independent. Absent/false = links shown, so
+// every container already saved keeps its links after this field ships.
+type Base = { id: string; zone: string; style: ContainerStyle; headingTag?: HeadingTag; hidden?: boolean; linksHidden?: boolean };
 
 // "Hero Section" — heading + rich description + buttons + image + background, all in
 // one container. `heading` and `subtitle` may be rich-text HTML (older plain values
@@ -656,4 +660,67 @@ export function mergeHeroContainers(cs: PageContainer[]): PageContainer[] {
     out.push(c);
   }
   return out;
+}
+
+// ─── "Show section link" (Base.linksHidden) ──────────────────────────────────
+// Container types that own at least one STRUCTURED link field (a Btn, a bare
+// href, or a per-item link). Only these show the admin's "Show section link"
+// toggle — on every other type it would be a control that does nothing.
+// KEEP IN SYNC with stripContainerLinks(): a new link-bearing type needs both.
+//
+// Deliberately excluded: `contactform`, whose buttonLabel drives a type="submit"
+// control with no href — hiding it would break form submission, not a link. Also
+// out of scope: anchors the admin types INSIDE rich text (a word link in a
+// description). Those are prose, not a section link, and blanking a field can't
+// remove them; this toggle governs the section's own buttons/links.
+export const LINK_BEARING_TYPES: ReadonlySet<ContainerType> = new Set([
+  "hero",
+  "imagecontent",
+  "cta",
+  "imagebanner",
+  "cards",
+  "services",
+]);
+
+const NO_BTN: Btn = { label: "", href: "" };
+const linkArr = <T,>(v: T[] | null | undefined): T[] => (Array.isArray(v) ? v : []);
+
+/**
+ * A copy of `c` with every structured link field blanked — how `linksHidden`
+ * takes effect. Every renderer already hides its link when the label is empty,
+ * so emptying the fields is equivalent to gating all 11 render sites, but stays
+ * in ONE place instead of being scattered across six renderers.
+ *
+ * ALWAYS blank label AND href together. Each render site is written as
+ * `href={btn(x).href || "#"}` and gated on the LABEL only, so clearing just the
+ * href would leave a fully visible button pointing at "#" — a dead link, which
+ * is worse than doing nothing.
+ */
+export function stripContainerLinks(c: PageContainer): PageContainer {
+  switch (c.type) {
+    case "hero":
+      return { ...c, props: { ...c.props, primary: NO_BTN, secondary: NO_BTN } };
+    case "imagecontent":
+      return { ...c, props: { ...c.props, primary: NO_BTN, secondary: NO_BTN } };
+    case "cta":
+      return { ...c, props: { ...c.props, button: NO_BTN } };
+    case "imagebanner":
+      return { ...c, props: { ...c.props, button: NO_BTN } };
+    case "cards":
+      // `link` makes the whole card clickable; `button` is the per-card CTA.
+      return {
+        ...c,
+        props: {
+          ...c.props,
+          items: linkArr(c.props.items).map((i) => ({ ...i, link: "", button: NO_BTN })),
+        },
+      };
+    case "services":
+      return {
+        ...c,
+        props: { ...c.props, items: linkArr(c.props.items).map((i) => ({ ...i, href: "" })) },
+      };
+    default:
+      return c;
+  }
 }

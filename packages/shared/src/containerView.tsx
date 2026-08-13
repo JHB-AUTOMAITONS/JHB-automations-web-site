@@ -39,6 +39,7 @@ import {
   toAlign,
   richTextAlign,
   CONTAINER_LABELS,
+  stripContainerLinks,
 } from "./containers";
 import { sanitizeRichText } from "./richText";
 import { RichInline } from "./richInline";
@@ -953,27 +954,34 @@ const RenderContainer = memo(function RenderContainer({ c }: { c: PageContainer 
   // Universal visibility: a hidden container renders nothing on the admin preview
   // AND the live site (its data stays saved). Absent → shown (backward compatible).
   if (c.hidden) return null;
-  switch (c.type) {
-    case "hero": return <Hero c={c} />;
-    case "herodesc": return <HeroDesc c={c} />;
-    case "features": return <Features c={c} />;
-    case "services": return <ServicesBlock c={c} />;
-    case "about": return <AboutBlock c={c} />;
-    case "cards": return <Cards c={c} />;
-    case "imagecontent": return <ImageContent c={c} />;
-    case "richtext": return <RichTextBlock c={c} />;
-    case "image": return <ImageBlock c={c} />;
-    case "imagebanner": return <ImageBanner c={c} />;
-    case "gallery": return <Gallery c={c} />;
-    case "video": return <VideoBlock c={c} />;
-    case "testimonials": return <Testimonials c={c} />;
-    case "faq": return <Faq c={c} />;
-    case "cta": return <Cta c={c} />;
-    case "team": return <Team c={c} />;
-    case "contactform": return <ContactFormBlock c={c} />;
-    case "advantage": return <Advantage c={c} />;
-    case "workflow": return <Workflow c={c} />;
-    case "custom": return <CustomBlock c={c} />;
+  // Universal link visibility, independent of the flag above: when links are
+  // turned off, every structured link/button field is blanked before dispatch,
+  // and each renderer's existing empty-label guard then omits the link while the
+  // section itself still renders. Absent → links shown (backward compatible).
+  // The ternary returns the SAME reference when the flag is off, so no extra
+  // object is allocated and the memo above keeps short-circuiting as before.
+  const v = c.linksHidden ? stripContainerLinks(c) : c;
+  switch (v.type) {
+    case "hero": return <Hero c={v} />;
+    case "herodesc": return <HeroDesc c={v} />;
+    case "features": return <Features c={v} />;
+    case "services": return <ServicesBlock c={v} />;
+    case "about": return <AboutBlock c={v} />;
+    case "cards": return <Cards c={v} />;
+    case "imagecontent": return <ImageContent c={v} />;
+    case "richtext": return <RichTextBlock c={v} />;
+    case "image": return <ImageBlock c={v} />;
+    case "imagebanner": return <ImageBanner c={v} />;
+    case "gallery": return <Gallery c={v} />;
+    case "video": return <VideoBlock c={v} />;
+    case "testimonials": return <Testimonials c={v} />;
+    case "faq": return <Faq c={v} />;
+    case "cta": return <Cta c={v} />;
+    case "team": return <Team c={v} />;
+    case "contactform": return <ContactFormBlock c={v} />;
+    case "advantage": return <Advantage c={v} />;
+    case "workflow": return <Workflow c={v} />;
+    case "custom": return <CustomBlock c={v} />;
     default: return null;
   }
 });

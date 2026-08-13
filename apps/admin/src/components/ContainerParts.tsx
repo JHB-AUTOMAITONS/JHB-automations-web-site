@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   CONTAINER_LABELS,
   CONTAINER_TYPES,
+  LINK_BEARING_TYPES,
   type ContainerType,
   type PageContainer,
 } from "@jhb/shared/containers";
@@ -154,6 +155,8 @@ export function ContainerCard({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const visible = !container.hidden;
+  // Absent → links shown, matching the renderer's own backward-compatible default.
+  const linksVisible = !container.linksHidden;
   return (
     <div className={`rounded-2xl border-2 border-dashed border-primary/40 bg-base p-4 ${visible ? "" : "opacity-60"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -201,6 +204,30 @@ export function ContainerCard({
           {visible ? "On" : "Off"}
         </button>
       </div>
+      {/* Link visibility — independent of the section toggle above, and only on
+          container types that actually have a link/button field (on the others
+          it would be a control that does nothing). Same markup as the toggle
+          above so the two read as a pair. */}
+      {LINK_BEARING_TYPES.has(container.type) && (
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 bg-surface p-3">
+          <div>
+            <p className="text-xs font-semibold text-ink/90">Show section link</p>
+            <p className="text-[11px] text-muted">
+              Turn off to hide this section&rsquo;s buttons and links. The section itself stays visible.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange({ ...container, linksHidden: !container.linksHidden })}
+            className="flex items-center gap-1.5 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+          >
+            <span className={`relative h-4 w-7 rounded-full transition-colors ${linksVisible ? "bg-primary" : "bg-ink/20"}`}>
+              <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${linksVisible ? "left-[14px]" : "left-0.5"}`} />
+            </span>
+            {linksVisible ? "On" : "Off"}
+          </button>
+        </div>
+      )}
       {!collapsed && (
         <div className="mt-3 space-y-3">
           <ContainerBody container={container} onChange={onChange} />
