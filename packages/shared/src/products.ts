@@ -110,6 +110,8 @@ export type Product = {
   about: ProductAbout;
   metaTitle: string;
   metaDescription: string;
+  // Optional so every product saved before this field existed still loads.
+  metaKeywords?: string;
   ogImage: string;
   canonical: string;
   ogTitle: string;

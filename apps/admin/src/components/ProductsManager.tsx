@@ -17,6 +17,7 @@ import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import { stripHeadingTags, ALIGN_TEXT, richTextAlign } from "@jhb/shared/containers";
 import { sanitizeRichText, stripAnchors } from "@jhb/shared/rich-text";
 import { RichInline } from "@jhb/shared/rich-inline";
+import AiSeoPanel from "./ai/AiSeoPanel";
 
 // Native sections of the live product detail page, in order (zone after each).
 const PRODUCT_SECTIONS = [
@@ -92,6 +93,17 @@ function CardVisibilityToggle({ hidden, onChange }: { hidden?: boolean; onChange
       </span>
       {visible ? "Shown" : "Hidden"}
     </button>
+  );
+}
+
+// Same wrapper Service Pages use for their "SEO & URL" section, so the two
+// editors read identically.
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-ink/10 bg-surface p-5 shadow-soft">
+      <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-muted">{title}</h2>
+      <div className="space-y-3">{children}</div>
+    </section>
   );
 }
 
@@ -297,10 +309,50 @@ function ProductBody({
         <>
           {cb.slot("top")}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Product title" value={p.title} onChange={(v) => onPatch({ title: v })} />
-            <Field label="Slug (URL)" value={p.slug} onChange={(v) => onPatch({ slug: v })} placeholder="auto from title" />
-          </div>
+          <Field label="Product title" value={p.title} onChange={(v) => onPatch({ title: v })} />
+
+          <Section title="SEO & URL">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted">Product slug (URL)</span>
+              <input
+                value={p.slug}
+                onChange={(e) => onPatch({ slug: e.target.value })}
+                onBlur={(e) => onPatch({ slug: slugify(e.target.value || p.title) })}
+                className="input"
+                placeholder="auto from title"
+              />
+              <p className="mt-1 text-[11px] text-muted">
+                Public path: /products/{slugify(p.slug || p.title) || "…"}
+              </p>
+            </label>
+            <Field label="SEO title" value={p.metaTitle} onChange={(v) => onPatch({ metaTitle: v })} />
+            <Field label="Meta description" value={p.metaDescription} onChange={(v) => onPatch({ metaDescription: v })} textarea />
+            <Field label="Meta keywords" value={p.metaKeywords ?? ""} onChange={(v) => onPatch({ metaKeywords: v })} />
+          </Section>
+
+          <AiSeoPanel
+            route={`/products/${slugify(p.slug || p.title) || p.id}`}
+            getContext={() => ({
+              title: p.metaTitle || p.title,
+              contentHtml: p.overview || p.description,
+              focusKeyword: (p.metaKeywords || "").split(",")[0]?.trim() || undefined,
+              metaTitle: p.metaTitle,
+              metaDescription: p.metaDescription,
+              keywords: p.metaKeywords,
+            })}
+            onApply={(r) => {
+              if (r.seoTitle) onPatch({ metaTitle: r.seoTitle });
+              if (r.metaDescription) onPatch({ metaDescription: r.metaDescription });
+              if (r.metaKeywords) onPatch({ metaKeywords: r.metaKeywords });
+              else if (r.secondaryKeywords?.length) onPatch({ metaKeywords: r.secondaryKeywords.join(", ") });
+              if (r.ogTitle) onPatch({ ogTitle: r.ogTitle });
+              if (r.ogDescription) onPatch({ ogDescription: r.ogDescription });
+              if (r.canonical) onPatch({ canonical: r.canonical });
+              if (r.contentHtml) onPatch({ overview: r.contentHtml });
+              if (r.faqs?.length) onPatch({ faqs: [...p.faqs, ...r.faqs] });
+            }}
+          />
+
           <Field label="Hero highlight (gradient phrase, optional)" value={p.highlight} onChange={(v) => onPatch({ highlight: v })} />
           <div>
             <span className="mb-1 block text-xs font-medium text-muted">Hero description (rich text — select a word, click 🔗 to link)</span>
@@ -352,11 +404,10 @@ function ProductBody({
 
           {cb.slot("after-faq")}
 
-          {/* SEO */}
-          <p className="pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted">SEO</p>
+          {/* Open Graph & canonical — SEO title/description/keywords moved into the
+              "SEO & URL" section above, next to the AI SEO Assistant. */}
+          <p className="pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Open Graph &amp; Canonical</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Meta title" value={p.metaTitle} onChange={(v) => onPatch({ metaTitle: v })} />
-            <Field label="Meta description" value={p.metaDescription} onChange={(v) => onPatch({ metaDescription: v })} />
             <Field label="OG title" value={p.ogTitle} onChange={(v) => onPatch({ ogTitle: v })} />
             <Field label="OG description" value={p.ogDescription} onChange={(v) => onPatch({ ogDescription: v })} />
             <Field label="OG image URL" value={p.ogImage} onChange={(v) => onPatch({ ogImage: v })} />

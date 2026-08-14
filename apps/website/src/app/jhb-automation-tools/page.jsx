@@ -7,9 +7,11 @@ import ToolsHubView from "@/components/ToolsHubView";
 export async function generateMetadata() {
   const hub = await getToolsHub();
   const canonical = "/jhb-automation-tools";
+  const keywords = (hub.seo.metaKeywords || "").split(",").map((k) => k.trim()).filter(Boolean);
   return {
     title: hub.seo.metaTitle,
     description: hub.seo.metaDescription,
+    ...(keywords.length ? { keywords } : {}),
     alternates: { canonical },
     openGraph: {
       siteName: "JHB Automations",

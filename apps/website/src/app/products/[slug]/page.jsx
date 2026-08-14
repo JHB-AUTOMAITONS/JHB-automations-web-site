@@ -34,9 +34,11 @@ export async function generateMetadata({
   if (!p) return { title: "Product Not Found — JHB Automations" };
   const canonical = p.canonical?.trim() || `/products/${p.slug}`;
   const ogImages = p.ogImage?.trim() ? [p.ogImage.trim()] : p.image ? [p.image] : undefined;
+  const keywords = (p.metaKeywords || "").split(",").map((k) => k.trim()).filter(Boolean);
   return {
     title: p.metaTitle || `${p.title} — JHB Automations`,
     description: p.metaDescription || stripHtml(p.description),
+    ...(keywords.length ? { keywords } : {}),
     alternates: { canonical },
     openGraph: {
       siteName: "JHB Automations",

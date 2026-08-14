@@ -15,6 +15,7 @@ import { usePageContainers } from "@/lib/usePageContainers";
 import { PageContainersView } from "@jhb/shared/container-view";
 import FaqAccordionView from "@jhb/shared/faq-accordion-view";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import AiSeoPanel from "./ai/AiSeoPanel";
 
 // The tools-hub page's native sections in live-render order, each paired with
 // the zone that sits AFTER it (matches the <PageContainersView zone> points in
@@ -383,15 +384,40 @@ export default function ToolsHubManager({
 
       {cb.slot("bottom")}
 
-      {/* SEO */}
-      <Card title="SEO Settings">
-        <Field label="Meta title" value={form.seo.metaTitle} onChange={(v) => setSeo("metaTitle", v)} />
+      {/* SEO & URL — same section + AI SEO Assistant used on Service Pages and
+          the JHB Products editor, wired to this page's own content/route so it
+          can never read or overwrite another page's SEO. */}
+      <Card title="SEO & URL">
+        <p className="text-[11px] text-muted">Public path: /jhb-automation-tools (fixed — this page has no editable slug).</p>
+        <Field label="SEO title" value={form.seo.metaTitle} onChange={(v) => setSeo("metaTitle", v)} />
         <Field label="Meta description" value={form.seo.metaDescription} onChange={(v) => setSeo("metaDescription", v)} textarea />
+        <Field label="Meta keywords" value={form.seo.metaKeywords ?? ""} onChange={(v) => setSeo("metaKeywords", v)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Open Graph title" value={form.seo.ogTitle} onChange={(v) => setSeo("ogTitle", v)} />
           <Field label="Open Graph description" value={form.seo.ogDescription} onChange={(v) => setSeo("ogDescription", v)} />
         </div>
       </Card>
+
+      <AiSeoPanel
+        route="/jhb-automation-tools"
+        getContext={() => ({
+          title: form.seo.metaTitle || form.hero.heading,
+          contentHtml: form.hero.description,
+          focusKeyword: (form.seo.metaKeywords || "").split(",")[0]?.trim() || undefined,
+          metaTitle: form.seo.metaTitle,
+          metaDescription: form.seo.metaDescription,
+          keywords: form.seo.metaKeywords,
+        })}
+        onApply={(r) => {
+          if (r.seoTitle) setSeo("metaTitle", r.seoTitle);
+          if (r.metaDescription) setSeo("metaDescription", r.metaDescription);
+          if (r.metaKeywords) setSeo("metaKeywords", r.metaKeywords);
+          else if (r.secondaryKeywords?.length) setSeo("metaKeywords", r.secondaryKeywords.join(", "));
+          if (r.ogTitle) setSeo("ogTitle", r.ogTitle);
+          if (r.ogDescription) setSeo("ogDescription", r.ogDescription);
+          if (r.faqs?.length) setForm((p) => ({ ...p, faqs: [...p.faqs, ...r.faqs!] }));
+        }}
+      />
 
       {cb.modal}
         </div>

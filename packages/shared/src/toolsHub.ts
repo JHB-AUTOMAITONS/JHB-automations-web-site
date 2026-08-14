@@ -74,6 +74,8 @@ export type ToolsHub = {
   seo: {
     metaTitle: string;
     metaDescription: string;
+    // Optional so a hub saved before this field existed still loads.
+    metaKeywords?: string;
     ogTitle: string;
     ogDescription: string;
   };
