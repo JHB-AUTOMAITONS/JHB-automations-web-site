@@ -10,6 +10,8 @@ import { extractHrefs, seedWhatsIncluded, type ServicePagePayload } from "@jhb/s
 import { HOME_FAQ_DEFAULTS } from "@jhb/shared/home-faqs";
 import type { PageContainer } from "@jhb/shared/containers";
 import { sanitizeRichText } from "@jhb/shared/rich-text";
+import { getServices } from "@jhb/shared/services-server";
+import { PRODUCTS_DEFAULT } from "@jhb/shared/products";
 
 async function getStaff() {
   const supabase = await createClient();
@@ -240,10 +242,120 @@ export async function saveToolsHub(data: Record<string, unknown>) {
   if (error) return { ok: false, error: error.message };
   await log("tools_hub.update", "Updated JHB Automation Tools hub");
   await snapshot("tools_hub", "JHB Automation Tools", data, "Updated Automation Tools hub");
-  revalidatePath("/jhb-automation-tools");
+  const hrSlug = await getHrSlug(supabase);
+  const hrPath = hrSlug ? `/${hrSlug}` : "/jhb-automation-tools";
+  revalidatePath(hrPath);
   revalidatePath("/");
-  await revalidateWebsite(["/jhb-automation-tools", "/"]);
+  await revalidateWebsite([hrPath, "/"]);
   return { ok: true };
+}
+
+// The HR Management System's public path is admin-editable (see
+// updateToolsHubSlug below) via the "jhb-automation-tools" product's `href` —
+// so, unlike a hardcoded route string, it has to be looked up fresh each time.
+async function getHrSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<string | null> {
+  const { data: row } = await supabase
+    .from("jhb_content")
+    .select("data")
+    .eq("key", "products")
+    .maybeSingle();
+  const items = ((row?.data as { items?: unknown[] } | null)?.items ?? []) as Record<
+    string,
+    unknown
+  >[];
+  const hr = items.find((p) => p.id === "jhb-automation-tools");
+  const href = typeof hr?.href === "string" ? hr.href.trim() : "";
+  return href ? href.replace(/^\//, "") : null;
+}
+
+// Changes only the HR product's URL — patches its `href`/`slug` inside the
+// "products" and "products_draft" documents. Kept as its own narrow action
+// (not routed through saveProducts/publishProducts) because ToolsHubManager's
+// local state only ever holds the tools_hub document, never the full products
+// array, and shouldn't need to for one field.
+export async function updateToolsHubSlug(newSlug: string) {
+  const ctx = await requireAdmin();
+  if (!ctx.ok) return { ok: false, error: "Only a Super Admin can do this." };
+  const { supabase, user } = ctx;
+
+  const slug = toSlug(newSlug);
+  if (!slug) return { ok: false, error: "Slug cannot be empty." };
+  if (RESERVED_SLUGS.has(slug))
+    return {
+      ok: false,
+      error: `"${slug}" is a reserved path and can't be used. Choose a different slug.`,
+    };
+
+  const [services, { data: liveRow }, { data: draftRow }] = await Promise.all([
+    getServices(),
+    supabase.from("jhb_content").select("data").eq("key", "products").maybeSingle(),
+    supabase.from("jhb_content").select("data").eq("key", "products_draft").maybeSingle(),
+  ]);
+  if (services.some((s) => s.slug === slug))
+    return { ok: false, error: `"${slug}" is already used by a service page. Choose a different slug.` };
+
+  // Falls back to the known-good code defaults if a document is missing or
+  // malformed (e.g. no "products" row has ever been saved yet) rather than
+  // silently patching nothing — this recreates exactly what's already being
+  // served today, just with the slug applied.
+  const resolveItems = (doc: { items?: unknown[] } | null | undefined): Record<string, unknown>[] => {
+    const items = (doc?.items ?? []) as Record<string, unknown>[];
+    return items.some((p) => p.id === "jhb-automation-tools")
+      ? items
+      : (PRODUCTS_DEFAULT.items as unknown as Record<string, unknown>[]);
+  };
+
+  const liveDoc = liveRow?.data as { items?: unknown[] } | null;
+  const liveItems = resolveItems(liveDoc);
+  const current = liveItems.find((p) => p.id === "jhb-automation-tools");
+  const oldPath =
+    typeof current?.href === "string" && current.href.trim()
+      ? current.href.trim()
+      : "/jhb-automation-tools";
+
+  const collides = (p: Record<string, unknown>) =>
+    p.id !== "jhb-automation-tools" &&
+    ((typeof p.slug === "string" && p.slug === slug) ||
+      (typeof p.href === "string" && p.href.trim().replace(/^\//, "") === slug));
+  if (liveItems.some(collides))
+    return { ok: false, error: `"${slug}" is already used by another product. Choose a different slug.` };
+
+  const patchItems = (items: Record<string, unknown>[]) =>
+    items.map((p) => (p.id === "jhb-automation-tools" ? { ...p, slug, href: `/${slug}` } : p));
+
+  const now = new Date().toISOString();
+  const draftDoc = draftRow?.data as { items?: unknown[] } | null;
+  const [liveWrite, draftWrite] = await Promise.all([
+    supabase
+      .from("jhb_content")
+      .upsert(
+        { key: "products", data: { items: patchItems(liveItems) }, updated_at: now, updated_by: user.id },
+        { onConflict: "key" }
+      ),
+    supabase
+      .from("jhb_content")
+      .upsert(
+        {
+          key: "products_draft",
+          data: { items: patchItems(resolveItems(draftDoc)) },
+          updated_at: now,
+          updated_by: user.id,
+        },
+        { onConflict: "key" }
+      ),
+  ]);
+  if (liveWrite.error) return { ok: false, error: liveWrite.error.message };
+  if (draftWrite.error) return { ok: false, error: draftWrite.error.message };
+
+  await log("tools_hub.slug", `Changed the HR Management System URL from ${oldPath} to /${slug}`);
+  await snapshot("products", "JHB Products", { items: patchItems(liveItems) }, `Changed HR Management System URL to /${slug}`);
+  revalidatePath(oldPath);
+  revalidatePath(`/${slug}`);
+  revalidatePath("/", "layout");
+  await revalidateWebsite([oldPath, `/${slug}`, "/"]);
+  return { ok: true, slug };
 }
 
 // JHB Products — one editable document in jhb_content ("products").
@@ -826,7 +938,7 @@ export async function deleteLead(id: number) {
 // root (/[slug]), so a reserved slug would be shadowed by a real page and 404.
 const RESERVED_SLUGS = new Set([
   "about", "contact", "blog", "services", "products",
-  "jhb-automation-tools", "admin", "dashboard", "login", "api",
+  "admin", "dashboard", "login", "api",
   "sitemap.xml", "robots.txt", "favicon.ico", "_next",
 ]);
 
@@ -849,6 +961,14 @@ export async function saveService(
     return {
       ok: false,
       error: `"${slug}" is a reserved path and can't be used as a service slug. Choose a different slug.`,
+    };
+  // The HR Management System's URL is admin-editable, so — unlike the other
+  // reserved words above — it can't be hardcoded; check wherever it currently is.
+  const hrSlug = await getHrSlug(supabase);
+  if (hrSlug && slug === hrSlug)
+    return {
+      ok: false,
+      error: `"${slug}" is currently used by the JHB HR Management System page. Choose a different slug.`,
     };
 
   const { error } = await supabase

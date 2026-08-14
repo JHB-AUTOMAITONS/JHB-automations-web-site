@@ -52,9 +52,9 @@ function routeToPageRel(route: string): string {
       : path.join("app", "products", "[slug]", "page.tsx");
   }
   // Static known routes live at app/<seg>/page.tsx.
-  const staticRoutes = new Set(["about", "blog", "services", "contact", "jhb-automation-tools"]);
+  const staticRoutes = new Set(["about", "blog", "services", "contact"]);
   if (seg.length === 1 && staticRoutes.has(seg[0])) return path.join("app", seg[0], "page.tsx");
-  // Single-segment unknown → service detail catch-all.
+  // Single-segment unknown → service/HR-hub catch-all (HR's URL is admin-editable).
   if (seg.length === 1) return path.join("app", "[slug]", "page.tsx");
   // Fallback: literal nested path.
   return path.join("app", ...seg, "page.tsx");

@@ -479,7 +479,9 @@ async function collectAuditUrls(base: string, limit: number): Promise<{ urls: st
   } catch {
     /* fall through to known routes */
   }
-  const fallback = ["/", "/about/", "/services/", "/blog/", "/contact/", "/jhb-automation-tools/"].map((p) => root + p);
+  // The HR Management System's path is admin-editable (no longer a fixed
+  // route), so it's left out here rather than risk a stale, wrong entry.
+  const fallback = ["/", "/about/", "/services/", "/blog/", "/contact/"].map((p) => root + p);
   return { urls: fallback.slice(0, limit), total: fallback.length, via: "known routes (sitemap not reachable)" };
 }
 

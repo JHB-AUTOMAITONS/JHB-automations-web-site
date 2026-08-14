@@ -4,20 +4,63 @@ import { getServiceFaqs } from "@jhb/shared/faqs-server";
 import { getServiceAnchorLinks } from "@jhb/shared/service-links-server";
 import { getPublishedServiceContent } from "@jhb/shared/service-pages-server";
 import { getSettings } from "@jhb/shared/content-server";
+import { getPublishedProducts } from "@jhb/shared/products-server";
+import { getToolsHub } from "@jhb/shared/tools-hub-server";
+import { getMediaAltMap } from "@jhb/shared/media-server";
+import { altFor } from "@jhb/shared/media";
 import ServiceDetailView from "@/components/ServiceDetail";
+import ToolsHubView from "@/components/ToolsHubView";
 
-// Pre-render every known service at its effective (DB) slug for fast first loads.
-export async function generateStaticParams() {
-  const services = await getServices();
-  return services.map((s) => ({ slug: s.slug }));
+// The "JHB HR Management System" hub used to be a separate, fixed static route
+// (app/jhb-automation-tools/page.jsx). Its public URL is now driven by the
+// SAME field that already feeds the website nav dropdown — the "jhb-automation-
+// tools" product's `href` in the products array — so there is exactly one
+// place its URL lives, never two documents that could drift apart. Checked
+// FIRST, before falling through to the service lookup below.
+async function findHrPath() {
+  const products = await getPublishedProducts();
+  const hr = products.find((p) => p.id === "jhb-automation-tools");
+  const path = (hr?.href || "").trim().replace(/^\//, "");
+  return path || null;
 }
-// New services added in the admin render on demand (no rebuild needed).
+
+// Pre-render every known service (+ the HR hub, at its current path) at its
+// effective (DB) slug for fast first loads.
+export async function generateStaticParams() {
+  const [services, hrPath] = await Promise.all([getServices(), findHrPath()]);
+  return [
+    ...services.map((s) => ({ slug: s.slug })),
+    ...(hrPath ? [{ slug: hrPath }] : []),
+  ];
+}
+// New services (and a changed HR slug) render on demand (no rebuild needed).
 export const dynamicParams = true;
 
 export async function generateMetadata({
   params,
 }) {
   const { slug } = await params;
+
+  const hrPath = await findHrPath();
+  if (hrPath && slug === hrPath) {
+    const hub = await getToolsHub();
+    const canonical = `/${slug}`;
+    const keywords = (hub.seo.metaKeywords || "").split(",").map((k) => k.trim()).filter(Boolean);
+    return {
+      title: hub.seo.metaTitle,
+      description: hub.seo.metaDescription,
+      ...(keywords.length ? { keywords } : {}),
+      alternates: { canonical },
+      openGraph: {
+        siteName: "JHB Automations",
+        type: "website",
+        url: canonical,
+        title: hub.seo.ogTitle || hub.seo.metaTitle,
+        description: hub.seo.ogDescription || hub.seo.metaDescription,
+      },
+    };
+  }
+
   const data = await getServiceBySlug(slug);
   if (!data) return { title: "Service Not Found — JHB Automations" };
   const canonical = `/${data.slug}`;
@@ -43,6 +86,49 @@ export default async function ServicePage({
   params,
 }) {
   const { slug } = await params;
+
+  const hrPath = await findHrPath();
+  if (hrPath && slug === hrPath) {
+    const [hub, altMap, settings] = await Promise.all([
+      getToolsHub(),
+      getMediaAltMap(),
+      getSettings(),
+    ]);
+    const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const heroImageAlt = altFor(hub.hero.image, altMap, hub.hero.heading);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "JHB HR Management System",
+      // Hidden tools are removed from the schema too — never advertise to a
+      // crawler something a visitor can't see on the page.
+      itemListElement: (hub.categories ?? []).filter((c) => !c.hidden).map((c, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: c.title,
+        description: c.desc,
+      })),
+    };
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: site },
+        { "@type": "ListItem", position: 2, name: "JHB HR Management System", item: `${site}/${slug}` },
+      ],
+    };
+
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+        {/* FAQPage schema is emitted by FaqAccordion inside ToolsHubView */}
+        <ToolsHubView hub={hub} heroImageAlt={heroImageAlt} faqShowNumbers={settings.faqShowNumbers} />
+      </>
+    );
+  }
+
   const data = await getServiceBySlug(slug);
   if (!data) notFound();
 

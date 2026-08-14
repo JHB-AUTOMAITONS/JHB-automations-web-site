@@ -6,7 +6,7 @@ import type { ToolsHub, ToolCategory, CrmFeature, HubBenefit, ToolsHubFaq } from
 import { TOOLS_HUB_DEFAULT } from "@jhb/shared/tools-hub";
 import type { InternalPage } from "@jhb/shared/service-pages";
 import type { PageContainer } from "@jhb/shared/containers";
-import { saveToolsHub } from "@/app/actions";
+import { saveToolsHub, updateToolsHubSlug } from "@/app/actions";
 import { withTimeout, actionErrorMessage } from "@/lib/asyncAction";
 import EditorHeader from "./EditorHeader";
 import RichEditor from "./RichEditor";
@@ -31,6 +31,7 @@ const TOOLSHUB_SECTIONS = [
 ];
 
 type Toast = { type: "success" | "error"; msg: string } | null;
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 function move<T>(arr: T[], from: number, to: number): T[] {
   if (to < 0 || to >= arr.length) return arr;
@@ -43,9 +44,11 @@ function move<T>(arr: T[], from: number, to: number): T[] {
 export default function ToolsHubManager({
   initial,
   internalPages = [],
+  initialSlug = "jhb-automation-tools",
 }: {
   initial: ToolsHub;
   internalPages?: InternalPage[];
+  initialSlug?: string;
 }) {
   const router = useRouter();
   // Defensive deep-default. The loader shallow-merges the saved doc over the
@@ -66,6 +69,10 @@ export default function ToolsHubManager({
   const [busy, setBusy] = useState<"" | "save" | "publish">("");
   const [toast, setToast] = useState<Toast>(null);
   const [showPreview, setShowPreview] = useState(true);
+  // The public path lives on the "jhb-automation-tools" product's `href`, not
+  // on the ToolsHub document itself — see updateToolsHubSlug in actions.ts.
+  const [slug, setSlug] = useState(initialSlug);
+  const [currentSlug, setCurrentSlug] = useState(initialSlug);
 
   // Inline "Add Container" engine — same one used on the Home page.
   const cb = usePageContainers(initial.containers ?? [], TOOLSHUB_SECTIONS);
@@ -79,6 +86,16 @@ export default function ToolsHubManager({
     if (busy) return;
     setBusy("publish");
     try {
+      const nextSlug = slugify(slug);
+      if (nextSlug && nextSlug !== currentSlug) {
+        const slugRes = await withTimeout(updateToolsHubSlug(nextSlug));
+        if (!slugRes.ok) {
+          flash({ type: "error", msg: slugRes.error || "Could not update the URL." });
+          return;
+        }
+        setCurrentSlug(slugRes.slug!);
+        setSlug(slugRes.slug!);
+      }
       const res = await withTimeout(saveToolsHub({ ...form, containers: cb.containers } as unknown as Record<string, unknown>));
       if (res.ok) {
         flash({ type: "success", msg: "Saved & live." });
@@ -168,7 +185,7 @@ export default function ToolsHubManager({
         publishLabel="Save changes"
         showPreview={showPreview}
         onTogglePreview={() => setShowPreview((s) => !s)}
-        extra={<a href={`${WEBSITE}/jhb-automation-tools`} target="_blank" className="text-xs text-primary hover:underline">Preview ↗</a>}
+        extra={<a href={`${WEBSITE}/${currentSlug}`} target="_blank" className="text-xs text-primary hover:underline">Preview ↗</a>}
       />
 
       <div className={`mt-8 grid gap-6 ${showPreview ? "xl:grid-cols-[1fr_440px]" : ""}`}>
@@ -388,7 +405,22 @@ export default function ToolsHubManager({
           the JHB Products editor, wired to this page's own content/route so it
           can never read or overwrite another page's SEO. */}
       <Card title="SEO & URL">
-        <p className="text-[11px] text-muted">Public path: /jhb-automation-tools (fixed — this page has no editable slug).</p>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted">Product slug (URL)</span>
+          <input
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            onBlur={(e) => setSlug(slugify(e.target.value) || currentSlug)}
+            className="input"
+            placeholder="jhb-automation-tools"
+          />
+          <p className="mt-1 text-[11px] text-muted">
+            Public path: /{slugify(slug) || "…"}
+          </p>
+          <p className="mt-1 text-[11px] text-muted">
+            Changing this moves the live page to the new address — the old URL ({`/${currentSlug}`}) stops working immediately (no automatic redirect). Takes effect on the next Save.
+          </p>
+        </label>
         <Field label="SEO title" value={form.seo.metaTitle} onChange={(v) => setSeo("metaTitle", v)} />
         <Field label="Meta description" value={form.seo.metaDescription} onChange={(v) => setSeo("metaDescription", v)} textarea />
         <Field label="Meta keywords" value={form.seo.metaKeywords ?? ""} onChange={(v) => setSeo("metaKeywords", v)} />
@@ -399,7 +431,7 @@ export default function ToolsHubManager({
       </Card>
 
       <AiSeoPanel
-        route="/jhb-automation-tools"
+        route={`/${slugify(slug) || currentSlug}`}
         getContext={() => ({
           title: form.seo.metaTitle || form.hero.heading,
           contentHtml: form.hero.description,
