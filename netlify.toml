@@ -30,15 +30,31 @@
   package = "@netlify/plugin-nextjs"
 
 # --- SEO 301 redirects (ported from the Apache .htaccess), run at the edge ---
+#
+# The "JHB HR Management System" page's URL is admin-editable (its public path
+# is the "jhb-automation-tools" product's `href`, changed here via the admin's
+# Product slug field) and has NO automatic redirect when it changes — by
+# design, matching Vasool/Clinic/Operations' slug editing. It moved from
+# /jhb-automation-tools to /hrms-software; every redirect below that used to
+# target the old path now targets the new one, plus a dedicated redirect from
+# the old path itself so existing bookmarks/search rankings aren't lost. If
+# the slug is changed again in the admin, these three targets need updating
+# by hand the same way (a known, accepted limitation of that feature).
+[[redirects]]
+  from = "/jhb-automation-tools"
+  to = "/hrms-software/"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/customer-relationship-management-software"
-  to = "/jhb-automation-tools/"
+  to = "/hrms-software/"
   status = 301
   force = true
 
 [[redirects]]
   from = "/services/customer-relationship-management-software"
-  to = "/jhb-automation-tools/"
+  to = "/hrms-software/"
   status = 301
   force = true
 

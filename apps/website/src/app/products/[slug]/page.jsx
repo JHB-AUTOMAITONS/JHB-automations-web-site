@@ -136,17 +136,19 @@ export default async function ProductPage({
                   />
                 </Reveal>
               )}
-              <Reveal delay={0.18}>
-                <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  <Link href="/#contact" className="btn btn-primary !px-7 !py-3.5">
-                    Book a Free Demo
-                    <span aria-hidden>→</span>
-                  </Link>
-                  <Link href={`/products/${p.slug}/about`} className="btn btn-ghost !px-7 !py-3.5">
-                    About {p.title}
-                  </Link>
-                </div>
-              </Reveal>
+              {!p.heroButtonsHidden && (
+                <Reveal delay={0.18}>
+                  <div className="mt-8 flex flex-wrap justify-center gap-3">
+                    <Link href="/#contact" className="btn btn-primary !px-7 !py-3.5">
+                      Book a Free Demo
+                      <span aria-hidden>→</span>
+                    </Link>
+                    <Link href={`/products/${p.slug}/about`} className="btn btn-ghost !px-7 !py-3.5">
+                      About {p.title}
+                    </Link>
+                  </div>
+                </Reveal>
+              )}
             </div>
 
             {p.image && (

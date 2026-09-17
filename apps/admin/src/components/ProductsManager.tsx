@@ -375,6 +375,12 @@ function ProductBody({
               onChange={(h) => onPatch({ heroHidden: h })}
               hint="Turn off to hide the hero on the live page. The breadcrumb stays."
             />
+            <VisibilityToggle
+              title="Show hero buttons"
+              hidden={p.heroButtonsHidden}
+              onChange={(h) => onPatch({ heroButtonsHidden: h })}
+              hint="Turn off to remove the &quot;Book a Free Demo&quot; / &quot;About&quot; buttons from the hero only. The rest of the hero stays."
+            />
           </div>
 
           {cb.slot("after-hero")}
