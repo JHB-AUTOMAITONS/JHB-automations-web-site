@@ -180,6 +180,12 @@ export default async function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;700&family=Ubuntu:wght@400;500;700&display=swap"
           media="print"
+          // The inline script right below mutates this element's `media` attribute
+          // directly (browser DOM, not React) the instant it loads — often before
+          // React ever hydrates it — so server (print) and client (all) legitimately
+          // disagree by design. suppressHydrationWarning tells React that's expected
+          // for this one node, instead of logging a hydration-mismatch error every load.
+          suppressHydrationWarning
         />
         <script
           dangerouslySetInnerHTML={{
